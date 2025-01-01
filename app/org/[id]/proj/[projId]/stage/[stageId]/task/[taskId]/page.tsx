@@ -51,9 +51,9 @@ function Taskage({ params: { id, projId, stageId, taskId } }: {
       {isSignedIn &&
         <div className="p-4 flex-1">
           <ResizablePanelGroup direction="horizontal" className="h-full">
-            <ResizablePanel className="h-full" minSize={70}>
+            <ResizablePanel className="h-full" minSize={70} defaultSize={70}>
               <ResizablePanelGroup direction={"vertical"} className="h-full">
-                <ResizablePanel className="h-full">
+                <ResizablePanel className="h-full" defaultSize={70}>
                   <h1 className="text-4xl font-bold">{task?.title}</h1>
                   <div className="mt-4">
                     <p className="text-sm text-gray-600">Assigned to: {task?.assignedTo}</p>
@@ -65,7 +65,7 @@ function Taskage({ params: { id, projId, stageId, taskId } }: {
                     </Label>
                   </div>
                 </ResizablePanel>
-                <ResizablePanel className="h-full">
+                <ResizablePanel className="h-full" defaultSize={70}>
                   <h2 className="text-2xl font-semibold">Comments</h2>
                 </ResizablePanel>
               </ResizablePanelGroup>

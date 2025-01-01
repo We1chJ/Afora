@@ -92,8 +92,6 @@ function Sidebar() {
           </SheetContent>
         </Sheet>
       </div>
-
-
       <div className="hidden md:inline">
         {menuOptions}
       </div>

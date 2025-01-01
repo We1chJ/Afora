@@ -17,7 +17,7 @@ import JoinOrgButton from "./JoinOrgButton";
 function Header() {
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-10 shadow-md  bg-[#6F61EF]	">
+    <header className="top-0 left-0 right-0 z-10 shadow-md bg-[#6F61EF]	">
       <div className="flex items-center justify-between m-3 mx-4">
         <h1 className="text-2xl font-bold text-white">
           <Link href="/">

@@ -1,13 +1,12 @@
 import SignedInLanding from "@/components/SignedInLanding";
-import { SignedIn, SignedOut, SignInButton,  } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, } from "@clerk/nextjs";
 
 export default function Home() {
 
   return (
-    <main className="flex h-[calc(100vh-4.7rem)]">
+    <main className="flex h-full">
       <SignedIn>
-        <SignedInLanding/>
-        
+        <SignedInLanding />
       </SignedIn>
       <SignedOut>
         <div className="w-full h-full bg-gradient-to-r from-[#6F61EF] via-[#6F61EF] to-purple-500/0 flex items-center justify-center">

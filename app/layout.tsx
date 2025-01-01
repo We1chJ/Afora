@@ -29,15 +29,17 @@ export default function RootLayout({
           />
         </head>
         <body>
-          <Header /> {/* Always show the header */}
-          <div className="flex min-h-screen pt-[74px]">
-            <SignedIn> {/* Only show side bar of organizations if user is signed in */}
-              <Sidebar />
-              {/* put the onboarding survey here to make sure no bypassing by going to another url page */}
-              <AppOnboarding />
-            </SignedIn>
-            <div className="flex-1 bg-gray-100 overflow-y-auto scrollbar-hide py-2">
-              {children} {/* Home Page */}
+          <div className="flex flex-col h-screen">
+            <Header /> {/* Always show the header */}
+            <div className="flex h-screen">
+              <SignedIn> {/* Only show side bar of organizations if user is signed in */}
+                <Sidebar />
+                {/* put the onboarding survey here to make sure no bypassing by going to another url page */}
+                <AppOnboarding />
+              </SignedIn>
+              <div className="flex-1 overflow-auto bg-gray-100">
+                {children} {/* Home Page */}
+              </div>
             </div>
           </div>
           <Toaster position="top-center" />

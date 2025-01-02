@@ -36,7 +36,6 @@ function SignedInLanding() {
 
     console.log("Organizations:", orgs);
     return (
-
         <div className='flex p-4 w-screen h-screen'>
             {orgs.length > 0 ? (
                 <div className="flex flex-wrap gap-8 m-4 max-h-full w-full">

@@ -25,7 +25,7 @@ function StagePage({ params: { id, projId, stageId } }: {
   }, [isLoaded, isSignedIn, projId, stageId]);
 
   return (
-    <div className="flex flex-col flex-1">
+    <div className="flex flex-col h-screen">
       {isSignedIn && <TaskList orgId={id} projId={projId} stageId={stageId} />}
     </div>
   )

@@ -89,12 +89,12 @@ function ProjectPage({ params: { id, projId } }: {
   });
 
   return (
-    <div className="w-screen h-full flex flex-col">
+    <div className="flex flex-col w-screen h-screen">
       <Table className="w-screen">
         <TableHeader>
           <TableRow>
             <div
-              className="flex flex-1 items-center justify-between bg-cover bg-center p-4 h-64 w-screen"
+              className="flex items-center justify-between bg-cover bg-center p-4 h-64 w-screen"
               style={{ backgroundImage: "url('https://cdn.discordapp.com/attachments/1295223753198010421/1309213417948713010/Screenshot_2024-11-21_at_12.46.13_PM.png?ex=6740c382&is=673f7202&hm=d63898e23ea10aeae3e7e62ef187937754b21a39b2777fbf4f3adcf44c37a840&')", backgroundSize: 'cover', height: '100%' }}
             >
               <h1 className="text-4xl font-bold m-4 text-white">

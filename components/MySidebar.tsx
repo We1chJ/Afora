@@ -1,0 +1,109 @@
+'use client';
+
+import { Home, HomeIcon, MenuIcon } from "lucide-react"
+import { useCollection } from "react-firebase-hooks/firestore"
+import { useUser } from "@clerk/nextjs";
+import { collection, doc, DocumentData, getDoc, query, where } from "firebase/firestore";
+import { db } from '@/firebase'
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarSeparator,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
+import { Organization } from "@/types/types";
+
+
+interface OrgDocument extends DocumentData {
+  createdAt: string;
+  role: string;
+  orgId: string;
+  userId: string;
+  orgTitle: string;
+}
+
+function MySidebar() {
+  const { user } = useUser()
+  const [userOrgs] = useCollection(
+    user && user.primaryEmailAddress && collection(db, "users", user.primaryEmailAddress.toString(), "orgs")
+  );
+  const [orgIds, setOrgIds] = useState<string[]>([]);
+  const [orgMap, setOrgMap] = useState<Map<string, string>>(new Map());
+
+  // Memoize the query to maintain stability
+  const orgQuery = useMemo(() =>
+    orgIds.length ?
+      query(
+        collection(db, 'organizations'),
+        where('__name__', 'in', orgIds)
+      )
+      : null
+    , [orgIds]);
+
+  const [value, loading, error] = useCollection(orgQuery);
+
+  // Get orgIds from userOrgs
+  useEffect(() => {
+    if (!userOrgs) return;
+    const orgDocs = userOrgs.docs.map((doc) => doc.data() as OrgDocument);
+    const ids = orgDocs.map((org) => org.orgId);
+    setOrgIds(ids);
+  }, [userOrgs]);
+
+  // Create map from organizations collection data
+  useEffect(() => {
+    if (!value) return;
+
+    const newOrgMap = new Map<string, string>();
+    value.docs.forEach(doc => {
+      const data = doc.data() as Organization;
+      newOrgMap.set(doc.id, data.title); // Assuming the title field is called 'title'
+    });
+
+    setOrgMap(newOrgMap);
+  }, [value]);
+
+  return (
+    <div className="h-screen">
+      <Sidebar collapsible="icon">
+        <SidebarContent>
+          <SidebarHeader>
+            <SidebarTrigger className="pl-1" />
+            <SidebarMenuButton asChild>
+              <Link href="/">
+                <Home />
+                <span className="font-bold">Home</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarHeader>
+          <SidebarGroup>
+            <SidebarGroupLabel>Projects</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {!loading && !error && orgMap && Array.from(orgMap.entries()).map(([id, title]) => (
+                  <SidebarMenuItem key={id}>
+                    <SidebarMenuButton asChild>
+                      <Link className="group-data-[collapsible=icon]:hidden" href={`/org/${id}`}>
+                        <span className="truncate border-e-indigo-50 font-bold">{title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+      </Sidebar>
+    </div>
+  )
+}
+export default MySidebar

@@ -17,7 +17,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Organization } from "@/types/types";
@@ -76,17 +75,16 @@ function MySidebar() {
     <div className="h-screen">
       <Sidebar collapsible="icon">
         <SidebarContent>
-          <SidebarHeader>
-            <SidebarTrigger className="pl-1" />
+          <SidebarHeader className="flex items-center justify-between bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
             <SidebarMenuButton asChild>
-              <Link href="/">
-                <Home />
+              <Link href="/" className="flex items-center space-x-2">
+                <Home className="w-5 h-5" />
                 <span className="font-bold">Home</span>
               </Link>
             </SidebarMenuButton>
           </SidebarHeader>
           <SidebarGroup>
-            <SidebarGroupLabel>Projects</SidebarGroupLabel>
+            <SidebarGroupLabel>Organizations</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {!loading && !error && orgMap && Array.from(orgMap.entries()).map(([id, title]) => (

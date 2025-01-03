@@ -29,14 +29,14 @@ export default function RootLayout({
           />
         </head>
         <body>
-          <div className="flex flex-col h-screen">
+          <SidebarProvider className="flex flex-col h-screen" style={{
+            "--sidebar-width": "10rem",
+            "--sidebar-width-mobile": "0rem",
+          } as React.CSSProperties}>
             <Header />
             <div className="flex flex-1 overflow-hidden">
               <SignedIn>
-                <SidebarProvider className="flex h-full" style={{
-                  "--sidebar-width": "10rem",
-                  "--sidebar-width-mobile": "10rem",
-                } as React.CSSProperties}>
+                <div className="flex h-full">
                   <MySidebar />
                   <div className="flex flex-col flex-1 overflow-hidden">
                     <AppOnboarding />
@@ -44,7 +44,7 @@ export default function RootLayout({
                       {children}
                     </main>
                   </div>
-                </SidebarProvider>
+                </div>
               </SignedIn>
 
               <SignedOut>
@@ -67,7 +67,7 @@ export default function RootLayout({
                 </div>
               </SignedOut>
             </div>
-          </div>
+          </SidebarProvider>
           <Toaster position="top-center" />
         </body>
       </html>

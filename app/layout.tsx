@@ -38,7 +38,7 @@ export default function RootLayout({
               <SignedIn>
                 <div className="flex h-full">
                   <MySidebar />
-                  <div className="flex flex-col flex-1 overflow-hidden">
+                  <div className="flex flex-col w-screen flex-1 overflow-hidden">
                     <AppOnboarding />
                     <main className="flex-1 overflow-auto bg-gray-100">
                       {children}

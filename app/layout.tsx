@@ -4,7 +4,7 @@ import { ClerkProvider, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs"
 import Header from "@/components/Header";
 import { Toaster } from "@/components/ui/sonner";
 import AppOnboarding from "@/components/AppOnboarding";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarProvider } from "@/components/ui/sidebar"
 import MySidebar from "@/components/MySidebar";
 
 export const metadata: Metadata = {

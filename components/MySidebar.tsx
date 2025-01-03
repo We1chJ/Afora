@@ -1,9 +1,9 @@
 'use client';
 
-import { Home, HomeIcon, MenuIcon } from "lucide-react"
+import { Home } from "lucide-react"
 import { useCollection } from "react-firebase-hooks/firestore"
 import { useUser } from "@clerk/nextjs";
-import { collection, doc, DocumentData, getDoc, query, where } from "firebase/firestore";
+import { collection, DocumentData, query, where } from "firebase/firestore";
 import { db } from '@/firebase'
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -17,7 +17,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Organization } from "@/types/types";
 

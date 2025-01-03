@@ -2,14 +2,10 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ClerkProvider, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import Header from "@/components/Header";
-import Sidebar from "@/components/Sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import AppOnboarding from "@/components/AppOnboarding";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable"
+import { SidebarProvider } from "@/components/ui/sidebar"
+import MySidebar from "@/components/MySidebar";
 
 export const metadata: Metadata = {
   title: "Afora",
@@ -22,7 +18,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // Switch to Google Auth if users become >10,000
     <ClerkProvider>
       <html lang="en">
         <head>
@@ -34,30 +29,26 @@ export default function RootLayout({
           />
         </head>
         <body>
-          <div className="flex flex-col h-screen">
-            <Header /> {/* Always show the header */}
-            <div className="flex overflow-auto h-screen">
-              <SignedIn> {/* Only show side bar of organizations if user is signed in */}
-                <ResizablePanelGroup direction="horizontal">
-                  <ResizablePanel defaultSize={15} minSize={10} maxSize={20}>
-                    <Sidebar />
-                  </ResizablePanel>
-                  <ResizableHandle withHandle>
-
-                  </ResizableHandle>
-                  {/* put the onboarding survey here to make sure no bypassing by going to another url page */}
-                  <AppOnboarding />
-                  <ResizablePanel defaultSize={85} minSize={80}>
-                    <div className="flex-1 overflow-auto bg-gray-100">
-                      {children} {/* Home Page */}
-                    </div>
-                  </ResizablePanel>
-                </ResizablePanelGroup>
+          <SidebarProvider className="flex flex-col h-screen" style={{
+            "--sidebar-width": "10rem",
+            "--sidebar-width-mobile": "0rem",
+          } as React.CSSProperties}>
+            <Header />
+            <div className="flex flex-1 overflow-hidden">
+              <SignedIn>
+                <div className="flex h-full">
+                  <MySidebar />
+                  <div className="flex flex-col w-screen flex-1 overflow-hidden">
+                    <AppOnboarding />
+                    <main className="flex-1 overflow-auto bg-gray-100">
+                      {children}
+                    </main>
+                  </div>
+                </div>
               </SignedIn>
 
-              {/* Sign in page */}
               <SignedOut>
-                <div className="w-full h-full bg-gradient-to-r from-[#6F61EF] via-[#6F61EF] to-purple-500/0 flex items-center justify-center">
+                <div className="flex-1 w-full h-full bg-gradient-to-r from-[#6F61EF] via-[#6F61EF] to-purple-500/0 flex items-center justify-center">
                   <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full mx-4">
                     <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">
                       Welcome to Afora
@@ -76,10 +67,11 @@ export default function RootLayout({
                 </div>
               </SignedOut>
             </div>
-          </div>
+          </SidebarProvider>
           <Toaster position="top-center" />
         </body>
       </html>
     </ClerkProvider>
   );
 }
+

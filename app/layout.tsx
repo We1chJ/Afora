@@ -36,11 +36,11 @@ export default function RootLayout({
             <Header />
             <div className="flex flex-1 overflow-hidden">
               <SignedIn>
-                <div className="flex h-full">
+                <div className="flex h-full w-full">
                   <MySidebar />
-                  <div className="flex flex-col w-screen flex-1 overflow-hidden">
+                  <div className="flex flex-col overflow-hidden w-full">
                     <AppOnboarding />
-                    <main className="flex-1 overflow-auto bg-gray-100">
+                    <main className="flex-1 overflow-auto w-full bg-gray-100">
                       {children}
                     </main>
                   </div>

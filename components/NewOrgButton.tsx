@@ -30,6 +30,8 @@ function NewOrgButton({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (isOp
         toast.success("Organization created successfully!");
         setIsOpen(false);
         router.push(`/org/${orgId}`);
+        setOrgName('');
+        setOrgDescription('');
       } else {
         toast.error(message);
       }
@@ -80,7 +82,7 @@ function NewOrgButton({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (isOp
         </div>
         <DialogFooter>
           <Button type="submit" onClick={handleCreateNewOrganization} disabled={isPending}>
-            {isPending ? "Loading..." : "Create"}
+            {isPending ? "Creating..." : "Create"}
           </Button>
         </DialogFooter>
       </DialogContent>

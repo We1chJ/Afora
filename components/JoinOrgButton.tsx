@@ -35,6 +35,7 @@ function JoinOrgButton({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (isO
         setIsOpen(false);
         router.push(`/org/${orgCode}`); // Updated route
         toast.success('Successfully joined!');
+        setOrgCode('');
       } else {
         console.log('Failed to join', message);
         toast.error(message);
@@ -70,7 +71,7 @@ function JoinOrgButton({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (isO
         </div>
         <DialogFooter>
           <Button type="submit" onClick={handleJoinNewOrganization} disabled={isPending}> {/* Updated onClick */}
-            {isPending ? "Loading..." : "Join"}
+            {isPending ? "Joining..." : "Join"}
           </Button>
         </DialogFooter>
 

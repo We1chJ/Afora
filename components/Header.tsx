@@ -10,12 +10,20 @@ import NewOrgButton from "./NewOrgButton";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import JoinOrgButton from "./JoinOrgButton";
 import { SidebarTrigger } from "./ui/sidebar";
+import { useState } from "react";
+import { Button } from "./ui/button";
 
 function Header() {
+
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isNewOrgOpen, setIsNewOrgOpen] = useState(false);
+  const [isJoinOrgOpen, setIsJoinOrgOpen] = useState(false);
+
   return (
     <header className="top-0 left-0 right-0 z-10 shadow-md bg-[#6F61EF]">
       <div className="flex items-center justify-between m-1 mx-4">
@@ -38,15 +46,24 @@ function Header() {
 
           <div className="flex gap-6 items-center text-white">
             <SignedIn>
-              <DropdownMenu>
+              {/* Note: The buttons in these components are extracted out to put here due to the interference of DropdownMenu with Dialogs */}
+              <NewOrgButton isOpen={isNewOrgOpen} setIsOpen={setIsNewOrgOpen} />
+              <JoinOrgButton isOpen={isJoinOrgOpen} setIsOpen={setIsJoinOrgOpen} />
+              <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                 <DropdownMenuTrigger className="hover:translate-y-[-2px] transition-transform duration-300">
                   <PlusIcon />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <div className="space-y-2 flex flex-col m-1 my-2">
-                    <NewOrgButton />
-                    <JoinOrgButton />
-                  </div>
+                  <DropdownMenuItem>
+                    <Button className="bg-[#6F61EF] w-full hover:bg-[#5646e4]" onClick={() => { setIsNewOrgOpen(true); setDropdownOpen(false); }}>
+                      Create Org
+                    </Button>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Button className="bg-[#6F61EF] w-full hover:bg-[#5646e4]" onClick={() => { setIsJoinOrgOpen(true); setDropdownOpen(false); }}>
+                      Join Org
+                    </Button>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </SignedIn>

@@ -7,7 +7,7 @@ import { collection, doc } from 'firebase/firestore'
 import { db } from '@/firebase'
 import MemberList from './MemberList'
 import ProjOnboarding from './ProjOnboarding'
-import { UserOrgData } from '@/types/types'
+import { Organization, UserOrgData } from '@/types/types'
 import { useUser } from '@clerk/nextjs'
 import ProjTab from './ProjTab'
 import { Copy } from 'lucide-react';
@@ -40,7 +40,7 @@ const OrganizationPage = ({ id }: { id: string }) => {
     return <div>No organization found</div>;
   }
 
-  const orgData = org!.data()!;
+  const orgData = org!.data()! as Organization;
 
   if (!orgData) {
     return <div>No organization found</div>;
@@ -52,7 +52,8 @@ const OrganizationPage = ({ id }: { id: string }) => {
         className="flex items-center justify-between bg-cover bg-center p-4 h-64 rounded-lg"
         style={{ backgroundImage: "url('https://media.discordapp.net/attachments/1295223753198010421/1309212572976676904/vector-collaboration-related-banner-design-in-trendy-linear-style-line-art-style-abstract-380112445.jpg?ex=6740c2b9&is=673f7139&hm=f0ae51ff74117d7fbf7b0ee8f6b1431156c794754535e7968eac47d1f38fdce4&=&format=webp')", backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
-        <ProjOnboarding orgId={id} />
+        {user && user.primaryEmailAddress && orgData && orgData.admins &&
+          !orgData.admins.includes(user.primaryEmailAddress.toString()) && <ProjOnboarding orgId={id} />}
         <h1 className="text-4xl font-bold m-4 text-white">
           {orgData && orgData.title}
         </h1>

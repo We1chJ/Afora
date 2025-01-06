@@ -22,7 +22,7 @@ function OrgPage({ params: { id } }: {
 
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-full">
       {isSignedIn && <OrganizationPage id={id} />}
     </div>
   )

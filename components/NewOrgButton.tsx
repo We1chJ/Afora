@@ -13,18 +13,15 @@ import {
   DialogTrigger,
   DialogFooter
 } from "@/components/ui/dialog"
-// import { useUser } from "@clerk/nextjs";
 import { Label } from "@radix-ui/react-label";
 import { Input } from "./ui/input";
 import { Textarea } from "@/components/ui/textarea"
 
-function NewOrgButton() {
+function NewOrgButton({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (isOpen: boolean) => void }) {
   const [isPending, startTransition] = useTransition();
-  const [isOpen, setIsOpen] = useState(false);
   const [orgName, setOrgName] = useState('');
   const [orgDescription, setOrgDescription] = useState('');
   const router = useRouter();
-  // const { user } = useUser();
 
   const handleCreateNewOrganization = () => {
     startTransition(async () => {
@@ -33,6 +30,8 @@ function NewOrgButton() {
         toast.success("Organization created successfully!");
         setIsOpen(false);
         router.push(`/org/${orgId}`);
+        setOrgName('');
+        setOrgDescription('');
       } else {
         toast.error(message);
       }
@@ -41,11 +40,12 @@ function NewOrgButton() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button disabled={isPending} className="bg-[#6F61EF] flex flex-1 hover:bg-[#5646e4]">
-          {isPending ? "Loading..." : "Create Org"}
-        </Button>
-      </DialogTrigger>
+      {/* <Button
+        disabled={isPending}
+        className="bg-[#6F61EF] flex flex-1 hover:bg-[#5646e4]"
+      >
+        {isPending ? "Loading..." : "Create Org"}
+      </Button> */}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create a New Organization</DialogTitle>
@@ -67,7 +67,7 @@ function NewOrgButton() {
               className="col-span-3"
             />
           </div>
-            <div className="grid grid-cols-4 items-center gap-4">
+          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="orgDescription" className="text-right">
               Description
             </Label>
@@ -78,11 +78,11 @@ function NewOrgButton() {
               placeholder="Enter organization description"
               className="col-span-3"
             />
-            </div>
+          </div>
         </div>
         <DialogFooter>
           <Button type="submit" onClick={handleCreateNewOrganization} disabled={isPending}>
-            {isPending ? "Loading..." : "Create"}
+            {isPending ? "Creating..." : "Create"}
           </Button>
         </DialogFooter>
       </DialogContent>

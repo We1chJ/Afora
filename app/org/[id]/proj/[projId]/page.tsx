@@ -1,7 +1,5 @@
 'use client';
 
-import { Card, CardHeader } from "@/components/ui/card"
-
 import { db } from "@/firebase";
 import { useAuth } from "@clerk/nextjs";
 import { collection, doc } from "firebase/firestore";
@@ -15,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Stage, teamCharterQuestions } from "@/types/types";
+import { Project, Stage, teamCharterQuestions } from "@/types/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
@@ -54,15 +52,21 @@ function ProjectPage({ params: { id, projId } }: {
     console.log('projid', projId);
   }, []);
 
+  const [projData, projLoading, projError] = useDocument(doc(db, 'projects', projId));
   const [stagesData, stagesLoading, stagesError] = useCollection(collection(db, 'projects', projId, 'stages'));
   const [teamCharterData, loading, error] = useDocument(doc(db, 'projects', projId));
 
-  if (stagesLoading) {
+  if (stagesLoading || projLoading) {
     return <Skeleton className="w-full h-96" />;
   }
   if (stagesError) {
     return <div>Error: {stagesError.message}</div>;
   }
+  if (projError) {
+    return <div>Error: {projError.message}</div>;
+  }
+
+  const proj = projData?.data() as Project;
 
   const stages: Stage[] = stagesData?.docs.map(doc => ({
     ...(doc.data() as Stage)
@@ -89,25 +93,29 @@ function ProjectPage({ params: { id, projId } }: {
   });
 
   return (
-    <div className="flex flex-col w-screen h-screen">
-      <Table className="w-screen">
+    <div className="flex flex-col w-full h-full">
+
+      <Table>
         <TableHeader>
-          <TableRow>
-            <div
-              className="flex items-center justify-between bg-cover bg-center p-4 h-64 w-screen"
-              style={{ backgroundImage: "url('https://cdn.discordapp.com/attachments/1295223753198010421/1309213417948713010/Screenshot_2024-11-21_at_12.46.13_PM.png?ex=6740c382&is=673f7202&hm=d63898e23ea10aeae3e7e62ef187937754b21a39b2777fbf4f3adcf44c37a840&')", backgroundSize: 'cover', height: '100%' }}
-            >
-              <h1 className="text-4xl font-bold m-4 text-white">
-              Project Stages
+          <div className="rounded-lg overflow-hidden bg-[#6F61EF] p-4 m-4 h-56 ">
+            <div className="flex flex-col justify-between h-full p-2">
+              <h1 className="text-xl font-bold text-white">
+                {proj.title}
               </h1>
+              <div className="flex w-full items-center justify-between">
+                <h1 className="text-4xl font-bold text-white">
+                  Project Stages
+                </h1>
+                <div className="flex items-center space-x-4 self-end">
+                  <Progress
+                    value={33}
+                    className="w-96"
+                  />
+                  <span className="font-bold text-white text-2xl">33%</span>
+                </div>
+              </div>
             </div>
-          </TableRow>
-          <TableRow>
-            <TableCell colSpan={2} className="px-4">
-              <h2 className="text-lg font-semibold py-2">Goal Progress: 33%</h2>
-              <Progress value={33} />
-            </TableCell>
-          </TableRow>
+          </div>
         </TableHeader>
         <TableBody>
           {stages.length === 0 ? (
@@ -118,82 +126,71 @@ function ProjectPage({ params: { id, projId } }: {
               <TableRow>
                 <TableCell className="flex space-x-4">
                   <GenerateTasksButton
-                  orgId={id}
-                  projId={projId}
-                  teamCharterResponses={teamCharterData?.data()?.teamCharterResponse || []}
+                    orgId={id}
+                    projId={projId}
+                    teamCharterResponses={teamCharterData?.data()?.teamCharterResponse || []}
                   />
                   <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-                  <AlertDialogTrigger asChild>
-                    <Button onClick={handleOpenEditing}>
-                    <EditIcon className="mr-2" /> Team Charter
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="w-full max-w-4xl">
-                    <AlertDialogHeader>
-                    <AlertDialogTitle>Project Team Charter</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Fill out this charter to kick off your project! 🚀
-                    </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <div className="overflow-y-auto max-h-96">
-                    <form className="space-y-4 p-2">
-                      {teamCharterQuestions.map((question, index) => (
-                      <div key={index}>
-                        <Label htmlFor={`question-${index}`}>{question}</Label>
-                        <Textarea
-                        id={`question-${index}`}
-                        name={`question-${index}`}
-                        value={responses[index] || ''}
-                        onChange={(e) => {
-                          const newResponses = [...responses];
-                          newResponses[index] = e.target.value;
-                          setResponses(newResponses);
-                        }}
-                        />
+                    <AlertDialogTrigger asChild>
+                      <Button onClick={handleOpenEditing}>
+                        <EditIcon className="mr-2" /> Team Charter
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="w-full max-w-4xl">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Project Team Charter</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Fill out this charter to kick off your project! 🚀
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <div className="overflow-y-auto max-h-96">
+                        <form className="space-y-4 p-2">
+                          {teamCharterQuestions.map((question, index) => (
+                            <div key={index}>
+                              <Label htmlFor={`question-${index}`}>{question}</Label>
+                              <Textarea
+                                id={`question-${index}`}
+                                name={`question-${index}`}
+                                value={responses[index] || ''}
+                                onChange={(e) => {
+                                  const newResponses = [...responses];
+                                  newResponses[index] = e.target.value;
+                                  setResponses(newResponses);
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </form>
                       </div>
-                      ))}
-                    </form>
-                    </div>
-                    <AlertDialogFooter>
-                    <Button onClick={() => setIsOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSaving} disabled={isPending}>
-                      {isPending ? <><Loader2 className="animate-spin mr-2" /> Loading</> : 'Save'}
-                    </Button>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
+                      <AlertDialogFooter>
+                        <Button onClick={() => setIsOpen(false)}>Cancel</Button>
+                        <Button onClick={handleSaving} disabled={isPending}>
+                          {isPending ? <><Loader2 className="animate-spin mr-2" /> Loading</> : 'Save'}
+                        </Button>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
                   </AlertDialog>
                 </TableCell>
-                {/* <TableCell>
-                  
-                </TableCell> */}
               </TableRow>
             </>
           ) : (
             stages
               .sort((a, b) => a.order - b.order)
               .map((stage, index) => (
-
-                <TableRow className="flex flex-1" key={index}>
-                  <Link className="flex flex-1" href={`/org/${id}/proj/${projId}/stage/${stage.id}`}>
-                    <TableCell className="flex flex-1">
-                      <Card className="w-full shadow-lg hover:shadow-3xl hover:translate-y-[-4px] transition-transform duration-300 h-auto">
-                        <CardHeader className="p-0">
-                          <div
-                            className="bg-cover bg-center items-end justify-start p-4"
-                          >
-                            {index + 1} - {stage.title}
-                          </div>
-                        </CardHeader>
-                      </Card>
-                    </TableCell>
-                  </Link>
+                <TableRow key={index} className="border-b">
+                  <TableCell colSpan={2} className="p-4">
+                    <Link href={`/org/${id}/proj/${projId}/stage/${stage.id}`} className="block p-4 bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-300">
+                      <div className="text-lg font-semibold">
+                        {index + 1}. {stage.title}
+                      </div>
+                    </Link>
+                  </TableCell>
                 </TableRow>
-
               ))
           )}
         </TableBody>
       </Table>
-    </div>
+    </div >
   )
 }
 export default ProjectPage

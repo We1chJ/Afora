@@ -17,10 +17,6 @@ const responseFormat = {
                     "items": {
                         "type": "object",
                         "properties": {
-                            "order": {
-                                "type": "number",
-                                "description": "The order of the stage."
-                            },
                             "stage_name": {
                                 "type": "string",
                                 "description": "The name of the stage."
@@ -31,10 +27,6 @@ const responseFormat = {
                                 "items": {
                                     "type": "object",
                                     "properties": {
-                                        "order": {
-                                            "type": "number",
-                                            "description": "The order of the stage."
-                                        },
                                         "task_name": {
                                             "type": "string",
                                             "description": "The name of the task."
@@ -45,7 +37,6 @@ const responseFormat = {
                                         }
                                     },
                                     "required": [
-                                        "order",
                                         "task_name",
                                         "assigned_user"
                                     ],
@@ -54,7 +45,6 @@ const responseFormat = {
                             }
                         },
                         "required": [
-                            "order",
                             "stage_name",
                             "tasks"
                         ],
@@ -73,11 +63,7 @@ const responseFormat = {
 
 
 export const generateTask = async (questions, userResponses, charterQuestions, teamCharterResponses) => {
-    const context = `While knowing nothing else, try to come up with a project road map separated into various levels each assigned with an order number assigned (each levels is a sub-goal that adds up together to achieve the ultimate goal: building a reusable rocket ship).
-
-Each levels should also have concrete actionable steps, as detailed as possible, to achieve the sub-goal for each level.
-
-Lastly, categorize similar actionable steps together based on the skills necessary to perform them and the kind of field they are in, and assign a user email to perform that specific category of tasks.`;
+    const context = `Come up with a project road map with various levels, each with detailed actionable steps for the sub-goal. Based on each user's onboarding info, assign each task a user's email based on their fields of interests and skills in each area that works the best.`;
 
     if (!userResponses || userResponses.length === 0) {
         throw new Error('There are no users to assign tasks to.');

@@ -3,20 +3,20 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Card, CardHeader } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import React, { useEffect } from 'react'
 import Link from "next/link"
 import { Skeleton } from "./ui/skeleton"
 import { useAuth } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
-import { useCollection } from "react-firebase-hooks/firestore"
+import { useCollection, useDocument } from "react-firebase-hooks/firestore"
 import { db } from "@/firebase"
-import { Task } from "@/types/types"
-import { collection } from "firebase/firestore"
+import { Stage, Task } from "@/types/types"
+import { collection, doc } from "firebase/firestore"
+import PieChartProgress from "./PieChartProgress"
 
 const TaskList = ({ orgId, projId, stageId }: { orgId: string, projId: string, stageId: string }) => {
   const { isSignedIn, isLoaded } = useAuth(); // Get authentication state
@@ -28,8 +28,18 @@ const TaskList = ({ orgId, projId, stageId }: { orgId: string, projId: string, s
     }
   }, []);
 
+  const [stageData, stageLoading, stageError] = useDocument(doc(db, 'projects', projId, 'stages', stageId));
   const [tasksData, tasksLoading, tasksError] = useCollection(collection(db, 'projects', projId, 'stages', stageId, 'tasks'));
 
+  if (stageLoading) {
+    return <Skeleton className="w-full h-96" />;
+  }
+
+  if (stageError) {
+    return <div>Error: {stageError.message}</div>;
+  }
+
+  const stage = stageData?.data() as Stage;
   if (tasksLoading) {
     return <Skeleton className="w-full h-96" />;
   }
@@ -47,9 +57,28 @@ const TaskList = ({ orgId, projId, stageId }: { orgId: string, projId: string, s
     <div className="w-full h-full flex flex-col">
       <Table className="w-full">
         <TableHeader>
-          <TableRow>
-            <TableHead className="text-xl font-bold text-black">Tasks</TableHead>
-          </TableRow>
+          <div className="flex w-full h-full gap-4 p-4 justify-between">
+            <div className="w-3/4">
+              <Card className="w-full h-full bg-[#6F61EF] hover:shadow-lg transition-shadow">
+                <CardHeader className="p-3">
+                  <CardTitle className="text-xl font-bold text-white">
+                    {'Stage ' + stage.order + '. ' + stage.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <h1 className="text-4xl font-bold text-white">
+                    Tasks
+                  </h1>
+                </CardContent>
+              </Card>
+            </div>
+            <div className="w-1/4">
+              <PieChartProgress
+                progress={33}
+                title="Progress"
+              />
+            </div>
+          </div>
         </TableHeader>
         <TableBody>
           {tasks.length === 0 ? (
@@ -67,10 +96,8 @@ const TaskList = ({ orgId, projId, stageId }: { orgId: string, projId: string, s
                     <TableCell className="flex flex-1">
                       <Card className="w-full shadow-lg hover:shadow-3xl hover:translate-y-[-4px] transition-transform duration-300 h-auto">
                         <CardHeader className="p-0">
-                          <div
-                            className="bg-cover bg-center items-end justify-start p-4"
-                          >
-                            {index+1} - {task.title} assigned to: {task.assignedTo}
+                          <div className="text-lg p-4">
+                            {index + 1}. {task.title}
                           </div>
                         </CardHeader>
                       </Card>

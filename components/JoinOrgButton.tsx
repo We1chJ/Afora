@@ -17,8 +17,7 @@ import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { inviteUserToOrg } from "@/actions/actions";
 
-function JoinOrgButton() { // Updated component name
-  const [isOpen, setIsOpen] = useState(false);
+function JoinOrgButton({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (isOpen: boolean) => void }) { // Updated component name
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const [orgCode, setOrgCode] = useState(''); // Updated state variable
@@ -36,6 +35,7 @@ function JoinOrgButton() { // Updated component name
         setIsOpen(false);
         router.push(`/org/${orgCode}`); // Updated route
         toast.success('Successfully joined!');
+        setOrgCode('');
       } else {
         console.log('Failed to join', message);
         toast.error(message);
@@ -44,11 +44,9 @@ function JoinOrgButton() { // Updated component name
   }
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button disabled={isPending} className="bg-[#6F61EF] flex flex-1 hover:bg-[#5646e4]">
-          {isPending ? "Loading..." : "Join Organization"} {/* Updated button text */}
-        </Button>
-      </DialogTrigger>
+      {/* <Button disabled={isPending} className="bg-[#6F61EF] flex flex-1 hover:bg-[#5646e4]">
+        {isPending ? "Loading..." : "Join Organization"}
+      </Button> */}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Join an Organization</DialogTitle> {/* Updated title */}
@@ -73,7 +71,7 @@ function JoinOrgButton() { // Updated component name
         </div>
         <DialogFooter>
           <Button type="submit" onClick={handleJoinNewOrganization} disabled={isPending}> {/* Updated onClick */}
-            {isPending ? "Loading..." : "Join"}
+            {isPending ? "Joining..." : "Join"}
           </Button>
         </DialogFooter>
 

@@ -36,9 +36,9 @@ function SignedInLanding() {
 
     console.log("Organizations:", orgs);
     return (
-        <div className='flex p-4 w-screen h-screen'>
+        <div className='flex p-4 w-full h-full'>
             {orgs.length > 0 ? (
-                <div className="flex flex-wrap gap-8 m-4 max-h-full w-full">
+                <div className="flex flex-wrap gap-8 m-4 h-full">
                     {orgs.map((org) => (
                         <HomePageCard org={org} key={org.orgId} />
                     ))}

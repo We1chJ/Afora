@@ -149,14 +149,13 @@ export type Task = {
     description: string;
     assignedTo: string; // TODO: one person per task or could be multiple?
     deadline: string;
+    order: string;
 }
 
 export type GeneratedTasks = {
     stages: {
-        order: number;
         stage_name: string; // The name of the stage
         tasks: {
-            order: number;
             task_name: string; // The name of the task
             assigned_user: string; // The user to whom the task is assigned
         }[];

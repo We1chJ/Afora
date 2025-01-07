@@ -108,14 +108,14 @@ const GenerateTasksButton = ({ orgId, projId, teamCharterResponses }: { orgId: s
           {
             generatedOutput && (
               <Accordion type="single" collapsible className="w-full">
-                {generatedOutput.stages.map((stage) => (
-                  <AccordionItem key={stage.order} value={`stage-${stage.order}`}>
-                    <AccordionTrigger>{`Stage ${stage.order}: ${stage.stage_name}`}</AccordionTrigger>
+                {generatedOutput.stages.map((stage, stageIndex) => (
+                  <AccordionItem key={stageIndex} value={`stage-${stageIndex}`}>
+                    <AccordionTrigger>{`Stage ${stageIndex + 1}: ${stage.stage_name}`}</AccordionTrigger>
                     <AccordionContent>
                       <Accordion type="single" collapsible className="w-full">
-                        {stage.tasks.map((task) => (
-                          <AccordionItem key={task.order} value={`task-${task.order}`}>
-                            <AccordionTrigger>{`Task ${task.order}: ${task.task_name}`}</AccordionTrigger>
+                        {stage.tasks.map((task, taskIndex) => (
+                          <AccordionItem key={taskIndex} value={`task-${taskIndex}`}>
+                            <AccordionTrigger>{`Task ${taskIndex + 1}: ${task.task_name}`}</AccordionTrigger>
                             <AccordionContent>
                               <p>Assigned User: {task.assigned_user}</p>
                             </AccordionContent>

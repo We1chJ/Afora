@@ -376,13 +376,13 @@ export async function updateStagesTasks(projId: string, structure: GeneratedTask
         }
 
         const batch = adminDb.batch();
-        structure.stages.forEach((stage) => {
+        structure.stages.forEach((stage, stageIndex) => {
             const stageRef = adminDb.collection('projects').doc(projId).collection('stages').doc();
-            batch.set(stageRef, { title: stage.stage_name, id: stageRef.id });
+            batch.set(stageRef, { title: stage.stage_name, id: stageRef.id, order: stageIndex+1 });
 
-            stage.tasks.forEach((task) => {
+            stage.tasks.forEach((task, taskIndex) => {
                 const taskRef = stageRef.collection('tasks').doc();
-                batch.set(taskRef, { title: task.task_name, assignedTo: task.assigned_user, id: taskRef.id });
+                batch.set(taskRef, { title: task.task_name, assignedTo: task.assigned_user, id: taskRef.id, order: taskIndex+1 });
             });
         });
         await batch.commit();

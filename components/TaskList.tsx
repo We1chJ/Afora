@@ -15,8 +15,7 @@ import { useRouter } from "next/navigation"
 import { useCollection, useDocument } from "react-firebase-hooks/firestore"
 import { db } from "@/firebase"
 import { Stage, Task } from "@/types/types"
-import { collection, doc, Firestore } from "firebase/firestore"
-import { Progress } from "./ui/progress"
+import { collection, doc } from "firebase/firestore"
 import PieChartProgress from "./PieChartProgress"
 
 const TaskList = ({ orgId, projId, stageId }: { orgId: string, projId: string, stageId: string }) => {
@@ -63,7 +62,7 @@ const TaskList = ({ orgId, projId, stageId }: { orgId: string, projId: string, s
               <Card className="w-full h-full bg-[#6F61EF] hover:shadow-lg transition-shadow">
                 <CardHeader className="p-3">
                   <CardTitle className="text-xl font-bold text-white">
-                    {stage.order + '. ' + stage.title}
+                    {'Stage ' + stage.order + '. ' + stage.title}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
@@ -97,10 +96,8 @@ const TaskList = ({ orgId, projId, stageId }: { orgId: string, projId: string, s
                     <TableCell className="flex flex-1">
                       <Card className="w-full shadow-lg hover:shadow-3xl hover:translate-y-[-4px] transition-transform duration-300 h-auto">
                         <CardHeader className="p-0">
-                          <div
-                            className="bg-cover bg-center items-end justify-start p-4"
-                          >
-                            {index + 1} - {task.title} assigned to: {task.assignedTo}
+                          <div className="text-lg p-4">
+                            {index + 1}. {task.title}
                           </div>
                         </CardHeader>
                       </Card>

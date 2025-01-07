@@ -1,7 +1,5 @@
 'use client';
 
-import { Card, CardHeader } from "@/components/ui/card"
-
 import { db } from "@/firebase";
 import { useAuth } from "@clerk/nextjs";
 import { collection, doc } from "firebase/firestore";
@@ -96,26 +94,29 @@ function ProjectPage({ params: { id, projId } }: {
 
   return (
     <div className="flex flex-col w-full h-full">
-      <div className="rounded-lg overflow-hidden bg-[#6F61EF] p-4 m-4 h-64 ">
-        <div className="flex flex-col justify-between h-full p-2">
-          <h1 className="text-4xl font-bold text-white">
-            {proj.title}
-          </h1>
-          <div className="flex w-full items-center justify-between">
-            <h1 className="text-4xl font-bold text-white">
-              Stages
-            </h1>
-            <div className="flex items-center space-x-4 self-end">
-              <Progress
-                value={33}
-                className="w-96"
-              />
-              <span className="font-bold text-white text-2xl">33%</span>
+
+      <Table>
+        <TableHeader>
+          <div className="rounded-lg overflow-hidden bg-[#6F61EF] p-4 m-4 h-64 ">
+            <div className="flex flex-col justify-between h-full p-2">
+              <h1 className="text-xl font-bold text-white">
+                {proj.title}
+              </h1>
+              <div className="flex w-full items-center justify-between">
+                <h1 className="text-4xl font-bold text-white">
+                  Project Stages
+                </h1>
+                <div className="flex items-center space-x-4 self-end">
+                  <Progress
+                    value={33}
+                    className="w-96"
+                  />
+                  <span className="font-bold text-white text-2xl">33%</span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-      <Table>
+        </TableHeader>
         <TableBody>
           {stages.length === 0 ? (
             <>

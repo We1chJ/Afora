@@ -49,32 +49,32 @@ const OrganizationPage = ({ id }: { id: string }) => {
   return (
     <div className="overflow-x-hidden p-4">
       <div
-        className="flex items-center justify-between bg-cover bg-center p-4 h-64 rounded-lg"
-        style={{ backgroundImage: "url('https://media.discordapp.net/attachments/1295223753198010421/1309212572976676904/vector-collaboration-related-banner-design-in-trendy-linear-style-line-art-style-abstract-380112445.jpg?ex=6740c2b9&is=673f7139&hm=f0ae51ff74117d7fbf7b0ee8f6b1431156c794754535e7968eac47d1f38fdce4&=&format=webp')", backgroundSize: 'cover', backgroundPosition: 'center' }}
+        className="flex items-center justify-between bg-cover bg-center p-4 h-64 rounded-lg relative"
+        style={{ backgroundImage: "url('https://imagifly.co/web/img/articles/abstract-wallpaper/midjourney-wallpaper-1.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         {user && user.primaryEmailAddress && orgData && orgData.admins &&
           !orgData.admins.includes(user.primaryEmailAddress.toString()) && <ProjOnboarding orgId={id} />}
         <h1 className="text-4xl font-bold m-4 text-white">
           {orgData && orgData.title}
         </h1>
+        {userOrgData && userOrgData.role === 'admin' &&
+          <div className="absolute bottom-4 left-4 bg-white bg-opacity-75 p-3 shadow-md rounded-lg">
+            <h2 className="text-m font-semibold">
+              Access Code:
+              <br />
+              {userOrgData.orgId}
+              <Copy
+                className="inline-block ml-2 cursor-pointer hover:bg-gray-200 rounded-md p-0.5"
+                onClick={() => {
+                  navigator.clipboard.writeText(userOrgData.orgId);
+                  toast.success('Access code copied to clipboard!');
+                }}
+              />
+            </h2>
+          </div>
+        }
       </div>
-      {userOrgData && userOrgData.role === 'admin' &&
-        <div className="inline-block my-2 p-3 shadow-md rounded-lg bg-white">
-          <h2 className="text-m font-semibold">
-            Access Code:
-            <br />
-            {userOrgData.orgId}
-            <Copy
-              className="inline-block ml-2 cursor-pointer hover:bg-gray-200 rounded-md p-0.5"
-              onClick={() => {
-                navigator.clipboard.writeText(userOrgData.orgId);
-                toast.success('Access code copied to clipboard!');
-              }}
-            />
-          </h2>
-        </div>
-      }
-      <Tabs defaultValue="projects" className="w-full">
+      <Tabs defaultValue="projects" className="mt-2 w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="projects">Projects</TabsTrigger>
           <TabsTrigger value="members">Members</TabsTrigger>

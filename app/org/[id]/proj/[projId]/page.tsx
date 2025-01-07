@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Stage, teamCharterQuestions } from "@/types/types";
+import { Project, Stage, teamCharterQuestions } from "@/types/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
@@ -54,15 +54,21 @@ function ProjectPage({ params: { id, projId } }: {
     console.log('projid', projId);
   }, []);
 
+  const [projData, projLoading, projError] = useDocument(doc(db, 'projects', projId));
   const [stagesData, stagesLoading, stagesError] = useCollection(collection(db, 'projects', projId, 'stages'));
   const [teamCharterData, loading, error] = useDocument(doc(db, 'projects', projId));
 
-  if (stagesLoading) {
+  if (stagesLoading || projLoading) {
     return <Skeleton className="w-full h-96" />;
   }
   if (stagesError) {
     return <div>Error: {stagesError.message}</div>;
   }
+  if (projError) {
+    return <div>Error: {projError.message}</div>;
+  }
+
+  const proj = projData?.data() as Project;
 
   const stages: Stage[] = stagesData?.docs.map(doc => ({
     ...(doc.data() as Stage)
@@ -90,25 +96,26 @@ function ProjectPage({ params: { id, projId } }: {
 
   return (
     <div className="flex flex-col w-full h-full">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <div
-              className="flex items-center justify-between bg-cover bg-center p-4"
-              style={{ backgroundImage: "url('https://images.pexels.com/photos/255379/pexels-photo-255379.jpeg?cs=srgb&dl=pexels-padrinan-255379.jpg&fm=jpg')", backgroundSize: 'cover', height: '100%' }}
-            >
-              <h1 className="text-4xl font-bold m-4 text-white">
-                Project Stages
-              </h1>
+      <div className="rounded-lg overflow-hidden bg-[#6F61EF] p-4 m-4 h-64 ">
+        <div className="flex flex-col justify-between h-full p-2">
+          <h1 className="text-4xl font-bold text-white">
+            {proj.title}
+          </h1>
+          <div className="flex w-full items-center justify-between">
+            <h1 className="text-4xl font-bold text-white">
+              Stages
+            </h1>
+            <div className="flex items-center space-x-4 self-end">
+              <Progress
+                value={33}
+                className="w-96"
+              />
+              <span className="font-bold text-white text-2xl">33%</span>
             </div>
-          </TableRow>
-          <TableRow>
-            <TableCell colSpan={2} className="px-4">
-              <h2 className="text-lg font-semibold py-2">Goal Progress: 33%</h2>
-              <Progress value={33} />
-            </TableCell>
-          </TableRow>
-        </TableHeader>
+          </div>
+        </div>
+      </div>
+      <Table>
         <TableBody>
           {stages.length === 0 ? (
             <>

@@ -97,7 +97,7 @@ function ProjectPage({ params: { id, projId } }: {
 
       <Table>
         <TableHeader>
-          <div className="rounded-lg overflow-hidden bg-[#6F61EF] p-4 m-4 h-64 ">
+          <div className="rounded-lg overflow-hidden bg-[#6F61EF] p-4 m-4 h-56 ">
             <div className="flex flex-col justify-between h-full p-2">
               <h1 className="text-xl font-bold text-white">
                 {proj.title}

@@ -31,6 +31,9 @@ const responseFormat = {
                                             "type": "string",
                                             "description": "The name of the task."
                                         },
+                                        "task_description": {
+                                            "type": "string",
+                                        },
                                         "assigned_user": {
                                             "type": "string",
                                             "description": "The user to whom the task is assigned."
@@ -38,6 +41,7 @@ const responseFormat = {
                                     },
                                     "required": [
                                         "task_name",
+                                        "task_description",
                                         "assigned_user"
                                     ],
                                     "additionalProperties": false

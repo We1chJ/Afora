@@ -52,6 +52,9 @@ const TaskList = ({ orgId, projId, stageId }: { orgId: string, projId: string, s
     ...(doc.data() as Task)
   })) || [];
 
+  if (!stage) {
+    return <div>Error: The stage has been deleted.</div>;
+  }
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -74,8 +77,8 @@ const TaskList = ({ orgId, projId, stageId }: { orgId: string, projId: string, s
             </div>
             <div className="w-1/4">
               <PieChartProgress
-                progress={33}
-                title="Progress"
+                // progress={33}
+                // title="Progress"
               />
             </div>
           </div>

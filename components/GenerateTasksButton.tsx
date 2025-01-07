@@ -100,9 +100,15 @@ const GenerateTasksButton = ({ orgId, projId, teamCharterResponses }: { orgId: s
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Generate Tasks</DialogTitle>
-            <DialogDescription>
-              Confirm the tasks structure generated.
-            </DialogDescription>
+            {generatedOutput ?
+              (<DialogDescription>
+                Confirm the tasks structure generated.
+              </DialogDescription>) :
+              (
+                <DialogDescription>
+                  Generate the stages and tasks roadmap in one click!
+                </DialogDescription>
+              )}
           </DialogHeader>
 
           {

@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/resizable"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
-function Taskage({ params: { id, projId, stageId, taskId } }: {
+function TaskPage({ params: { id, projId, stageId, taskId } }: {
   params: {
     id: string;
     projId: string;
@@ -47,36 +48,50 @@ function Taskage({ params: { id, projId, stageId, taskId } }: {
   const task = taskData?.data();
 
   return (
-    <div className="flex flex-col flex-1 h-screen">
+    <div className="flex flex-col flex-1 h-full w-full">
       {isSignedIn &&
-        <div className="p-4 flex-1">
-          <ResizablePanelGroup direction="horizontal" className="h-full">
-            <ResizablePanel className="h-full" minSize={70} defaultSize={70}>
-              <ResizablePanelGroup direction={"vertical"} className="h-full">
-                <ResizablePanel className="h-full" defaultSize={70}>
-                  <h1 className="text-4xl font-bold">{task?.title}</h1>
-                  <div className="mt-4">
-                    <p className="text-sm text-gray-600">Assigned to: {task?.assignedTo}</p>
-                    {/* <p className="text-sm text-gray-600">Deadline: {task?.deadline}</p> */}
-                    <p className="text-lg mt-4">{task?.description}</p>
-                    <Input id="upload" type="file" className="hidden" />
-                    <Label htmlFor="upload" className="cursor-pointer inline-block bg-black text-white py-3 px-4 rounded">
-                      Upload File
-                    </Label>
-                  </div>
+        <div className="p-6 flex-1">
+          <ResizablePanelGroup direction="vertical">
+            <ResizablePanel defaultSize={50}>
+              <ResizablePanelGroup direction="horizontal" className="space-x-8">
+                <ResizablePanel defaultSize={70}>
+                  <Card className="w-full bg-[#6F61EF] hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6 space-y-8">
+                      <h1 className="text-4xl font-bold text-white">
+                        {task?.title || "Task Title"}
+                      </h1>
+                      <p className="text-sm text-white mt-2">
+                        {task?.description || "No description available"}
+                      </p>
+                    </CardContent>
+                  </Card>
                 </ResizablePanel>
-                <ResizablePanel className="h-full" defaultSize={70}>
-                  <h2 className="text-2xl font-semibold">Comments</h2>
+                <ResizablePanel defaultSize={30}>
+                  <Card className="w-full bg-white p-6 space-y-8 shadow-lg hover:shadow-xl transition-shadow">
+                    <CardTitle className="">
+                      Your submission
+                    </CardTitle>
+                    <CardContent className="">
+                      Submit
+                    </CardContent>
+                  </Card>
                 </ResizablePanel>
               </ResizablePanelGroup>
             </ResizablePanel>
 
-            <ResizablePanel className="h-full">
-              <h2 className="text-2xl font-semibold">Admin Feedback</h2>
+            <ResizablePanel defaultSize={50}>
+              <ResizablePanelGroup direction="horizontal" className="space-x-8">
+                <ResizablePanel defaultSize={70}>
+                  Public Comment
+                </ResizablePanel>
+                <ResizablePanel defaultSize={30}>
+                  Private Comment
+                </ResizablePanel>
+              </ResizablePanelGroup>
             </ResizablePanel>
           </ResizablePanelGroup>
         </div>}
     </div>
   )
 }
-export default Taskage;
+export default TaskPage;

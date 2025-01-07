@@ -157,6 +157,7 @@ export type GeneratedTasks = {
         stage_name: string; // The name of the stage
         tasks: {
             task_name: string; // The name of the task
+            task_description: string; // The detailed description of the task
             assigned_user: string; // The user to whom the task is assigned
         }[];
     }[];

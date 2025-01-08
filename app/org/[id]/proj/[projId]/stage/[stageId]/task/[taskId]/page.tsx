@@ -11,9 +11,8 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import SubmissionCard from "@/components/SubmissionCard";
 
 function TaskPage({ params: { id, projId, stageId, taskId } }: {
   params: {
@@ -67,14 +66,7 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
                   </Card>
                 </ResizablePanel>
                 <ResizablePanel defaultSize={30}>
-                  <Card className="w-full bg-white p-6 space-y-8 shadow-lg hover:shadow-xl transition-shadow">
-                    <CardTitle className="">
-                      Your submission
-                    </CardTitle>
-                    <CardContent className="">
-                      Submit
-                    </CardContent>
-                  </Card>
+                  <SubmissionCard />
                 </ResizablePanel>
               </ResizablePanelGroup>
             </ResizablePanel>

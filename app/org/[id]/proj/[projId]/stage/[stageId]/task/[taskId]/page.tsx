@@ -13,6 +13,9 @@ import {
 } from "@/components/ui/resizable"
 import { Card, CardContent } from "@/components/ui/card";
 import SubmissionCard from "@/components/SubmissionCard";
+import { Separator } from "@/components/ui/separator";
+import { CircleUserRound, UserRoundPen, Users } from "lucide-react";
+import CommentBox from "@/components/CommentBox";
 
 function TaskPage({ params: { id, projId, stageId, taskId } }: {
   params: {
@@ -73,11 +76,31 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
 
             <ResizablePanel defaultSize={50}>
               <ResizablePanelGroup direction="horizontal" className="space-x-8">
-                <ResizablePanel defaultSize={70}>
-                  Public Comment
+                <ResizablePanel defaultSize={70} className="h-full space-y-2">
+                  <div className="flex items-center space-x-2 text-xl font-semibold text-gray-800">
+                    <Users />
+                    <p>Public Comment</p>
+                  </div>
+                  <Separator className="bg-gray-400" />
+                  <div className="flex flex-col p-4 w-full h-full space-y-2">
+                    <CommentBox />
+                    {/* display comments */}
+
+                  </div>
                 </ResizablePanel>
                 <ResizablePanel defaultSize={30}>
-                  Private Comment
+                  <Card className="w-full bg-[#F5F5F5] hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6 space-y-4">
+                      <h2 className="flex items-center space-x-2 text-xl font-semibold text-gray-800">
+                        <UserRoundPen />
+                        <p>Private Comment</p>
+                      </h2>
+                      <Separator className="bg-gray-400" />
+                      <p className="text-sm text-gray-600">
+                        Add your private comments here.
+                      </p>
+                    </CardContent>
+                  </Card>
                 </ResizablePanel>
               </ResizablePanelGroup>
             </ResizablePanel>

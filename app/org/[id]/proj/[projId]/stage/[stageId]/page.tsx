@@ -62,6 +62,8 @@ function StagePage({ params: { id, projId, stageId } }: {
     return <div>Error: The stage has been deleted.</div>;
   }
 
+  const tasksCompleted = tasks.filter(task => task.isCompleted).length;
+
   return (
     <div className="w-full h-full flex flex-col">
       <Table className="w-full">
@@ -82,7 +84,7 @@ function StagePage({ params: { id, projId, stageId } }: {
               </Card>
             </div>
             <div className="w-1/4">
-              <PieChartProgress />
+              <PieChartProgress tasksCompleted={tasksCompleted} totalTasks={tasks.length} />
             </div>
           </div>
         </TableHeader>

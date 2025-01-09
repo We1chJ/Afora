@@ -14,26 +14,23 @@ import {
     ChartTooltipContent,
 } from "@/components/ui/chart"
 
-const chartData = [
-    { browser: 'Completed', visitors: 75, fill: '#000000' },
-    { browser: 'In Progress', visitors: 25, fill: '#e5e7eb' }
-];
 
-const chartConfig = {
-    completed: {
-        label: "Completed",
-        color: "#000000",
-    },
-    inProgress: {
-        label: "In Progress",
-        color: "#e5e7eb",
-    },
-} satisfies ChartConfig
+export function PieChartProgress({ tasksCompleted, totalTasks }: { tasksCompleted: number; totalTasks: number }) {
+    const chartData = [
+        { status: 'Completed', counts: tasksCompleted, fill: '#000000' },
+        { status: 'In Progress', counts: (totalTasks - tasksCompleted), fill: '#e5e7eb' }
+    ];
 
-export function PieChartProgress() {
-    const totalVisitors = React.useMemo(() => {
-        return chartData.reduce((acc, curr) => acc + curr.visitors, 0)
-    }, [])
+    const chartConfig = {
+        completed: {
+            label: "Completed",
+            color: "#000000",
+        },
+        inProgress: {
+            label: "In Progress",
+            color: "#e5e7eb",
+        },
+    } satisfies ChartConfig
 
     return (
         <Card className="flex flex-col h-full">
@@ -49,8 +46,8 @@ export function PieChartProgress() {
                         />
                         <Pie
                             data={chartData}
-                            dataKey="visitors"
-                            nameKey="browser"
+                            dataKey="counts"
+                            nameKey="status"
                             innerRadius={55}
                             strokeWidth={10}
                         >
@@ -70,7 +67,7 @@ export function PieChartProgress() {
                                                     y={viewBox.cy}
                                                     className="fill-foreground text-3xl font-bold"
                                                 >
-                                                    {totalVisitors.toLocaleString()}
+                                                    {((tasksCompleted / totalTasks) * 100).toFixed(0) + '%'}
                                                 </tspan>
                                                 <tspan
                                                     x={viewBox.cx}

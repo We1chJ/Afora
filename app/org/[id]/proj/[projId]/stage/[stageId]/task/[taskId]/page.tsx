@@ -83,22 +83,19 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
                   </div>
                   <Separator className="bg-gray-400" />
                   <div className="flex flex-col p-4 w-full h-full space-y-2">
-                    <CommentBox />
                     {/* display comments */}
-
+                    <CommentBox />
                   </div>
                 </ResizablePanel>
                 <ResizablePanel defaultSize={30}>
-                  <Card className="w-full bg-[#F5F5F5] hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6 space-y-4">
+                  <Card className="w-full py-2 bg-white hover:shadow-lg transition-shadow">
+                    <CardContent className="space-y-2">
                       <h2 className="flex items-center space-x-2 text-xl font-semibold text-gray-800">
                         <UserRoundPen />
                         <p>Private Comment</p>
                       </h2>
                       <Separator className="bg-gray-400" />
-                      <p className="text-sm text-gray-600">
-                        Add your private comments here.
-                      </p>
+                      <CommentBox className="shadow-none w-full" />
                     </CardContent>
                   </Card>
                 </ResizablePanel>

@@ -1,16 +1,23 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { CircleUser, SendHorizontal } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import React from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
-const CommentBox = () => {
+interface CommentBoxProps {
+  className?: string;
+}
+
+const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
   const [comment, setComment] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
+  const quillRef = useRef<any>(null);
 
   const handlePost = () => {
     console.log('Posted comment:', comment);
     setComment('');
+    setIsFocused(false);
   };
 
   const modules = {
@@ -21,14 +28,29 @@ const CommentBox = () => {
     ]
   };
 
+  useEffect(() => {
+    const handleFocus = () => setIsFocused(true);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (quillRef.current && !quillRef.current.contains(event.target)) {
+        if (!comment.trim()) {
+          setIsFocused(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [comment]);
+
   return (
-    <div className="relative">
+    <div className={`relative`} ref={quillRef}>
       <style jsx global>{`
         .quill {
           position: relative;
           z-index: 50;
           display: flex;
           flex-direction: column;
+          transition: all 0.2s ease;
         }
         
         .ql-toolbar {
@@ -38,21 +60,57 @@ const CommentBox = () => {
           background-color: white;
           border-top-left-radius: 0.375rem;
           border-top-right-radius: 0.375rem;
+          padding: 4px !important;
+          border: none !important;
+          border-bottom: 1px solid #e5e7eb !important;
+          opacity: 0;
+          height: 0;
+          padding: 0 !important;
+          overflow: hidden;
+          transition: all 0.2s ease;
+        }
+        
+        .toolbar-visible .ql-toolbar {
+          opacity: 1;
+          height: 36px;
+          padding: 4px !important;
+        }
+        
+        .ql-toolbar .ql-formats {
+          margin-right: 8px !important;
+        }
+        
+        .ql-toolbar button {
+          width: 24px;
+          height: 24px;
+          padding: 2px;
         }
         
         .ql-container {
           z-index: 50;
           height: auto !important;
-          min-height: 50px;
-          max-height: 100px;
-          border-bottom-left-radius: 0.375rem;
-          border-bottom-right-radius: 0.375rem;
+          min-height: 40px;
+          max-height: ${isFocused ? '200px' : '40px'};
+          border-radius: 0.375rem;
+          border: 1px solid #e5e7eb !important;
+          transition: all 0.2s ease;
+        }
+        
+        .toolbar-visible .ql-container {
+          border-top-left-radius: 0 !important;
+          border-top-right-radius: 0 !important;
         }
         
         .ql-editor {
-          min-height: 50px;
-          max-height: 100px;
+          min-height: 40px;
+          max-height: ${isFocused ? '200px' : '40px'};
           overflow-y: auto;
+          padding: 8px !important;
+        }
+        
+        .ql-editor.ql-blank::before {
+          font-style: normal !important;
+          color: #9ca3af !important;
         }
         
         .ql-tooltip {
@@ -68,17 +126,20 @@ const CommentBox = () => {
         }
       `}</style>
 
-      <div className="flex items-center w-full space-x-2 p-3 bg-white rounded-lg shadow">
+      <div className={`flex items-center w-full space-x-2 p-3 bg-white rounded-lg shadow ${className}`}>
         <CircleUser className="w-10 h-10 text-gray-400" />
         <div className="flex-1">
-          <ReactQuill
-            theme="snow"
-            value={comment}
-            placeholder={comment ? '' : 'Leave a comment here...'}
-            onChange={setComment}
-            modules={modules}
-            className="w-full"
-          />
+          <div className={isFocused ? 'toolbar-visible' : ''}>
+            <ReactQuill
+              theme="snow"
+              value={comment}
+              placeholder={comment ? '' : 'Leave a comment here...'}
+              onChange={setComment}
+              modules={modules}
+              className="w-full"
+              onFocus={() => setIsFocused(true)}
+            />
+          </div>
         </div>
         <Button
           variant="default"

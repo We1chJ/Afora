@@ -74,6 +74,7 @@ const CommentBox = () => {
           <ReactQuill
             theme="snow"
             value={comment}
+            placeholder={comment ? '' : 'Leave a comment here...'}
             onChange={setComment}
             modules={modules}
             className="w-full"

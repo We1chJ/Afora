@@ -150,6 +150,7 @@ export type Task = {
     assignedTo: string; // TODO: one person per task or could be multiple?
     deadline: string;
     order: string;
+    isCompleted: boolean;
 }
 
 export type GeneratedTasks = {

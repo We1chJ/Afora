@@ -14,8 +14,9 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import SubmissionCard from "@/components/SubmissionCard";
 import { Separator } from "@/components/ui/separator";
-import { CircleUserRound, UserRoundPen, Users } from "lucide-react";
+import { UserRoundPen, Users } from "lucide-react";
 import CommentBox from "@/components/CommentBox";
+import { Task } from "@/types/types";
 
 function TaskPage({ params: { id, projId, stageId, taskId } }: {
   params: {
@@ -47,7 +48,7 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
     return <div>Error: {taskError.message}</div>;
   }
 
-  const task = taskData?.data();
+  const task = taskData?.data() as Task;
 
   return (
     <div className="flex flex-col flex-1 h-full w-full">
@@ -69,7 +70,7 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
                   </Card>
                 </ResizablePanel>
                 <ResizablePanel defaultSize={30}>
-                  <SubmissionCard />
+                  <SubmissionCard projId={projId} stageId={stageId} taskId={taskId} task={task} />
                 </ResizablePanel>
               </ResizablePanelGroup>
             </ResizablePanel>

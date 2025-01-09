@@ -2,16 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { File, X, Upload } from 'lucide-react';
-
+import { File, X, Upload, Check, Loader, Undo } from 'lucide-react';
+import { Task } from '@/types/types';
+import { setTaskComplete } from '@/actions/actions';
+import { useTransition } from 'react';
 interface FileItem {
     id: string;
     file: File;
 }
 
-const SubmissionCard = () => {
+const SubmissionCard = ({ task, projId, stageId, taskId }: { task: Task, projId: string, stageId: string, taskId: string }) => {
     const [files, setFiles] = useState<FileItem[]>([]);
     const [isDragging, setIsDragging] = useState(false);
+    const [isCompleted, setIsCompleted] = useState(false);
+    const [isPending, startTransition] = useTransition();
+
+    useEffect(() => {
+        if (task && task.isCompleted !== undefined) {
+            setIsCompleted(task.isCompleted);
+        }
+    }, [task]);
 
     useEffect(() => {
         const handleDragEnter = (e: DragEvent) => {
@@ -57,10 +67,24 @@ const SubmissionCard = () => {
         }
     };
 
+    const handleToggleCompleteTask = () => {
+        startTransition(() => {
+            setTaskComplete(projId, stageId, taskId, !isCompleted).then(() => {
+
+            }).catch(() => {
+                console.log("set task complete failed");
+            });
+        });
+    };
     return (
         <>
             <Card className="w-full h-fit bg-white p-4 space-y-2 shadow-lg hover:shadow-xl transition-shadow">
-                <CardTitle>Your submission</CardTitle>
+                <CardTitle className="flex justify-between items-center">
+                    <span>Your submission</span>
+                    <span className={`text-sm font-semibold ${isCompleted ? 'text-green-500' : 'text-blue-500'}`}>
+                        {isCompleted ? 'Completed' : 'Assigned'}
+                    </span>
+                </CardTitle>
                 <CardContent className="h-full space-y-2 ">
                     <div className="space-y-2 overflow-y-auto max-h-28">
                         {files.map(({ id, file }) => (
@@ -98,9 +122,30 @@ const SubmissionCard = () => {
                         <Button>Submit</Button>
                     </div>
 
-                    <Button className='w-full bg-white text-black border border-black hover:bg-black hover:text-white'>Mark as Complete</Button>
+                    <Button
+                        className={`w-full ${isCompleted ? 'bg-white text-black border border-black hover:bg-black hover:text-white' : 'bg-black text-white hover:bg-white hover:text-black border border-black'} ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={handleToggleCompleteTask}
+                        disabled={isPending}
+                    >
+                        {isPending ? (
+                            <>
+                                {isCompleted ? 'Unsubmitting...' : 'Submitting...'}
+                                <Loader className="h-5 w-5 ml-2 animate-spin" />
+                            </>
+                        ) : isCompleted ? (
+                            <>
+                                Unsubmit
+                                <Undo className="h-5 w-5 ml-2" />
+                            </>
+                        ) : (
+                            <>
+                                Mark as Complete
+                                <Check className="h-5 w-5 ml-2" />
+                            </>
+                        )}
+                    </Button>
                 </CardContent>
-            </Card>
+            </Card >
 
             {isDragging && (
                 <div
@@ -114,7 +159,8 @@ const SubmissionCard = () => {
                         <p className="text-gray-500">Drop your files here</p>
                     </div>
                 </div>
-            )}
+            )
+            }
         </>
     );
 };

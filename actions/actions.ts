@@ -392,3 +392,13 @@ export async function updateStagesTasks(projId: string, structure: GeneratedTask
         return { success: false, message: (error as Error).message };
     }
 }
+
+export async function setTaskComplete(projId: string, stageId: string, taskId: string, isCompleted: boolean) {
+    auth().protect();
+    try {
+        await adminDb.collection("projects").doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId).set({ isCompleted: isCompleted }, { merge: true })
+        return { success: true };
+    } catch (error) {
+        return { success: false, message: (error as Error).message };
+    }
+}

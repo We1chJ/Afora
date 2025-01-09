@@ -17,6 +17,7 @@ import { db } from "@/firebase"
 import { Stage, Task } from "@/types/types"
 import { collection, doc } from "firebase/firestore"
 import PieChartProgress from "./PieChartProgress"
+import { CircleCheckBig, Clock7 } from "lucide-react"
 
 const TaskList = ({ orgId, projId, stageId }: { orgId: string, projId: string, stageId: string }) => {
   const { isSignedIn, isLoaded } = useAuth(); // Get authentication state
@@ -77,8 +78,8 @@ const TaskList = ({ orgId, projId, stageId }: { orgId: string, projId: string, s
             </div>
             <div className="w-1/4">
               <PieChartProgress
-                // progress={33}
-                // title="Progress"
+              // progress={33}
+              // title="Progress"
               />
             </div>
           </div>
@@ -98,9 +99,14 @@ const TaskList = ({ orgId, projId, stageId }: { orgId: string, projId: string, s
                     {/* <TableCell className="font-medium text-black whitespace-nowrap">{stage.order} - {stage.title}</TableCell> */}
                     <TableCell className="flex flex-1">
                       <Card className="w-full shadow-lg hover:shadow-3xl hover:translate-y-[-4px] transition-transform duration-300 h-auto">
-                        <CardHeader className="p-0">
-                          <div className="text-lg p-4">
-                            {index + 1}. {task.title}
+                        <CardHeader>
+                          <div className="flex justify-between items-center">
+                            <span className="text-lg">{index + 1}. {task.title}</span>
+                            {task.isCompleted ? (
+                              <CircleCheckBig className="text-green-500" />
+                            ) : (
+                              <Clock7 className="text-yellow-500" />
+                            )}
                           </div>
                         </CardHeader>
                       </Card>
@@ -111,7 +117,7 @@ const TaskList = ({ orgId, projId, stageId }: { orgId: string, projId: string, s
           )}
         </TableBody>
       </Table>
-    </div>
+    </div >
   )
 }
 

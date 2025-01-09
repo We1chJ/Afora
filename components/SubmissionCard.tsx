@@ -81,7 +81,7 @@ const SubmissionCard = ({ task, projId, stageId, taskId }: { task: Task, projId:
             <Card className="w-full h-fit bg-white p-4 space-y-2 shadow-lg hover:shadow-xl transition-shadow">
                 <CardTitle className="flex justify-between items-center">
                     <span>Your submission</span>
-                    <span className={`text-sm font-semibold ${isCompleted ? 'text-green-500' : 'text-blue-500'}`}>
+                    <span className={`text-lg font-semibold ${isCompleted ? 'text-green-500' : 'text-blue-500'}`}>
                         {isCompleted ? 'Completed' : 'Assigned'}
                     </span>
                 </CardTitle>

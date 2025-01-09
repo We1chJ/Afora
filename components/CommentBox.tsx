@@ -31,8 +31,14 @@ const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
   useEffect(() => {
     const handleFocus = () => setIsFocused(true);
     const handleClickOutside = (event: MouseEvent) => {
+      const tempElement = document.createElement('div');
+      tempElement.innerHTML = comment;
+      if (tempElement.textContent?.trim() === '') {
+        setComment('');
+        setIsFocused(false);
+      }
       if (quillRef.current && !quillRef.current.contains(event.target)) {
-        if (!comment.trim()) {
+        if (!comment.trim() || comment.trim() === '') {
           setIsFocused(false);
         }
       }
@@ -127,7 +133,10 @@ const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
       `}</style>
 
       <div className={`flex items-center w-full space-x-2 p-3 bg-white rounded-lg shadow ${className}`}>
-        <CircleUser className="w-10 h-10 text-gray-400" />
+        {/* Hide CircleUser on small screens (< 640px) */}
+        <div className="hidden sm:block">
+          <CircleUser className="w-10 h-10 text-gray-400" />
+        </div>
         <div className="flex-1">
           <div className={isFocused ? 'toolbar-visible' : ''}>
             <ReactQuill

@@ -2,9 +2,9 @@
 
 import { db } from "@/firebase";
 import { useAuth } from "@clerk/nextjs";
-import { collection, doc } from "firebase/firestore";
+import { collection, doc, onSnapshot, query, where } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import {
   Table,
@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Project, Stage, teamCharterQuestions } from "@/types/types";
+import { Project, Stage, Task, teamCharterQuestions } from "@/types/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
@@ -30,9 +30,17 @@ import {
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@radix-ui/react-label";
-import { setTeamCharter } from "@/actions/actions";
+import { getProjProgress, setTeamCharter } from "@/actions/actions";
 import { toast } from "sonner";
 import GenerateTasksButton from "@/components/GenerateTasksButton";
+
+export interface StageProgress {
+  stageOrder: number;
+  totalTasks: number;
+  tasksCompleted: number;
+  locked: boolean;
+}
+
 function ProjectPage({ params: { id, projId } }: {
   params: {
     id: string;
@@ -49,12 +57,29 @@ function ProjectPage({ params: { id, projId } }: {
     if (isLoaded && !isSignedIn) {
       router.replace('/'); // Redirect to the login page
     }
-    console.log('projid', projId);
   }, []);
 
   const [projData, projLoading, projError] = useDocument(doc(db, 'projects', projId));
   const [stagesData, stagesLoading, stagesError] = useCollection(collection(db, 'projects', projId, 'stages'));
   const [teamCharterData, loading, error] = useDocument(doc(db, 'projects', projId));
+  const stages: Stage[] = stagesData?.docs.map(doc => ({
+    ...(doc.data() as Stage)
+  })) || [];
+
+  const [stageProgresses, setStageProgresses] = useState<StageProgress[]>([]);
+  useEffect(() => {
+    const fetchProgresses = async () => {
+      const result = await getProjProgress(projId);
+      if (result.success && result.stageProgresses) {
+        result.stageProgresses.sort((a, b) => a.stageOrder - b.stageOrder);
+        setStageProgresses(result.stageProgresses);
+      } else {
+        console.error(result.message);
+      }
+    };
+    fetchProgresses();
+  }, [stages]);
+
 
   if (stagesLoading || projLoading) {
     return <Skeleton className="w-full h-96" />;
@@ -67,11 +92,6 @@ function ProjectPage({ params: { id, projId } }: {
   }
 
   const proj = projData?.data() as Project;
-
-  const stages: Stage[] = stagesData?.docs.map(doc => ({
-    ...(doc.data() as Stage)
-  })) || [];
-
 
   const handleOpenEditing = () => {
     if (!teamCharterData || loading || error) return;
@@ -108,10 +128,16 @@ function ProjectPage({ params: { id, projId } }: {
                 </h1>
                 <div className="flex items-center space-x-4 self-end">
                   <Progress
-                    value={33}
+                    value={stageProgresses.length > 0 ? (stageProgresses.reduce((acc, stage) => acc + stage.tasksCompleted, 0) / stageProgresses.reduce((acc, stage) => acc + stage.totalTasks, 0)) * 100 : 0}
                     className="w-96"
                   />
-                  <span className="font-bold text-white text-2xl">33%</span>
+                  {stageProgresses.length > 0 ? (
+                    <span className="font-bold text-white text-2xl">
+                      {Math.round((stageProgresses.reduce((acc, stage) => acc + stage.tasksCompleted, 0) / stageProgresses.reduce((acc, stage) => acc + stage.totalTasks, 0)) * 100)}%
+                    </span>
+                  ) : (
+                    <Loader2 className="animate-spin text-white" />
+                  )}
                 </div>
               </div>
             </div>
@@ -180,8 +206,11 @@ function ProjectPage({ params: { id, projId } }: {
                 <TableRow key={index} className="border-b">
                   <TableCell colSpan={2} className="p-4">
                     <Link href={`/org/${id}/proj/${projId}/stage/${stage.id}`} className="block p-4 bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-300">
-                      <div className="text-lg font-semibold">
-                        {index + 1}. {stage.title}
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-semibold">{index + 1}. {stage.title}</span>
+                        <span className="text-sm text-gray-500">
+                          {stageProgresses[index] ? `${stageProgresses[index].tasksCompleted} / ${stageProgresses[index].totalTasks} tasks completed` : 'Loading...'}
+                        </span>
                       </div>
                     </Link>
                   </TableCell>

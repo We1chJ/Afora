@@ -1,6 +1,6 @@
 'use client'
 import { db } from '@/firebase';
-import { Project} from '@/types/types';
+import { Project } from '@/types/types';
 import { collection, DocumentData, FirestoreError, getDocs, query, QuerySnapshot, where } from 'firebase/firestore';
 import React, { useEffect, useState, useTransition } from 'react'
 import { useCollection } from 'react-firebase-hooks/firestore';
@@ -39,7 +39,7 @@ const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId }: { us
             }
         };
         fetchProjects();
-    }, [userProjects]);
+    }, [userProjects, userLoading, userError]);
 
     useEffect(() => {
         if (output) {
@@ -109,7 +109,7 @@ const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId }: { us
                                 .map((doc) => {
                                     const proj = doc.data() as Project;
                                     return (
-                                        <ProjectCard  key={proj.projId} orgId={orgId} projId={proj.projId} projectName={proj.title} backgroundImage={''} tasks={[]} />
+                                        <ProjectCard key={proj.projId} orgId={orgId} projId={proj.projId} projectName={proj.title} backgroundImage={''} tasks={[]} />
                                     );
                                 })
                         )}

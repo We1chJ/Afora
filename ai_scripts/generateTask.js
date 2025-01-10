@@ -31,6 +31,9 @@ const responseFormat = {
                                             "type": "string",
                                             "description": "The name of the task."
                                         },
+                                        "task_description": {
+                                            "type": "string",
+                                        },
                                         "assigned_user": {
                                             "type": "string",
                                             "description": "The user to whom the task is assigned."
@@ -38,6 +41,7 @@ const responseFormat = {
                                     },
                                     "required": [
                                         "task_name",
+                                        "task_description",
                                         "assigned_user"
                                     ],
                                     "additionalProperties": false
@@ -63,7 +67,7 @@ const responseFormat = {
 
 
 export const generateTask = async (questions, userResponses, charterQuestions, teamCharterResponses) => {
-    const context = `Come up with a project road map with various levels, each with detailed actionable steps for the sub-goal. Based on each user's onboarding info, assign each task a user's email based on their fields of interests and skills in each area that works the best.`;
+    const context = `Just in titles without numbers like stage 1, come up with a project road map with various levels, each with detailed actionable steps for the sub-goal. Based on each user's onboarding info, assign each task a user's email based on their fields of interests and skills in each area that works the best.`;
 
     if (!userResponses || userResponses.length === 0) {
         throw new Error('There are no users to assign tasks to.');

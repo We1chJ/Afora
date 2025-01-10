@@ -11,10 +11,14 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable"
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import SubmissionCard from "@/components/SubmissionCard";
+import { Separator } from "@/components/ui/separator";
+import { UserRoundPen, Users } from "lucide-react";
+import CommentBox from "@/components/CommentBox";
+import { Task } from "@/types/types";
 
-function Taskage({ params: { id, projId, stageId, taskId } }: {
+function TaskPage({ params: { id, projId, stageId, taskId } }: {
   params: {
     id: string;
     projId: string;
@@ -44,39 +48,63 @@ function Taskage({ params: { id, projId, stageId, taskId } }: {
     return <div>Error: {taskError.message}</div>;
   }
 
-  const task = taskData?.data();
+  const task = taskData?.data() as Task;
 
   return (
-    <div className="flex flex-col flex-1 h-screen">
+    <div className="flex flex-col flex-1 h-full w-full">
       {isSignedIn &&
-        <div className="p-4 flex-1">
-          <ResizablePanelGroup direction="horizontal" className="h-full">
-            <ResizablePanel className="h-full" minSize={70} defaultSize={70}>
-              <ResizablePanelGroup direction={"vertical"} className="h-full">
-                <ResizablePanel className="h-full" defaultSize={70}>
-                  <h1 className="text-4xl font-bold">{task?.title}</h1>
-                  <div className="mt-4">
-                    <p className="text-sm text-gray-600">Assigned to: {task?.assignedTo}</p>
-                    {/* <p className="text-sm text-gray-600">Deadline: {task?.deadline}</p> */}
-                    <p className="text-lg mt-4">{task?.description}</p>
-                    <Input id="upload" type="file" className="hidden" />
-                    <Label htmlFor="upload" className="cursor-pointer inline-block bg-black text-white py-3 px-4 rounded">
-                      Upload File
-                    </Label>
-                  </div>
+        <div className="p-6 flex-1">
+          <ResizablePanelGroup direction="vertical">
+            <ResizablePanel defaultSize={50}>
+              <ResizablePanelGroup direction="horizontal" className="space-x-8">
+                <ResizablePanel defaultSize={70}>
+                  <Card className="w-full bg-[#6F61EF] hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6 space-y-8">
+                      <h1 className="text-4xl font-bold text-white">
+                        {task?.title || "Task Title"}
+                      </h1>
+                      <p className="text-sm text-white mt-2">
+                        {task?.description || "No description available"}
+                      </p>
+                    </CardContent>
+                  </Card>
                 </ResizablePanel>
-                <ResizablePanel className="h-full" defaultSize={70}>
-                  <h2 className="text-2xl font-semibold">Comments</h2>
+                <ResizablePanel defaultSize={30}>
+                  <SubmissionCard projId={projId} stageId={stageId} taskId={taskId} task={task} />
                 </ResizablePanel>
               </ResizablePanelGroup>
             </ResizablePanel>
 
-            <ResizablePanel className="h-full">
-              <h2 className="text-2xl font-semibold">Admin Feedback</h2>
+            <ResizablePanel defaultSize={50}>
+              <ResizablePanelGroup direction="horizontal" className="space-x-8">
+                <ResizablePanel defaultSize={70} className="h-full space-y-2">
+                  <div className="flex items-center space-x-2 text-xl font-semibold text-gray-800">
+                    <Users />
+                    <p>Public Comment</p>
+                  </div>
+                  <Separator className="bg-gray-400" />
+                  <div className="flex flex-col p-4 w-full h-full space-y-2">
+                    {/* display comments */}
+                    <CommentBox />
+                  </div>
+                </ResizablePanel>
+                <ResizablePanel defaultSize={30}>
+                  <Card className="w-full py-2 bg-white hover:shadow-lg transition-shadow">
+                    <CardContent className="space-y-2">
+                      <h2 className="flex items-center space-x-2 text-xl font-semibold text-gray-800">
+                        <UserRoundPen />
+                        <p>Private Comment</p>
+                      </h2>
+                      <Separator className="bg-gray-400" />
+                      <CommentBox className="shadow-none w-full" />
+                    </CardContent>
+                  </Card>
+                </ResizablePanel>
+              </ResizablePanelGroup>
             </ResizablePanel>
           </ResizablePanelGroup>
         </div>}
     </div>
   )
 }
-export default Taskage;
+export default TaskPage;

@@ -17,6 +17,7 @@ import JoinOrgButton from "./JoinOrgButton";
 import { SidebarTrigger } from "./ui/sidebar";
 import { useState } from "react";
 import { Button } from "./ui/button";
+import Image from "next/image";
 
 function Header() {
 
@@ -35,7 +36,7 @@ function Header() {
         <div className="flex items-center justify-between flex-1">
           <h1 className="text-2xl font-bold text-white">
             <Link href="/">
-              <img src="/logoFull.svg" alt="Logo" />
+              <Image src="/logoFull.svg" alt="Logo" width={150} height={50} />
             </Link>
           </h1>
 

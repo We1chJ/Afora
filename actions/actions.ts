@@ -1,9 +1,7 @@
 'use server'
-import { db } from "@/firebase";
 import { adminDb } from "@/firebase-admin";
-import { GeneratedTasks } from "@/types/types";
+import { GeneratedTasks, Stage } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
-import { query, collection, where, getDocs } from "firebase/firestore";
 
 // IMPLEMENT THIS WITH FIREBASE FIRESTORE NOW THAT WE AREN'T USING LIVE BLOCKS
 
@@ -378,13 +376,47 @@ export async function updateStagesTasks(projId: string, structure: GeneratedTask
         const batch = adminDb.batch();
         structure.stages.forEach((stage, stageIndex) => {
             const stageRef = adminDb.collection('projects').doc(projId).collection('stages').doc();
-            batch.set(stageRef, { title: stage.stage_name, id: stageRef.id, order: stageIndex+1 });
+            batch.set(stageRef, {
+                title: stage.stage_name,
+                id: stageRef.id,
+                order: stageIndex + 1,
+                totalTasks: stage.tasks.length,
+                tasksCompleted: 0
+            });
 
             stage.tasks.forEach((task, taskIndex) => {
                 const taskRef = stageRef.collection('tasks').doc();
-                batch.set(taskRef, { title: task.task_name, assignedTo: task.assigned_user, id: taskRef.id, order: taskIndex+1 });
+                batch.set(taskRef, {
+                    title: task.task_name,
+                    description: task.task_description,
+                    assignedTo: task.assigned_user,
+                    id: taskRef.id,
+                    order: taskIndex + 1
+                });
             });
         });
+        await batch.commit();
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+export async function setTaskComplete(projId: string, stageId: string, taskId: string, isCompleted: boolean) {
+    auth().protect();
+    try {
+        const taskRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId);
+        const stageRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId);
+
+        const batch = adminDb.batch();
+        batch.set(taskRef, { isCompleted: isCompleted }, { merge: true });
+
+        const stageDoc = await stageRef.get();
+        const stageData = stageDoc.data() as Stage;
+        const tasksCompleted = isCompleted ? stageData.tasksCompleted + 1 : stageData.tasksCompleted - 1;
+        batch.set(stageRef, { tasksCompleted }, { merge: true });
+
         await batch.commit();
         return { success: true };
     } catch (error) {

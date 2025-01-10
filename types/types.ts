@@ -141,6 +141,8 @@ export type Stage = {
     id: string;
     title: string;
     order: number;
+    tasksCompleted: number;
+    totalTasks: number;
 }
 
 export type Task = {
@@ -150,6 +152,7 @@ export type Task = {
     assignedTo: string; // TODO: one person per task or could be multiple?
     deadline: string;
     order: string;
+    isCompleted: boolean;
 }
 
 export type GeneratedTasks = {
@@ -157,6 +160,7 @@ export type GeneratedTasks = {
         stage_name: string; // The name of the stage
         tasks: {
             task_name: string; // The name of the task
+            task_description: string; // The detailed description of the task
             assigned_user: string; // The user to whom the task is assigned
         }[];
     }[];

@@ -1,56 +1,91 @@
-import React from 'react';
-import { PieChart, Pie, Cell } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+"use client"
 
-const ResponsivePieProgress = ({ progress = 75, title = "Progress" }) => {
-    const percentage = Math.min(100, Math.max(0, progress));
-    const remaining = 100 - percentage;
+import * as React from "react"
+import { Label, Pie, PieChart } from "recharts"
 
-    const data = [
-        { name: 'Progress', value: percentage },
-        { name: 'Remaining', value: remaining }
+import {
+    Card,
+    CardContent,
+} from "@/components/ui/card"
+import {
+    ChartConfig,
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent,
+} from "@/components/ui/chart"
+
+
+export function PieChartProgress({ tasksCompleted, totalTasks }: { tasksCompleted: number; totalTasks: number }) {
+    const chartData = [
+        { status: 'Completed', counts: tasksCompleted, fill: '#000000' },
+        { status: 'In Progress', counts: (totalTasks - tasksCompleted), fill: '#e5e7eb' }
     ];
 
-    const colors = ['#000000', '#e5e7eb'];
+    const chartConfig = {
+        completed: {
+            label: "Completed",
+            color: "#000000",
+        },
+        inProgress: {
+            label: "In Progress",
+            color: "#e5e7eb",
+        },
+    } satisfies ChartConfig
 
     return (
-        <Card className="w-full max-w-xs hover:shadow-lg transition-shadow">
-            {/* <CardHeader className="p-3">
-                <CardTitle className="text-lg font-bold text-center">{title}</CardTitle>
-            </CardHeader> */}
-            <CardContent className="p-2">
-                <div className="relative w-full h-full min-w-[150px] max-w-[200px] mx-auto">
-                    <PieChart width={200} height={200} className="w-full">
+        <Card className="flex flex-col h-full">
+            <CardContent className="flex-1 pb-0 max-h-[200px]">
+                <ChartContainer
+                    config={chartConfig}
+                    className="mx-auto aspect-square max-h-[200px]"
+                >
+                    <PieChart>
+                        <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent hideLabel />}
+                        />
                         <Pie
-                            data={data}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={90}
-                            dataKey="value"
-                            startAngle={90}
-                            endAngle={-270}
+                            data={chartData}
+                            dataKey="counts"
+                            nameKey="status"
+                            innerRadius={55}
+                            strokeWidth={10}
                         >
-                            {data.map((entry, index) => (
-                                <Cell
-                                    key={`cell-${index}`}
-                                    fill={colors[index]}
-                                />
-                            ))}
+                            <Label
+                                content={({ viewBox }) => {
+                                    if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                                        return (
+                                            <text
+                                                x={viewBox.cx}
+                                                y={viewBox.cy}
+                                                textAnchor="middle"
+                                                dominantBaseline="middle"
+                                                className="flex flex-col items-center justify-center"
+                                            >
+                                                <tspan
+                                                    x={viewBox.cx}
+                                                    y={viewBox.cy}
+                                                    className="fill-foreground text-3xl font-bold"
+                                                >
+                                                    {((tasksCompleted / totalTasks) * 100).toFixed(0) + '%'}
+                                                </tspan>
+                                                <tspan
+                                                    x={viewBox.cx}
+                                                    y={(viewBox.cy || 0) + 24}
+                                                    className="fill-muted-foreground"
+                                                >
+                                                    Completed
+                                                </tspan>
+                                            </text>
+                                        )
+                                    }
+                                }}
+                            />
                         </Pie>
                     </PieChart>
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-                        <div className="text-4xl font-bold text-black-500">
-                            {percentage}%
-                        </div>
-                        <div className="text-xs text-gray-500">
-                            Complete
-                        </div>
-                    </div>
-                </div>
+                </ChartContainer>
             </CardContent>
         </Card>
-    );
-};
-
-export default ResponsivePieProgress;
+    )
+}
+export default PieChartProgress;

@@ -30,7 +30,7 @@ import {
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@radix-ui/react-label";
-import { getProjProgress, setTeamCharter } from "@/actions/actions";
+import { setTeamCharter } from "@/actions/actions";
 import { toast } from "sonner";
 import GenerateTasksButton from "@/components/GenerateTasksButton";
 
@@ -65,21 +65,6 @@ function ProjectPage({ params: { id, projId } }: {
   const stages: Stage[] = stagesData?.docs.map(doc => ({
     ...(doc.data() as Stage)
   })) || [];
-
-  const [stageProgresses, setStageProgresses] = useState<StageProgress[]>([]);
-  useEffect(() => {
-    const fetchProgresses = async () => {
-      const result = await getProjProgress(projId);
-      if (result.success && result.stageProgresses) {
-        result.stageProgresses.sort((a, b) => a.stageOrder - b.stageOrder);
-        setStageProgresses(result.stageProgresses);
-      } else {
-        console.error(result.message);
-      }
-    };
-    fetchProgresses();
-  }, [stages]);
-
 
   if (stagesLoading || projLoading) {
     return <Skeleton className="w-full h-96" />;
@@ -126,19 +111,17 @@ function ProjectPage({ params: { id, projId } }: {
                 <h1 className="text-4xl font-bold text-white">
                   Project Stages
                 </h1>
-                <div className="flex items-center space-x-4 self-end">
-                  <Progress
-                    value={stageProgresses.length > 0 ? (stageProgresses.reduce((acc, stage) => acc + stage.tasksCompleted, 0) / stageProgresses.reduce((acc, stage) => acc + stage.totalTasks, 0)) * 100 : 0}
-                    className="w-96"
-                  />
-                  {stageProgresses.length > 0 ? (
+                {stages && stages.length > 0 && (
+                  <div className="flex items-center space-x-4 self-end">
+                    <Progress
+                      value={(stages.reduce((acc, stage) => acc + stage.tasksCompleted, 0) / stages.reduce((acc, stage) => acc + stage.totalTasks, 0)) * 100}
+                      className="w-96"
+                    />
                     <span className="font-bold text-white text-2xl">
-                      {Math.round((stageProgresses.reduce((acc, stage) => acc + stage.tasksCompleted, 0) / stageProgresses.reduce((acc, stage) => acc + stage.totalTasks, 0)) * 100)}%
+                      {Math.round((stages.reduce((acc, stage) => acc + stage.tasksCompleted, 0) / stages.reduce((acc, stage) => acc + stage.totalTasks, 0)) * 100)}%
                     </span>
-                  ) : (
-                    <Loader2 className="animate-spin text-white" />
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -209,7 +192,7 @@ function ProjectPage({ params: { id, projId } }: {
                       <div className="flex justify-between items-center">
                         <span className="text-lg font-semibold">{index + 1}. {stage.title}</span>
                         <span className="text-sm text-gray-500">
-                          {stageProgresses[index] ? `${stageProgresses[index].tasksCompleted} / ${stageProgresses[index].totalTasks} tasks completed` : 'Loading...'}
+                          {`${stage.tasksCompleted} / ${stage.totalTasks} tasks completed`}
                         </span>
                       </div>
                     </Link>

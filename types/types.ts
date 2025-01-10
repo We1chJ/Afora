@@ -141,6 +141,8 @@ export type Stage = {
     id: string;
     title: string;
     order: number;
+    tasksCompleted: number;
+    totalTasks: number;
 }
 
 export type Task = {

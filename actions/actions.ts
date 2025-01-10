@@ -379,11 +379,23 @@ export async function updateStagesTasks(projId: string, structure: GeneratedTask
         const batch = adminDb.batch();
         structure.stages.forEach((stage, stageIndex) => {
             const stageRef = adminDb.collection('projects').doc(projId).collection('stages').doc();
-            batch.set(stageRef, { title: stage.stage_name, id: stageRef.id, order: stageIndex + 1 });
+            batch.set(stageRef, {
+                title: stage.stage_name,
+                id: stageRef.id,
+                order: stageIndex + 1,
+                totalTasks: stage.tasks.length,
+                tasksCompleted: 0
+            });
 
             stage.tasks.forEach((task, taskIndex) => {
                 const taskRef = stageRef.collection('tasks').doc();
-                batch.set(taskRef, { title: task.task_name, description: task.task_description, assignedTo: task.assigned_user, id: taskRef.id, order: taskIndex + 1 });
+                batch.set(taskRef, {
+                    title: task.task_name,
+                    description: task.task_description,
+                    assignedTo: task.assigned_user,
+                    id: taskRef.id,
+                    order: taskIndex + 1
+                });
             });
         });
         await batch.commit();
@@ -397,33 +409,45 @@ export async function updateStagesTasks(projId: string, structure: GeneratedTask
 export async function setTaskComplete(projId: string, stageId: string, taskId: string, isCompleted: boolean) {
     auth().protect();
     try {
-        await adminDb.collection("projects").doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId).set({ isCompleted: isCompleted }, { merge: true })
+        const taskRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId);
+        const stageRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId);
+
+        const batch = adminDb.batch();
+        batch.set(taskRef, { isCompleted: isCompleted }, { merge: true });
+
+        const stageDoc = await stageRef.get();
+        const stageData = stageDoc.data() as Stage;
+        const tasksCompleted = isCompleted ? stageData.tasksCompleted + 1 : stageData.tasksCompleted - 1;
+        batch.set(stageRef, { tasksCompleted }, { merge: true });
+
+        await batch.commit();
         return { success: true };
     } catch (error) {
+        console.error(error);
         return { success: false, message: (error as Error).message };
     }
 }
 
-export async function getProjProgress(projId: string) {
-    auth().protect();
-    try {
-        const stageProgresses: StageProgress[] = [];
-        const stagesSnapshot = await adminDb.collection("projects").doc(projId).collection("stages").get();
-        const stages = stagesSnapshot.docs.map(async (stageDoc) => {
-            const stageData = stageDoc.data() as Stage;
-            const stageProgress: StageProgress = { stageOrder: stageData.order, tasksCompleted: 0, totalTasks: 0, locked: false };
-            const tasksSnapshot = await stageDoc.ref.collection("tasks").get();
-            tasksSnapshot.docs.map(taskDoc => {
-                const taskData = taskDoc.data() as Task;
-                stageProgress.totalTasks++;
-                if (taskData.isCompleted) stageProgress.tasksCompleted++;
-            });
-            stageProgresses.push(stageProgress);
-        });
+// export async function getProjProgress(projId: string) {
+//     auth().protect();
+//     try {
+//         const stageProgresses: StageProgress[] = [];
+//         const stagesSnapshot = await adminDb.collection("projects").doc(projId).collection("stages").get();
+//         const stages = stagesSnapshot.docs.map(async (stageDoc) => {
+//             const stageData = stageDoc.data() as Stage;
+//             const stageProgress: StageProgress = { stageOrder: stageData.order, tasksCompleted: 0, totalTasks: 0, locked: false };
+//             const tasksSnapshot = await stageDoc.ref.collection("tasks").get();
+//             tasksSnapshot.docs.map(taskDoc => {
+//                 const taskData = taskDoc.data() as Task;
+//                 stageProgress.totalTasks++;
+//                 if (taskData.isCompleted) stageProgress.tasksCompleted++;
+//             });
+//             stageProgresses.push(stageProgress);
+//         });
 
-        const resolvedStages = await Promise.all(stages);
-        return { success: true, stageProgresses: stageProgresses };
-    } catch (error) {
-        return { success: false, message: (error as Error).message };
-    }
-}
+//         const resolvedStages = await Promise.all(stages);
+//         return { success: true, stageProgresses: stageProgresses };
+//     } catch (error) {
+//         return { success: false, message: (error as Error).message };
+//     }
+// }

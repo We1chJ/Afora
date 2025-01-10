@@ -110,17 +110,19 @@ const SubmissionCard = ({ task, projId, stageId, taskId }: { task: Task, projId:
                         ))}
                     </div>
 
-                    <div className="flex space-x-2 items-center">
-                        <div className="w-full max-w-sm">
-                            <Input
-                                id="fileUpload"
-                                type="file"
-                                onChange={(e) => e.target.files && handleFiles(e.target.files)}
-                                multiple
-                            />
+                    {!isCompleted && (
+                        <div className="flex space-x-2 items-center">
+                            <div className="w-full max-w-sm">
+                                <Input
+                                    id="fileUpload"
+                                    type="file"
+                                    onChange={(e) => e.target.files && handleFiles(e.target.files)}
+                                    multiple
+                                />
+                            </div>
+                            <Button>Submit</Button>
                         </div>
-                        <Button>Submit</Button>
-                    </div>
+                    )}
 
                     <Button
                         className={`w-full ${isCompleted ? 'bg-white text-black border border-black hover:bg-black hover:text-white' : 'bg-black text-white hover:bg-white hover:text-black border border-black'} ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}

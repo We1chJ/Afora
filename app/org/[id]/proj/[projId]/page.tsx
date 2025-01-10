@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { EditIcon, Loader2 } from "lucide-react";
+import { CircleCheck, EditIcon, Loader2, LockKeyhole, NotepadText } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -33,6 +33,8 @@ import { Label } from "@radix-ui/react-label";
 import { setTeamCharter } from "@/actions/actions";
 import { toast } from "sonner";
 import GenerateTasksButton from "@/components/GenerateTasksButton";
+import { HoverCard, HoverCardTrigger } from "@radix-ui/react-hover-card";
+import { HoverCardContent } from "@/components/ui/hover-card";
 
 export interface StageProgress {
   stageOrder: number;
@@ -52,6 +54,7 @@ function ProjectPage({ params: { id, projId } }: {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+
   useEffect(() => {
     // Redirect to login if the user is not authenticated
     if (isLoaded && !isSignedIn) {
@@ -62,9 +65,24 @@ function ProjectPage({ params: { id, projId } }: {
   const [projData, projLoading, projError] = useDocument(doc(db, 'projects', projId));
   const [stagesData, stagesLoading, stagesError] = useCollection(collection(db, 'projects', projId, 'stages'));
   const [teamCharterData, loading, error] = useDocument(doc(db, 'projects', projId));
-  const stages: Stage[] = stagesData?.docs.map(doc => ({
-    ...(doc.data() as Stage)
-  })) || [];
+  const stages: Stage[] = useMemo(() => {
+    return stagesData?.docs
+      .map(doc => ({
+        ...(doc.data() as Stage)
+      }))
+      .sort((a, b) => a.order - b.order) || [];
+  }, [stagesData]);
+
+  // 0 = locked, 1 = in progress, 2 = completed
+  const [stageStatus, setStageStatus] = useState<number[]>([]);
+  useEffect(() => {
+    const newStageStatus = new Array(stages.length).fill(0);
+    stages.forEach((stage, i) => {
+      newStageStatus[i] = (i > 0 && newStageStatus[i - 1] !== 2) ? 0 : (stage.tasksCompleted == stage.totalTasks) ? 2 : 1;
+    });
+    setStageStatus(newStageStatus);
+  }, [stages]);
+
 
   if (stagesLoading || projLoading) {
     return <Skeleton className="w-full h-96" />;
@@ -99,7 +117,6 @@ function ProjectPage({ params: { id, projId } }: {
 
   return (
     <div className="flex flex-col w-full h-full">
-
       <Table>
         <TableHeader>
           <div className="rounded-lg overflow-hidden bg-[#6F61EF] p-4 m-4 h-56 ">
@@ -184,14 +201,43 @@ function ProjectPage({ params: { id, projId } }: {
             </>
           ) : (
             stages
-              .sort((a, b) => a.order - b.order)
               .map((stage, index) => (
                 <TableRow key={index} className="border-b">
                   <TableCell colSpan={2} className="p-4">
                     <Link href={`/org/${id}/proj/${projId}/stage/${stage.id}`} className="block p-4 bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-300">
                       <div className="flex justify-between items-center">
                         <span className="text-lg font-semibold">{index + 1}. {stage.title}</span>
-                        <span className="text-sm text-gray-500">
+                        <span className="flex items-center text-sm text-gray-500">
+                          {stageStatus[index] === 0 && (
+                            <HoverCard>
+                              <HoverCardTrigger>
+                                <LockKeyhole className="mr-4" />
+                              </HoverCardTrigger>
+                              <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
+                                <p className="text-sm">This stage is locked. Help your team members finish their tasks before moving on!</p>
+                              </HoverCardContent>
+                            </HoverCard>
+                          )}
+                          {stageStatus[index] === 1 && (
+                            <HoverCard>
+                              <HoverCardTrigger>
+                                <NotepadText className="mr-4 text-yellow-500" />
+                              </HoverCardTrigger>
+                              <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
+                                <p className="text-sm">This stage is in progress. Keep going!</p>
+                              </HoverCardContent>
+                            </HoverCard>
+                          )}
+                          {stageStatus[index] === 2 && (
+                            <HoverCard>
+                              <HoverCardTrigger>
+                                <CircleCheck className="mr-4 text-green-500" />
+                              </HoverCardTrigger>
+                              <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
+                                <p className="text-sm">This stage is completed. Great job!</p>
+                              </HoverCardContent>
+                            </HoverCard>
+                          )}
                           {`${stage.tasksCompleted} / ${stage.totalTasks} tasks completed`}
                         </span>
                       </div>

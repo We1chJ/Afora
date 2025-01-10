@@ -6,6 +6,7 @@ import { File, X, Upload, Check, Loader, Undo } from 'lucide-react';
 import { Task } from '@/types/types';
 import { setTaskComplete } from '@/actions/actions';
 import { useTransition } from 'react';
+
 interface FileItem {
     id: string;
     file: File;
@@ -70,32 +71,45 @@ const SubmissionCard = ({ task, projId, stageId, taskId }: { task: Task, projId:
     const handleToggleCompleteTask = () => {
         startTransition(() => {
             setTaskComplete(projId, stageId, taskId, !isCompleted).then(() => {
-
             }).catch(() => {
                 console.log("set task complete failed");
             });
         });
     };
+
     return (
         <>
-            <Card className="w-full h-fit bg-white p-4 space-y-2 shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="w-full h-fit bg-white p-2 md:p-4 space-y-2 shadow-lg hover:shadow-xl transition-shadow">
                 <CardTitle className="flex justify-between items-center">
-                    <span>Your submission</span>
-                    <span className={`text-lg font-semibold ${isCompleted ? 'text-green-500' : 'text-blue-500'}`}>
-                        {isCompleted ? 'Completed' : 'Assigned'}
+                    <span className="hidden md:inline">Your submission</span>
+                    <span className="md:hidden">
+                        <File className="h-5 w-5" />
+                    </span>
+                    <span className={`text-sm md:text-lg font-semibold ${isCompleted ? 'text-green-500' : 'text-blue-500'}`}>
+                        {isCompleted ? (
+                            <div className="flex items-center space-x-1">
+                                <Check className="h-4 w-4 md:h-5 md:w-5" />
+                                <span className="hidden md:inline">Completed</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center space-x-1">
+                                <div className="h-2 w-2 md:h-3 md:w-3 rounded-full bg-blue-500"></div>
+                                <span className="hidden md:inline">Assigned</span>
+                            </div>
+                        )}
                     </span>
                 </CardTitle>
-                <CardContent className="h-full space-y-2 ">
+                <CardContent className="h-full space-y-2 p-0 md:p-2">
                     <div className="space-y-2 overflow-y-auto max-h-28">
                         {files.map(({ id, file }) => (
                             <div key={id} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
-                                <div className="flex items-center space-x-3">
-                                    <File className="h-6 w-6 text-gray-400" />
+                                <div className="flex items-center space-x-2 md:space-x-3">
+                                    <File className="h-4 w-4 md:h-6 md:w-6 text-gray-400" />
                                     <div className="text-left">
-                                        <p className="text-sm font-medium">
-                                            {file.name.length > 20 ? `${file.name.slice(0, 20)}...` : file.name}
+                                        <p className="text-xs md:text-sm font-medium">
+                                            {file.name.length > 12 ? `${file.name.slice(0, 12)}...` : file.name}
                                         </p>
-                                        <p className="text-xs text-gray-500">
+                                        <p className="hidden md:block text-xs text-gray-500">
                                             {(file.size / 1024 / 1024).toFixed(2)} MB
                                         </p>
                                     </div>
@@ -104,23 +118,27 @@ const SubmissionCard = ({ task, projId, stageId, taskId }: { task: Task, projId:
                                     onClick={() => removeFile(id)}
                                     className="p-1 hover:bg-gray-200 rounded"
                                 >
-                                    <X className="h-5 w-5 text-gray-500" />
+                                    <X className="h-4 w-4 md:h-5 md:w-5 text-gray-500" />
                                 </button>
                             </div>
                         ))}
                     </div>
 
                     {!isCompleted && (
-                        <div className="flex space-x-2 items-center">
+                        <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 items-center">
                             <div className="w-full max-w-sm">
                                 <Input
                                     id="fileUpload"
                                     type="file"
                                     onChange={(e) => e.target.files && handleFiles(e.target.files)}
                                     multiple
+                                    className="text-xs md:text-sm"
                                 />
                             </div>
-                            <Button>Submit</Button>
+                            <Button className="w-full md:w-auto">
+                                <span className="hidden md:inline">Submit</span>
+                                <Upload className="h-4 w-4 md:hidden" />
+                            </Button>
                         </div>
                     )}
 
@@ -131,23 +149,25 @@ const SubmissionCard = ({ task, projId, stageId, taskId }: { task: Task, projId:
                     >
                         {isPending ? (
                             <>
-                                {isCompleted ? 'Unsubmitting...' : 'Submitting...'}
-                                <Loader className="h-5 w-5 ml-2 animate-spin" />
+                                <span className="hidden md:inline">
+                                    {isCompleted ? 'Unsubmitting...' : 'Submitting...'}
+                                </span>
+                                <Loader className="h-4 w-4 md:h-5 md:w-5 md:ml-2 animate-spin" />
                             </>
                         ) : isCompleted ? (
                             <>
-                                Unsubmit
-                                <Undo className="h-5 w-5 ml-2" />
+                                <span className="hidden md:inline">Unsubmit</span>
+                                <Undo className="h-4 w-4 md:h-5 md:w-5 md:ml-2" />
                             </>
                         ) : (
                             <>
-                                Mark as Complete
-                                <Check className="h-5 w-5 ml-2" />
+                                <span className="hidden md:inline">Mark as Complete</span>
+                                <Check className="h-4 w-4 md:h-5 md:w-5 md:ml-2" />
                             </>
                         )}
                     </Button>
                 </CardContent>
-            </Card >
+            </Card>
 
             {isDragging && (
                 <div
@@ -156,13 +176,12 @@ const SubmissionCard = ({ task, projId, stageId, taskId }: { task: Task, projId:
                     onDrop={handleDrop}
                     onDragLeave={() => setIsDragging(false)}
                 >
-                    <div className="bg-white p-8 rounded-lg shadow-lg flex flex-col items-center space-y-4">
-                        <Upload className="h-12 w-12 text-gray-400" />
-                        <p className="text-gray-500">Drop your files here</p>
+                    <div className="bg-white p-4 md:p-8 rounded-lg shadow-lg flex flex-col items-center space-y-4">
+                        <Upload className="h-8 w-8 md:h-12 md:w-12 text-gray-400" />
+                        <p className="text-sm md:text-base text-gray-500">Drop your files here</p>
                     </div>
                 </div>
-            )
-            }
+            )}
         </>
     );
 };

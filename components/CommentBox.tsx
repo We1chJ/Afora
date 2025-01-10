@@ -48,7 +48,7 @@ const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
   }, [comment]);
 
   return (
-    <div className={`relative`} ref={quillRef}>
+    <div className={`relative w-full max-w-full`} ref={quillRef}>
       <style jsx global>{`
         .quill {
           position: relative;
@@ -56,6 +56,8 @@ const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
           display: flex;
           flex-direction: column;
           transition: all 0.2s ease;
+          width: 100%;
+          min-width: 0; /* Add this to handle text overflow */
         }
         
         .ql-toolbar {
@@ -73,32 +75,53 @@ const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
           padding: 0 !important;
           overflow: hidden;
           transition: all 0.2s ease;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+          width: 100%;
         }
         
         .toolbar-visible .ql-toolbar {
           opacity: 1;
-          height: 36px;
+          height: auto;
+          min-height: 36px;
           padding: 4px !important;
         }
         
         .ql-toolbar .ql-formats {
-          margin-right: 8px !important;
+          margin-right: 4px !important;
+          margin-bottom: 4px !important;
+          display: flex;
+          flex-wrap: wrap;
         }
         
         .ql-toolbar button {
-          width: 24px;
-          height: 24px;
-          padding: 2px;
+          width: 28px;
+          height: 28px;
+          padding: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        @media (max-width: 480px) {
+          .ql-toolbar button {
+            width: 24px;
+            height: 24px;
+            padding: 2px;
+          }
         }
         
         .ql-container {
           z-index: 50;
           height: auto !important;
           min-height: 40px;
-          max-height: ${isFocused ? '200px' : '40px'};
+          max-height: none;
           border-radius: 0.375rem;
           border: 1px solid #e5e7eb !important;
           transition: all 0.2s ease;
+          width: 100%;
+          min-width: 0; /* Add this to handle text overflow */
         }
         
         .toolbar-visible .ql-container {
@@ -108,35 +131,82 @@ const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
         
         .ql-editor {
           min-height: 40px;
-          max-height: ${isFocused ? '200px' : '40px'};
+          max-height: ${isFocused ? '300px' : '40px'};
+          height: auto;
           overflow-y: auto;
+          overflow-x: hidden; /* Prevent horizontal scroll */
           padding: 8px !important;
+          word-break: break-word;
+          word-wrap: break-word;
+          white-space: pre-wrap;
+          font-size: 14px;
+          line-height: 1.5;
+          width: 100%;
         }
-        
+
+        /* Handle placeholder text */
         .ql-editor.ql-blank::before {
           font-style: normal !important;
           color: #9ca3af !important;
+          font-size: 14px;
+          position: absolute;
+          left: 8px;
+          right: 8px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        @media (max-width: 640px) {
+          .ql-editor {
+            font-size: 16px;
+            padding: 6px !important;
+            max-height: ${isFocused ? '200px' : '40px'};
+          }
+          
+          .ql-editor.ql-blank::before {
+            font-size: 16px;
+            left: 6px;
+            right: 6px;
+          }
         }
         
         .ql-tooltip {
           z-index: 52 !important;
-          position: absolute !important;
-          left: unset !important;
-          top: unset !important;
-          transform: none !important;
+          position: fixed !important;
+          left: 50% !important;
+          top: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          max-width: 90vw;
+          width: auto;
+          white-space: normal;
+        }
+
+        .ql-tooltip input[type="text"] {
+          width: 100%;
+          max-width: 200px;
         }
         
         .ql-tooltip[data-mode="link"]::before {
           content: "Enter link URL:";
         }
+
+        @media (max-width: 480px) {
+          .ql-tooltip {
+            font-size: 14px;
+          }
+          
+          .ql-tooltip input[type="text"] {
+            max-width: 160px;
+          }
+        }
       `}</style>
 
-      <div className={`flex items-center w-full space-x-2 p-3 bg-white rounded-lg shadow ${className}`}>
-        {/* Hide CircleUser on small screens (< 640px) */}
-        <div className="hidden sm:block">
-          <CircleUser className="w-10 h-10 text-gray-400" />
+      <div className={`flex items-start w-full space-x-2 p-2 sm:p-3 bg-white rounded-lg shadow ${className}`}>
+        <div className="hidden sm:block shrink-0">
+          <CircleUser className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0"> {/* Add min-width: 0 to handle text overflow */}
           <div className={isFocused ? 'toolbar-visible' : ''}>
             <ReactQuill
               theme="snow"
@@ -149,14 +219,16 @@ const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
             />
           </div>
         </div>
-        <Button
-          variant="default"
-          onClick={handlePost}
-          className="h-10"
-          disabled={!comment.trim()}
-        >
-          <SendHorizontal />
-        </Button>
+        <div className="shrink-0">
+          <Button
+            variant="default"
+            onClick={handlePost}
+            className="h-8 w-8 sm:h-10 sm:w-10 p-0"
+            disabled={!comment.trim()}
+          >
+            <SendHorizontal className="h-4 w-4 sm:h-5 sm:w-5" />
+          </Button>
+        </div>
       </div>
     </div>
   );

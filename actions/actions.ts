@@ -1,10 +1,7 @@
 'use server'
-import type { StageProgress } from "@/app/org/[id]/proj/[projId]/page";
-import { db } from "@/firebase";
 import { adminDb } from "@/firebase-admin";
-import { GeneratedTasks, Stage, Task } from "@/types/types";
+import { GeneratedTasks, Stage } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
-import { query, collection, where, getDocs } from "firebase/firestore";
 
 // IMPLEMENT THIS WITH FIREBASE FIRESTORE NOW THAT WE AREN'T USING LIVE BLOCKS
 
@@ -427,27 +424,3 @@ export async function setTaskComplete(projId: string, stageId: string, taskId: s
         return { success: false, message: (error as Error).message };
     }
 }
-
-// export async function getProjProgress(projId: string) {
-//     auth().protect();
-//     try {
-//         const stageProgresses: StageProgress[] = [];
-//         const stagesSnapshot = await adminDb.collection("projects").doc(projId).collection("stages").get();
-//         const stages = stagesSnapshot.docs.map(async (stageDoc) => {
-//             const stageData = stageDoc.data() as Stage;
-//             const stageProgress: StageProgress = { stageOrder: stageData.order, tasksCompleted: 0, totalTasks: 0, locked: false };
-//             const tasksSnapshot = await stageDoc.ref.collection("tasks").get();
-//             tasksSnapshot.docs.map(taskDoc => {
-//                 const taskData = taskDoc.data() as Task;
-//                 stageProgress.totalTasks++;
-//                 if (taskData.isCompleted) stageProgress.tasksCompleted++;
-//             });
-//             stageProgresses.push(stageProgress);
-//         });
-
-//         const resolvedStages = await Promise.all(stages);
-//         return { success: true, stageProgresses: stageProgresses };
-//     } catch (error) {
-//         return { success: false, message: (error as Error).message };
-//     }
-// }

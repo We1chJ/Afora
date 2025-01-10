@@ -12,7 +12,7 @@ interface CommentBoxProps {
 const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
   const [comment, setComment] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const quillRef = useRef<any>(null);
+  const quillRef = useRef<HTMLDivElement>(null);
 
   const handlePost = () => {
     console.log('Posted comment:', comment);
@@ -29,7 +29,6 @@ const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
   };
 
   useEffect(() => {
-    const handleFocus = () => setIsFocused(true);
     const handleClickOutside = (event: MouseEvent) => {
       const tempElement = document.createElement('div');
       tempElement.innerHTML = comment;
@@ -37,7 +36,7 @@ const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
         setComment('');
         setIsFocused(false);
       }
-      if (quillRef.current && !quillRef.current.contains(event.target)) {
+      if (quillRef.current && !quillRef.current.contains(event.target as Node)) {
         if (!comment.trim() || comment.trim() === '') {
           setIsFocused(false);
         }

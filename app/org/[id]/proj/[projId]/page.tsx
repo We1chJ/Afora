@@ -2,7 +2,7 @@
 
 import { db } from "@/firebase";
 import { useAuth } from "@clerk/nextjs";
-import { collection, doc, onSnapshot, query, where } from "firebase/firestore";
+import { collection, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Project, Stage, Task, teamCharterQuestions } from "@/types/types";
+import { Project, Stage, teamCharterQuestions } from "@/types/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";

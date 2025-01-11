@@ -1,6 +1,6 @@
 'use server'
 import { adminDb } from "@/firebase-admin";
-import { GeneratedTasks, Stage } from "@/types/types";
+import { Comment, GeneratedTasks, Stage } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 
 // IMPLEMENT THIS WITH FIREBASE FIRESTORE NOW THAT WE AREN'T USING LIVE BLOCKS
@@ -419,6 +419,22 @@ export async function setTaskComplete(projId: string, stageId: string, taskId: s
 
         await batch.commit();
         return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+export async function postComment(isPublic: boolean, projId: string, stageId: string, taskId: string, message: string, time: Date, uid: string) {
+    auth().protect();
+    try {
+        const newCommentRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId).collection((isPublic) ? 'public' : 'private').doc();
+        await newCommentRef.set({
+            message: message,
+            msgId: newCommentRef.id,
+            time: time,
+            uid: uid
+        });
     } catch (error) {
         console.error(error);
         return { success: false, message: (error as Error).message };

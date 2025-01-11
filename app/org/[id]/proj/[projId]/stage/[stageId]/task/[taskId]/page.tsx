@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { UserRoundPen, Users } from "lucide-react";
 import CommentBox from "@/components/CommentBox";
 import { Task } from "@/types/types";
+import CommentView from "@/components/CommentView";
 
 function TaskPage({ params: { id, projId, stageId, taskId } }: {
   params: {
@@ -89,7 +90,8 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
                   <Separator className="bg-gray-400" />
                   <div className="flex flex-col p-4 w-full h-full space-y-2">
                     {/* display comments */}
-                    <CommentBox />
+                    <CommentView />
+                    <CommentBox isPublic={true} projId={projId} stageId={stageId} taskId={taskId} />
                   </div>
                 </ResizablePanel>
                 <ResizablePanel defaultSize={30}>
@@ -100,7 +102,7 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
                         <p>Private Comment</p>
                       </h2>
                       <Separator className="bg-gray-400" />
-                      <CommentBox className="shadow-none w-full" />
+                      <CommentBox isPublic={false} projId={projId} stageId={stageId} taskId={taskId} className="shadow-none w-full" />
                     </CardContent>
                   </Card>
                 </ResizablePanel>

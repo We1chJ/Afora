@@ -165,3 +165,10 @@ export type GeneratedTasks = {
         }[];
     }[];
 };
+
+export type Comment = {
+    message: string;
+    msgId: string;
+    time: string;
+    uid: string;
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react';
-import { CircleUser, SendHorizontal } from 'lucide-react';
+import { CircleUser, LoaderCircle, SendHorizontal } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import React from 'react';
 import ReactQuill from 'react-quill';
@@ -9,22 +9,36 @@ import 'react-quill/dist/quill.snow.css';
 import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
 import TurndownService from 'turndown';
+import { postComment } from '@/actions/actions';
+import { useTransition } from 'react';
 const turndownService = new TurndownService();
 
 interface CommentBoxProps {
   className?: string;
+  isPublic: boolean;
+  projId: string;
+  stageId: string;
+  taskId: string;
 }
 
-const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
+const CommentBox: React.FC<CommentBoxProps> = ({ className, isPublic, projId, stageId, taskId }) => {
   const { user } = useUser();
   const [comment, setComment] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const quillRef = useRef<HTMLDivElement>(null);
+  const [isPending, startTransition] = useTransition();
 
   const handlePost = () => {
-    console.log('Posted comment:', turndownService.turndown(comment));
-    setComment('');
-
+    const mdComment = turndownService.turndown(comment);
+    startTransition(async () => {
+      await postComment(isPublic, projId, stageId, taskId, mdComment, new Date(), user!.primaryEmailAddress!.toString())
+        .then(() => {
+          setComment('');
+        })
+        .catch((error) => {
+          console.error('Error posting comment:', error);
+        });
+    });
   };
 
   const modules = {
@@ -34,7 +48,6 @@ const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
       [{ 'list': 'ordered' }, { 'list': 'bullet' }]
     ]
   };
-
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -236,9 +249,13 @@ const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
             variant="default"
             onClick={handlePost}
             className="h-8 w-8 sm:h-10 sm:w-10 p-0"
-            disabled={!comment.trim()}
+            disabled={!comment.trim() || isPending}
           >
-            <SendHorizontal className="h-4 w-4 sm:h-5 sm:w-5" />
+            {isPending ? (
+              <LoaderCircle className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+            ) : (
+              <SendHorizontal className="h-4 w-4 sm:h-5 sm:w-5" />
+            )}
           </Button>
         </div>
       </div>

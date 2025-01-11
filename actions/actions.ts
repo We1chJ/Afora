@@ -2,6 +2,7 @@
 import { adminDb } from "@/firebase-admin";
 import { Comment, GeneratedTasks, Stage } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
+import { Timestamp } from "firebase/firestore";
 
 // IMPLEMENT THIS WITH FIREBASE FIRESTORE NOW THAT WE AREN'T USING LIVE BLOCKS
 
@@ -425,7 +426,7 @@ export async function setTaskComplete(projId: string, stageId: string, taskId: s
     }
 }
 
-export async function postComment(isPublic: boolean, projId: string, stageId: string, taskId: string, message: string, time: Date, uid: string) {
+export async function postComment(isPublic: boolean, projId: string, stageId: string, taskId: string, message: string, time: Timestamp, uid: string) {
     auth().protect();
     try {
         const newCommentRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId).collection((isPublic) ? 'public' : 'private').doc();

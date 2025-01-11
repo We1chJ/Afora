@@ -8,10 +8,10 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
-import TurndownService from 'turndown';
 import { postComment } from '@/actions/actions';
 import { useTransition } from 'react';
-const turndownService = new TurndownService();
+import { Timestamp } from 'firebase/firestore';
+
 
 interface CommentBoxProps {
   className?: string;
@@ -29,9 +29,8 @@ const CommentBox: React.FC<CommentBoxProps> = ({ className, isPublic, projId, st
   const [isPending, startTransition] = useTransition();
 
   const handlePost = () => {
-    const mdComment = turndownService.turndown(comment);
     startTransition(async () => {
-      await postComment(isPublic, projId, stageId, taskId, mdComment, new Date(), user!.primaryEmailAddress!.toString())
+      await postComment(isPublic, projId, stageId, taskId, comment, new Timestamp(Date.now() / 1000, 0), user!.primaryEmailAddress!.toString())
         .then(() => {
           setComment('');
         })

@@ -1,4 +1,4 @@
-import { DocumentData } from "firebase/firestore";
+import { DocumentData, Timestamp } from "firebase/firestore";
 
 /**
  * - editor: members who can edit the documents
@@ -169,6 +169,6 @@ export type GeneratedTasks = {
 export type Comment = {
     message: string;
     msgId: string;
-    time: string;
+    time: Timestamp;
     uid: string;
 }

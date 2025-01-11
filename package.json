@@ -61,6 +61,8 @@
     "react-resizable-panels": "^2.1.7",
     "react-simplemde-editor": "^5.2.0",
     "recharts": "^2.15.0",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.0",
     "shadcn": "^2.1.0",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.3",
@@ -70,6 +72,7 @@
     "vercel": "^39.0.5"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

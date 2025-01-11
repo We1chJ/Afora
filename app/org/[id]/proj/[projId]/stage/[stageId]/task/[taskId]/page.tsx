@@ -2,7 +2,7 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/firebase";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -28,6 +28,7 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
 }) {
   console.log(id);
   const { isSignedIn, isLoaded } = useAuth(); // Get authentication state
+  const { user } = useUser();
   const router = useRouter();
   useEffect(() => {
     // Redirect to login if the user is not authenticated
@@ -40,7 +41,7 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
 
   const [taskData, taskLoading, taskError] = useDocument(doc(db, 'projects', projId, 'stages', stageId, 'tasks', taskId));
 
-  if (taskLoading) {
+  if (!user || taskLoading) {
     return <Skeleton className="w-full h-96" />;
   }
 
@@ -66,6 +67,9 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
                       <p className="text-sm text-white mt-2">
                         {task?.description || "No description available"}
                       </p>
+                      <div className="text-sm text-white">
+                        <strong>Assigned to:</strong> {task?.assignedTo || "No assignee"}
+                      </div>
                     </CardContent>
                   </Card>
                 </ResizablePanel>

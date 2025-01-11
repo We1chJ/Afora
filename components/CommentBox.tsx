@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useRef, useEffect } from 'react';
 import { CircleUser, SendHorizontal } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -6,6 +8,8 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
+import TurndownService from 'turndown';
+const turndownService = new TurndownService();
 
 interface CommentBoxProps {
   className?: string;
@@ -18,9 +22,9 @@ const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
   const quillRef = useRef<HTMLDivElement>(null);
 
   const handlePost = () => {
-    console.log('Posted comment:', comment);
+    console.log('Posted comment:', turndownService.turndown(comment));
     setComment('');
-    setIsFocused(false);
+
   };
 
   const modules = {
@@ -30,6 +34,7 @@ const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
       [{ 'list': 'ordered' }, { 'list': 'bullet' }]
     ]
   };
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

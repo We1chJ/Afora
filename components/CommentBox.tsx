@@ -4,12 +4,15 @@ import { Button } from "@/components/ui/button";
 import React from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { useUser } from '@clerk/nextjs';
+import Image from 'next/image';
 
 interface CommentBoxProps {
   className?: string;
 }
 
 const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
+  const { user } = useUser();
   const [comment, setComment] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const quillRef = useRef<HTMLDivElement>(null);
@@ -204,7 +207,11 @@ const CommentBox: React.FC<CommentBoxProps> = ({ className }) => {
 
       <div className={`flex items-start w-full space-x-2 p-2 sm:p-3 bg-white rounded-lg shadow ${className}`}>
         <div className="hidden sm:block shrink-0">
-          <CircleUser className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+          {(user && user.imageUrl) ?
+            <Image src={user.imageUrl} alt="User profile image" width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" />
+            :
+            <CircleUser className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+          }
         </div>
         <div className="flex-1 min-w-0"> {/* Add min-width: 0 to handle text overflow */}
           <div className={isFocused ? 'toolbar-visible' : ''}>

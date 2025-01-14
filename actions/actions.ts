@@ -448,8 +448,22 @@ export async function updateStages(projId: string, stageUpdates: Stage[]) {
     try {
         const batch = adminDb.batch();
         const projRef = adminDb.collection('projects').doc(projId).collection("stages");
+
         stageUpdates.forEach((stage: Stage) => {
-            batch.set(projRef.doc(stage.id), { order: stage.order, title: stage.title }, { merge: true });
+            if (stage.id === '-1') {
+                const newStageRef = projRef.doc();
+                batch.set(newStageRef, {
+                    title: stage.title,
+                    id: newStageRef.id,
+                    order: stage.order,
+                    totalTasks: 0,
+                    tasksCompleted: 0
+                });
+            } else if (stage.id === '-2') {
+                batch.delete(projRef.doc(stage.id));
+            } else {
+                batch.set(projRef.doc(stage.id), { order: stage.order, title: stage.title }, { merge: true });
+            }
         })
 
         await batch.commit();

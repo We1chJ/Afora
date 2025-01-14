@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { CircleCheck, EditIcon, Loader2, LockKeyhole, NotepadText, Pencil, PencilLine, Save } from "lucide-react";
+import { CircleCheck, EditIcon, Loader2, LockKeyhole, NotepadText, PencilLine, Save } from "lucide-react";
 import { Reorder, useDragControls } from "framer-motion";
 import { toast } from "sonner";
 import GenerateTasksButton from "@/components/GenerateTasksButton";
@@ -131,11 +131,15 @@ function ProjectPage({ params: { id, projId } }: {
       const stageUpdates: Stage[] = [];
       reorderedStages.forEach((stage, index) => {
         const originalStage = stages.find(s => s.id === stage.id);
-        if (stage.order !== index || (originalStage && stage.title !== originalStage.title)) {
+        // id = -1 for adding a new stage
+        // id = -2 for deleting a existing stage
+        // push change for new stages
+        if (!originalStage) {
+          stageUpdates.push({ ...stage, order: index });
+        } else if (stage.order !== index || (originalStage && stage.title !== originalStage.title)) { // only commit changes on order change and renaming
           stageUpdates.push({ ...stage, order: index, title: stage.title });
         }
       });
-      console.log(stageUpdates);
       updateStages(projId, stageUpdates);
       toast.success('Stages updated successfully!');
     } catch (error) {
@@ -184,7 +188,7 @@ function ProjectPage({ params: { id, projId } }: {
             </div>
           </div>
         </TableHeader>
-        <TableBody className="w-full">
+        <TableBody className="w-full pb-2">
           {stages.length === 0 ? (
             <>
               <TableRow>
@@ -242,82 +246,108 @@ function ProjectPage({ params: { id, projId } }: {
             </>
           ) : (
             isEditing ? (
-              <Reorder.Group
-                axis="y"
-                values={reorderedStages}
-                onReorder={setReorderedStages}
-                className="w-full px-4 space-y-4"
-              >
-                {reorderedStages.map((stage, index) => (
-                  <Reorder.Item
-                    key={stage.id}
-                    value={stage}
-                    className="w-full touch-none"
-                  >
-                    <div className="w-full flex items-center gap-4">
-                      <ReorderIcon dragControls={dragControl} />
-                      <div
-                        className={`w-full block flex-1 p-4 bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-300 cursor-grab`}
-                      >
-                        <div className="flex w-full justify-between items-center">
-                          <span className="w-full text-lg font-semibold">
-                            {isEditing ? (
-                              <div className="flex flex-row items-center">
-                                {index + 1}.{" "}
-                                <input
-                                  type="text"
-                                  value={stage.title}
-                                  onChange={(e) => {
-                                    const newStages = [...reorderedStages];
-                                    newStages[index].title = e.target.value;
-                                    setReorderedStages(newStages);
-                                  }}
-                                  className="w-full focus:outline-none ml-2 underline"
-                                />
-                              </div>
-                            ) : (
-                              stage.title
-                            )}
-                          </span>
-                          <span className="flex items-center text-sm text-gray-500">
-                            {stageStatus[index] === 0 && (
-                              <HoverCard>
-                                <HoverCardTrigger>
-                                  <LockKeyhole className="mr-4" />
-                                </HoverCardTrigger>
-                                <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
-                                  <p className="text-sm">This stage is locked. Help your team members finish their tasks before moving on!</p>
-                                </HoverCardContent>
-                              </HoverCard>
-                            )}
-                            {stageStatus[index] === 1 && (
-                              <HoverCard>
-                                <HoverCardTrigger>
-                                  <NotepadText className="mr-4 text-yellow-500" />
-                                </HoverCardTrigger>
-                                <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
-                                  <p className="text-sm">This stage is in progress. Keep going!</p>
-                                </HoverCardContent>
-                              </HoverCard>
-                            )}
-                            {stageStatus[index] === 2 && (
-                              <HoverCard>
-                                <HoverCardTrigger>
-                                  <CircleCheck className="mr-4 text-green-500" />
-                                </HoverCardTrigger>
-                                <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
-                                  <p className="text-sm">This stage is completed. Great job!</p>
-                                </HoverCardContent>
-                              </HoverCard>
-                            )}
-                            {`${stage.tasksCompleted} / ${stage.totalTasks} tasks completed`}
-                          </span>
+              <>
+                <Reorder.Group
+                  axis="y"
+                  values={reorderedStages}
+                  onReorder={setReorderedStages}
+                  className="w-full px-4 space-y-4 py-2"
+                >
+                  {reorderedStages.map((stage, index) => (
+                    <Reorder.Item
+                      key={stage.id}
+                      value={stage}
+                      className="w-full touch-none"
+                    >
+                      <div className="w-full flex items-center gap-4">
+                        <ReorderIcon dragControls={dragControl} />
+                        <div
+                          className={`w-full block flex-1 p-4 bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-300 cursor-grab`}
+                        >
+                          <div className="flex w-full justify-between items-center">
+                            <span className="w-full text-lg font-semibold">
+                              {isEditing ? (
+                                <div className="flex flex-row items-center">
+                                  {index + 1}.{" "}
+                                  <input
+                                    type="text"
+                                    value={stage.title}
+                                    onChange={(e) => {
+                                      const newStages = [...reorderedStages];
+                                      newStages[index].title = e.target.value;
+                                      setReorderedStages(newStages);
+                                    }}
+                                    className="w-full focus:outline-none ml-2 underline" />
+                                </div>
+                              ) : (
+                                stage.title
+                              )}
+                            </span>
+                            <span className="flex items-center text-sm text-gray-500">
+                              {stageStatus[index] === 0 && (
+                                <HoverCard>
+                                  <HoverCardTrigger>
+                                    <LockKeyhole className="mr-4" />
+                                  </HoverCardTrigger>
+                                  <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
+                                    <p className="text-sm">This stage is locked. Help your team members finish their tasks before moving on!</p>
+                                  </HoverCardContent>
+                                </HoverCard>
+                              )}
+                              {stageStatus[index] === 1 && (
+                                <HoverCard>
+                                  <HoverCardTrigger>
+                                    <NotepadText className="mr-4 text-yellow-500" />
+                                  </HoverCardTrigger>
+                                  <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
+                                    <p className="text-sm">This stage is in progress. Keep going!</p>
+                                  </HoverCardContent>
+                                </HoverCard>
+                              )}
+                              {stageStatus[index] === 2 && (
+                                <HoverCard>
+                                  <HoverCardTrigger>
+                                    <CircleCheck className="mr-4 text-green-500" />
+                                  </HoverCardTrigger>
+                                  <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
+                                    <p className="text-sm">This stage is completed. Great job!</p>
+                                  </HoverCardContent>
+                                </HoverCard>
+                              )}
+                              {`${stage.tasksCompleted} / ${stage.totalTasks} tasks completed`}
+                            </span>
+                          </div>
                         </div>
                       </div>
+                    </Reorder.Item>
+                  ))}
+                </Reorder.Group>
+                <div className="w-full flex items-center px-4 py-2 gap-4">
+                  <ReorderIcon dragControls={dragControl} />
+                  <div className="w-full block flex-1 p-4 bg-gray-200 rounded-lg shadow hover:shadow-lg transition-shadow duration-300 cursor-pointer">
+                    <div className="flex w-full justify-between items-center">
+                      <Button
+                        variant="ghost"
+                        className="w-full flex justify-between items-center"
+                        onClick={() => {
+                          const newStage: Stage = {
+                            id: '-1',
+                            title: 'New Stage',
+                            order: reorderedStages.length,
+                            tasksCompleted: 0,
+                            totalTasks: 0,
+                          };
+                          setReorderedStages([...reorderedStages, newStage]);
+                        }}
+                      >
+                        <span className="w-full text-lg font-semibold text-gray-500">
+                          + New Stage
+                        </span>
+                      </Button>
                     </div>
-                  </Reorder.Item>
-                ))}
-              </Reorder.Group>
+                  </div>
+                </div>
+              </>
             ) : (
               <div className="w-full px-4 space-y-4" >
                 {stages.map((stage, index) => (

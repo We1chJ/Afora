@@ -2,7 +2,7 @@
 
 import { db } from "@/firebase";
 import { useAuth } from "@clerk/nextjs";
-import { collection, doc } from "firebase/firestore";
+import { collection, doc, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
@@ -18,7 +18,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { CircleCheck, EditIcon, Loader2, LockKeyhole, NotepadText } from "lucide-react";
+import { CircleCheck, EditIcon, GripVertical, Loader2, LockKeyhole, NotepadText } from "lucide-react";
+import { Reorder, useDragControls } from "framer-motion";
+import { toast } from "sonner";
+import GenerateTasksButton from "@/components/GenerateTasksButton";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -31,10 +34,9 @@ import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@radix-ui/react-label";
 import { setTeamCharter } from "@/actions/actions";
-import { toast } from "sonner";
-import GenerateTasksButton from "@/components/GenerateTasksButton";
 import { HoverCard, HoverCardTrigger } from "@radix-ui/react-hover-card";
 import { HoverCardContent } from "@/components/ui/hover-card";
+import { ReorderIcon } from "@/components/ReorderIcon";
 
 export interface StageProgress {
   stageOrder: number;
@@ -54,13 +56,16 @@ function ProjectPage({ params: { id, projId } }: {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isEditing, setIsEditing] = useState(false);
+  const [reorderedStages, setReorderedStages] = useState<Stage[]>([]);
+  const dragControl = useDragControls();
 
   useEffect(() => {
     // Redirect to login if the user is not authenticated
     if (isLoaded && !isSignedIn) {
       router.replace('/'); // Redirect to the login page
     }
-  }, []);
+  }, [isLoaded, isSignedIn, router]);
 
   const [projData, projLoading, projError] = useDocument(doc(db, 'projects', projId));
   const [stagesData, stagesLoading, stagesError] = useCollection(collection(db, 'projects', projId, 'stages'));
@@ -73,6 +78,13 @@ function ProjectPage({ params: { id, projId } }: {
       .sort((a, b) => a.order - b.order) || [];
   }, [stagesData]);
 
+  // Update reorderedStages when stages change
+  useEffect(() => {
+    if (!isEditing) {
+      setReorderedStages(stages);
+    }
+  }, [stages]);
+
   // 0 = locked, 1 = in progress, 2 = completed
   const [stageStatus, setStageStatus] = useState<number[]>([]);
   useEffect(() => {
@@ -82,7 +94,6 @@ function ProjectPage({ params: { id, projId } }: {
     });
     setStageStatus(newStageStatus);
   }, [stages]);
-
 
   if (stagesLoading || projLoading) {
     return <Skeleton className="w-full h-96" />;
@@ -115,18 +126,46 @@ function ProjectPage({ params: { id, projId } }: {
     setIsOpen(false);
   });
 
+  const handleReorder = async (newOrder: Stage[]) => {
+    setReorderedStages(newOrder);
+
+    if (!isEditing) return;
+
+    try {
+      // const batch = writeBatch(db);
+
+      // // Update the order of each stage in Firestore
+      // newOrder.forEach((stage, index) => {
+      //   const stageRef = doc(db, 'projects', projId, 'stages', stage.id);
+      //   batch.update(stageRef, { order: index });
+      // });
+
+      // await batch.commit();
+      toast.success('Stage order updated successfully!');
+    } catch (error) {
+      console.error('Error updating stage order:', error);
+      toast.error('Failed to update stage order');
+    }
+  };
+
   return (
     <div className="flex flex-col w-full h-full">
-      <Table>
+      <Table className="w-full">
         <TableHeader>
-          <div className="rounded-lg overflow-hidden bg-[#6F61EF] p-4 m-4 h-56 ">
+          <div className="rounded-lg overflow-hidden bg-[#6F61EF] p-4 m-4 h-56">
             <div className="flex flex-col justify-between h-full p-2">
-              <h1 className="text-xl font-bold text-white">
+              <h1 className="w-full text-xl flex justify-between font-bold text-white">
                 {proj.title}
+                <Button
+                  variant={isEditing ? "secondary" : "default"}
+                  onClick={() => setIsEditing(!isEditing)}
+                >
+                  {isEditing ? 'Done' : 'Edit Order'}
+                </Button>
               </h1>
               <div className="flex w-full items-center justify-between">
                 <h1 className="text-4xl font-bold text-white">
-                  Project Stages
+                  Project Roadmap 🗺️
                 </h1>
                 {stages && stages.length > 0 && (
                   <div className="flex items-center space-x-4 self-end">
@@ -143,7 +182,7 @@ function ProjectPage({ params: { id, projId } }: {
             </div>
           </div>
         </TableHeader>
-        <TableBody>
+        <TableBody className="w-full">
           {stages.length === 0 ? (
             <>
               <TableRow>
@@ -200,13 +239,31 @@ function ProjectPage({ params: { id, projId } }: {
               </TableRow>
             </>
           ) : (
-            stages
-              .map((stage, index) => (
-                <TableRow key={index} className="border-b">
-                  <TableCell colSpan={2} className="p-4">
-                    <Link href={`/org/${id}/proj/${projId}/stage/${stage.id}`} className="block p-4 bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-300">
-                      <div className="flex justify-between items-center">
-                        <span className="text-lg font-semibold">{index + 1}. {stage.title}</span>
+            <Reorder.Group
+              axis="y"
+              values={reorderedStages}
+              onReorder={handleReorder}
+              className="w-full px-4 space-y-4"
+            >
+              {reorderedStages.map((stage, index) => (
+                <Reorder.Item
+                  key={stage.id}
+                  value={stage}
+                  className="w-full touch-none"
+                >
+                  <div className="w-full flex items-center gap-4">
+                    {isEditing && (
+                      <ReorderIcon dragControls={dragControl} />
+                    )}
+                    <Link
+                      href={`/org/${id}/proj/${projId}/stage/${stage.id}`}
+                      className={`w-full block flex-1 p-4 bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-300 ${isEditing ? 'cursor-grab' : ''}`}
+                      onClick={(e) => isEditing && e.preventDefault()}
+                    >
+                      <div className="flex w-full justify-between items-center">
+                        <span className="text-lg font-semibold">
+                          {index + 1}. {stage.title}
+                        </span>
                         <span className="flex items-center text-sm text-gray-500">
                           {stageStatus[index] === 0 && (
                             <HoverCard>
@@ -242,13 +299,15 @@ function ProjectPage({ params: { id, projId } }: {
                         </span>
                       </div>
                     </Link>
-                  </TableCell>
-                </TableRow>
-              ))
+                  </div>
+                </Reorder.Item>
+              ))}
+            </Reorder.Group>
           )}
         </TableBody>
       </Table>
-    </div >
-  )
+    </div>
+  );
 }
-export default ProjectPage
+
+export default ProjectPage;

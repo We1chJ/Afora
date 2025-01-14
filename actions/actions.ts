@@ -380,7 +380,7 @@ export async function updateStagesTasks(projId: string, structure: GeneratedTask
             batch.set(stageRef, {
                 title: stage.stage_name,
                 id: stageRef.id,
-                order: stageIndex + 1,
+                order: stageIndex,
                 totalTasks: stage.tasks.length,
                 tasksCompleted: 0
             });
@@ -392,7 +392,7 @@ export async function updateStagesTasks(projId: string, structure: GeneratedTask
                     description: task.task_description,
                     assignedTo: task.assigned_user,
                     id: taskRef.id,
-                    order: taskIndex + 1
+                    order: taskIndex
                 });
             });
         });

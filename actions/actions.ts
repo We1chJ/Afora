@@ -441,3 +441,21 @@ export async function postComment(isPublic: boolean, projId: string, stageId: st
         return { success: false, message: (error as Error).message };
     }
 }
+
+export async function setStageOrder(projId: string, newOrder: Map<string, number>) {
+    auth().protect();
+
+    try {
+        const batch = adminDb.batch();
+        const projRef = adminDb.collection('projects').doc(projId).collection("stages");
+        newOrder.forEach((order: number, stageId: string) => {
+            batch.set(projRef.doc(stageId), { order }, { merge: true });
+        })
+
+        await batch.commit();
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}

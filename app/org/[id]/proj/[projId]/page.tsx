@@ -33,7 +33,7 @@ import {
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@radix-ui/react-label";
-import { setTeamCharter } from "@/actions/actions";
+import { setStageOrder, setTeamCharter } from "@/actions/actions";
 import { HoverCard, HoverCardTrigger } from "@radix-ui/react-hover-card";
 import { HoverCardContent } from "@/components/ui/hover-card";
 import { ReorderIcon } from "@/components/ReorderIcon";
@@ -126,21 +126,15 @@ function ProjectPage({ params: { id, projId } }: {
     setIsOpen(false);
   });
 
-  const handleReorder = async (newOrder: Stage[]) => {
-    setReorderedStages(newOrder);
-
-    if (!isEditing) return;
-
+  const handleReorderSave = () => {
     try {
-      // const batch = writeBatch(db);
-
-      // // Update the order of each stage in Firestore
-      // newOrder.forEach((stage, index) => {
-      //   const stageRef = doc(db, 'projects', projId, 'stages', stage.id);
-      //   batch.update(stageRef, { order: index });
-      // });
-
-      // await batch.commit();
+      const stageOrderMap = new Map<string, number>();
+      reorderedStages.forEach((stage, index) => {
+        if (stage.order !== index) {
+          stageOrderMap.set(stage.id, index);
+        }
+      });
+      setStageOrder(projId, stageOrderMap);
       toast.success('Stage order updated successfully!');
     } catch (error) {
       console.error('Error updating stage order:', error);
@@ -158,9 +152,14 @@ function ProjectPage({ params: { id, projId } }: {
                 {proj.title}
                 <Button
                   variant={isEditing ? "secondary" : "default"}
-                  onClick={() => setIsEditing(!isEditing)}
+                  onClick={() => {
+                    if (isEditing) {
+                      handleReorderSave();
+                    }
+                    setIsEditing(!isEditing);
+                  }}
                 >
-                  {isEditing ? 'Done' : 'Edit Order'}
+                  {isEditing ? 'Save' : 'Edit Order'}
                 </Button>
               </h1>
               <div className="flex w-full items-center justify-between">
@@ -239,70 +238,118 @@ function ProjectPage({ params: { id, projId } }: {
               </TableRow>
             </>
           ) : (
-            <Reorder.Group
-              axis="y"
-              values={reorderedStages}
-              onReorder={handleReorder}
-              className="w-full px-4 space-y-4"
-            >
-              {reorderedStages.map((stage, index) => (
-                <Reorder.Item
-                  key={stage.id}
-                  value={stage}
-                  className="w-full touch-none"
-                >
-                  <div className="w-full flex items-center gap-4">
-                    {isEditing && (
+            isEditing ? (
+              <Reorder.Group
+                axis="y"
+                values={reorderedStages}
+                onReorder={setReorderedStages}
+                className="w-full px-4 space-y-4"
+              >
+                {reorderedStages.map((stage, index) => (
+                  <Reorder.Item
+                    key={stage.id}
+                    value={stage}
+                    className="w-full touch-none"
+                  >
+                    <div className="w-full flex items-center gap-4">
                       <ReorderIcon dragControls={dragControl} />
-                    )}
-                    <Link
-                      href={`/org/${id}/proj/${projId}/stage/${stage.id}`}
-                      className={`w-full block flex-1 p-4 bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-300 ${isEditing ? 'cursor-grab' : ''}`}
-                      onClick={(e) => isEditing && e.preventDefault()}
-                    >
-                      <div className="flex w-full justify-between items-center">
-                        <span className="text-lg font-semibold">
-                          {index + 1}. {stage.title}
-                        </span>
-                        <span className="flex items-center text-sm text-gray-500">
-                          {stageStatus[index] === 0 && (
-                            <HoverCard>
-                              <HoverCardTrigger>
-                                <LockKeyhole className="mr-4" />
-                              </HoverCardTrigger>
-                              <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
-                                <p className="text-sm">This stage is locked. Help your team members finish their tasks before moving on!</p>
-                              </HoverCardContent>
-                            </HoverCard>
-                          )}
-                          {stageStatus[index] === 1 && (
-                            <HoverCard>
-                              <HoverCardTrigger>
-                                <NotepadText className="mr-4 text-yellow-500" />
-                              </HoverCardTrigger>
-                              <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
-                                <p className="text-sm">This stage is in progress. Keep going!</p>
-                              </HoverCardContent>
-                            </HoverCard>
-                          )}
-                          {stageStatus[index] === 2 && (
-                            <HoverCard>
-                              <HoverCardTrigger>
-                                <CircleCheck className="mr-4 text-green-500" />
-                              </HoverCardTrigger>
-                              <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
-                                <p className="text-sm">This stage is completed. Great job!</p>
-                              </HoverCardContent>
-                            </HoverCard>
-                          )}
-                          {`${stage.tasksCompleted} / ${stage.totalTasks} tasks completed`}
-                        </span>
-                      </div>
-                    </Link>
-                  </div>
-                </Reorder.Item>
-              ))}
-            </Reorder.Group>
+                      <Link
+                        href={`/org/${id}/proj/${projId}/stage/${stage.id}`}
+                        className={`w-full block flex-1 p-4 bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-300 cursor-grab`}
+                        onClick={(e) => e.preventDefault()}
+                      >
+                        <div className="flex w-full justify-between items-center">
+                          <span className="text-lg font-semibold">
+                            {index + 1}. {stage.title}
+                          </span>
+                          <span className="flex items-center text-sm text-gray-500">
+                            {stageStatus[index] === 0 && (
+                              <HoverCard>
+                                <HoverCardTrigger>
+                                  <LockKeyhole className="mr-4" />
+                                </HoverCardTrigger>
+                                <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
+                                  <p className="text-sm">This stage is locked. Help your team members finish their tasks before moving on!</p>
+                                </HoverCardContent>
+                              </HoverCard>
+                            )}
+                            {stageStatus[index] === 1 && (
+                              <HoverCard>
+                                <HoverCardTrigger>
+                                  <NotepadText className="mr-4 text-yellow-500" />
+                                </HoverCardTrigger>
+                                <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
+                                  <p className="text-sm">This stage is in progress. Keep going!</p>
+                                </HoverCardContent>
+                              </HoverCard>
+                            )}
+                            {stageStatus[index] === 2 && (
+                              <HoverCard>
+                                <HoverCardTrigger>
+                                  <CircleCheck className="mr-4 text-green-500" />
+                                </HoverCardTrigger>
+                                <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
+                                  <p className="text-sm">This stage is completed. Great job!</p>
+                                </HoverCardContent>
+                              </HoverCard>
+                            )}
+                            {`${stage.tasksCompleted} / ${stage.totalTasks} tasks completed`}
+                          </span>
+                        </div>
+                      </Link>
+                    </div>
+                  </Reorder.Item>
+                ))}
+              </Reorder.Group>
+            ) : (
+              <div className="w-full px-4 space-y-4" >
+                {stages.map((stage, index) => (
+                  <Link
+                    href={`/org/${id}/proj/${projId}/stage/${stage.id}`}
+                    className="block p-4 bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-300"
+                  >
+                    <div className="flex w-full justify-between items-center">
+                      <span className="text-lg font-semibold">
+                        {index + 1}. {stage.title}
+                      </span>
+                      <span className="flex items-center text-sm text-gray-500">
+                        {stageStatus[index] === 0 && (
+                          <HoverCard>
+                            <HoverCardTrigger>
+                              <LockKeyhole className="mr-4" />
+                            </HoverCardTrigger>
+                            <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
+                              <p className="text-sm">This stage is locked. Help your team members finish their tasks before moving on!</p>
+                            </HoverCardContent>
+                          </HoverCard>
+                        )}
+                        {stageStatus[index] === 1 && (
+                          <HoverCard>
+                            <HoverCardTrigger>
+                              <NotepadText className="mr-4 text-yellow-500" />
+                            </HoverCardTrigger>
+                            <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
+                              <p className="text-sm">This stage is in progress. Keep going!</p>
+                            </HoverCardContent>
+                          </HoverCard>
+                        )}
+                        {stageStatus[index] === 2 && (
+                          <HoverCard>
+                            <HoverCardTrigger>
+                              <CircleCheck className="mr-4 text-green-500" />
+                            </HoverCardTrigger>
+                            <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
+                              <p className="text-sm">This stage is completed. Great job!</p>
+                            </HoverCardContent>
+                          </HoverCard>
+                        )}
+                        {`${stage.tasksCompleted} / ${stage.totalTasks} tasks completed`}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )
           )}
         </TableBody>
       </Table>

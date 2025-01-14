@@ -442,14 +442,14 @@ export async function postComment(isPublic: boolean, projId: string, stageId: st
     }
 }
 
-export async function setStageOrder(projId: string, newOrder: Map<string, number>) {
+export async function updateStages(projId: string, stageUpdates: Stage[]) {
     auth().protect();
 
     try {
         const batch = adminDb.batch();
         const projRef = adminDb.collection('projects').doc(projId).collection("stages");
-        newOrder.forEach((order: number, stageId: string) => {
-            batch.set(projRef.doc(stageId), { order }, { merge: true });
+        stageUpdates.forEach((stage: Stage) => {
+            batch.set(projRef.doc(stage.id), { order: stage.order, title: stage.title }, { merge: true });
         })
 
         await batch.commit();

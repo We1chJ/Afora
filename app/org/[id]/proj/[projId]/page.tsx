@@ -2,7 +2,7 @@
 
 import { db } from "@/firebase";
 import { useAuth } from "@clerk/nextjs";
-import { collection, doc, writeBatch } from "firebase/firestore";
+import { collection, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { CircleCheck, EditIcon, GripVertical, Loader2, LockKeyhole, NotepadText } from "lucide-react";
+import { CircleCheck, EditIcon, Loader2, LockKeyhole, NotepadText, Pencil, PencilLine, Save } from "lucide-react";
 import { Reorder, useDragControls } from "framer-motion";
 import { toast } from "sonner";
 import GenerateTasksButton from "@/components/GenerateTasksButton";
@@ -33,7 +33,7 @@ import {
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@radix-ui/react-label";
-import { setStageOrder, setTeamCharter } from "@/actions/actions";
+import { setTeamCharter, updateStages } from "@/actions/actions";
 import { HoverCard, HoverCardTrigger } from "@radix-ui/react-hover-card";
 import { HoverCardContent } from "@/components/ui/hover-card";
 import { ReorderIcon } from "@/components/ReorderIcon";
@@ -81,7 +81,7 @@ function ProjectPage({ params: { id, projId } }: {
   // Update reorderedStages when stages change
   useEffect(() => {
     if (!isEditing) {
-      setReorderedStages(stages);
+      setReorderedStages(stages.map(stage => ({ ...stage })));
     }
   }, [stages]);
 
@@ -126,16 +126,18 @@ function ProjectPage({ params: { id, projId } }: {
     setIsOpen(false);
   });
 
-  const handleReorderSave = () => {
+  const handleStageSave = () => {
     try {
-      const stageOrderMap = new Map<string, number>();
+      const stageUpdates: Stage[] = [];
       reorderedStages.forEach((stage, index) => {
-        if (stage.order !== index) {
-          stageOrderMap.set(stage.id, index);
+        const originalStage = stages.find(s => s.id === stage.id);
+        if (stage.order !== index || (originalStage && stage.title !== originalStage.title)) {
+          stageUpdates.push({ ...stage, order: index, title: stage.title });
         }
       });
-      setStageOrder(projId, stageOrderMap);
-      toast.success('Stage order updated successfully!');
+      console.log(stageUpdates);
+      updateStages(projId, stageUpdates);
+      toast.success('Stages updated successfully!');
     } catch (error) {
       console.error('Error updating stage order:', error);
       toast.error('Failed to update stage order');
@@ -154,12 +156,13 @@ function ProjectPage({ params: { id, projId } }: {
                   variant={isEditing ? "secondary" : "default"}
                   onClick={() => {
                     if (isEditing) {
-                      handleReorderSave();
+                      handleStageSave();
                     }
                     setIsEditing(!isEditing);
                   }}
                 >
-                  {isEditing ? 'Save' : 'Edit Order'}
+                  {isEditing ? 'Save' : 'Edit'}
+                  {isEditing ? <Save className="ml-1" /> : <PencilLine className="ml-1" />}
                 </Button>
               </h1>
               <div className="flex w-full items-center justify-between">
@@ -253,14 +256,28 @@ function ProjectPage({ params: { id, projId } }: {
                   >
                     <div className="w-full flex items-center gap-4">
                       <ReorderIcon dragControls={dragControl} />
-                      <Link
-                        href={`/org/${id}/proj/${projId}/stage/${stage.id}`}
+                      <div
                         className={`w-full block flex-1 p-4 bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-300 cursor-grab`}
-                        onClick={(e) => e.preventDefault()}
                       >
                         <div className="flex w-full justify-between items-center">
-                          <span className="text-lg font-semibold">
-                            {index + 1}. {stage.title}
+                          <span className="w-full text-lg font-semibold">
+                            {isEditing ? (
+                              <div className="flex flex-row items-center">
+                                {index + 1}.{" "}
+                                <input
+                                  type="text"
+                                  value={stage.title}
+                                  onChange={(e) => {
+                                    const newStages = [...reorderedStages];
+                                    newStages[index].title = e.target.value;
+                                    setReorderedStages(newStages);
+                                  }}
+                                  className="w-full focus:outline-none ml-2 underline"
+                                />
+                              </div>
+                            ) : (
+                              stage.title
+                            )}
                           </span>
                           <span className="flex items-center text-sm text-gray-500">
                             {stageStatus[index] === 0 && (
@@ -296,7 +313,7 @@ function ProjectPage({ params: { id, projId } }: {
                             {`${stage.tasksCompleted} / ${stage.totalTasks} tasks completed`}
                           </span>
                         </div>
-                      </Link>
+                      </div>
                     </div>
                   </Reorder.Item>
                 ))}

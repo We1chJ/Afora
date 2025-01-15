@@ -248,27 +248,6 @@ export async function inviteUserToOrg(orgId: string, email: string, access: stri
     }
 }
 
-export async function deleteTask(roomId: string, taskId: string) {
-    auth().protect(); // ensure the user is authenticated
-
-    console.log("deleteTask", roomId, taskId);
-
-    try {
-        await adminDb
-            .collection("documents")
-            .doc(roomId)
-            .collection("tasks")
-            .doc(taskId)
-            .delete();
-
-        console.log(`Task ${taskId} deleted successfully from room ${roomId}`);
-        return { success: true };
-    } catch (error) {
-        console.error("Error deleting task:", error);
-        return { success: false };
-    }
-}
-
 export async function setUserOnboardingSurvey(selectedTags: string[][]) {
     auth().protect();
 
@@ -469,6 +448,61 @@ export async function updateStages(projId: string, stageUpdates: Stage[], stages
         stagesToDelete.forEach((stageId: string) => {
             batch.delete(projRef.doc(stageId));
         });
+
+        await batch.commit();
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+export async function createTask(projId: string, stageId: string, order: number) {
+    auth().protect();
+
+    try {
+        const taskRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId).collection("tasks").doc();
+        const defaultTask = {
+            title: "New Task",
+            description: "This is a default task description.",
+            assignedTo: "",
+            id: taskRef.id,
+            order: order,
+            isCompleted: false
+        };
+
+        await taskRef.set(defaultTask);
+
+        const stageRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId);
+        const stageDoc = await stageRef.get();
+        const stageData = stageDoc.data() as Stage;
+        const totalTasks = stageData.totalTasks + 1;
+
+        await stageRef.set({ totalTasks }, { merge: true });
+
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+export async function deleteTask(projId: string, stageId: string, taskId: string) {
+    auth().protect();
+
+    try {
+        const taskRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId);
+        const stageRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId);
+
+        const batch = adminDb.batch();
+        batch.delete(taskRef);
+
+        const stageDoc = await stageRef.get();
+        const stageData = stageDoc.data() as Stage;
+        const totalTasks = stageData.totalTasks - 1;
+        const tasksCompleted = stageData.tasksCompleted - (stageData.tasksCompleted > 0 ? 1 : 0);
+
+        batch.set(stageRef, { totalTasks, tasksCompleted }, { merge: true });
 
         await batch.commit();
         return { success: true };

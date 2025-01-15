@@ -151,7 +151,7 @@ export type Task = {
     description: string;
     assignedTo: string; // TODO: one person per task or could be multiple?
     deadline: string;
-    order: string;
+    order: number;
     isCompleted: boolean;
 }
 

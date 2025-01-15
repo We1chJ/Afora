@@ -190,7 +190,7 @@ function StagePage({ params: { id, projId, stageId } }: {
               </Link>
             </TableRow>
           ))}
-          {isEditing && (
+          {(isEditing || tasks.length == 0) && (
             <TableRow>
               <TableCell>
                 <div className="w-full flex-1 p-4 bg-gray-200 rounded-lg shadow hover:shadow-lg transition-shadow duration-300 cursor-pointer">

@@ -35,55 +35,61 @@ export function PieChartProgress({ tasksCompleted, totalTasks }: { tasksComplete
     return (
         <Card className="flex flex-col h-full">
             <CardContent className="flex-1 pb-0 max-h-[200px]">
-                <ChartContainer
-                    config={chartConfig}
-                    className="mx-auto aspect-square max-h-[200px]"
-                >
-                    <PieChart>
-                        <ChartTooltip
-                            cursor={false}
-                            content={<ChartTooltipContent hideLabel />}
-                        />
-                        <Pie
-                            data={chartData}
-                            dataKey="counts"
-                            nameKey="status"
-                            innerRadius={55}
-                            strokeWidth={10}
-                        >
-                            <Label
-                                content={({ viewBox }) => {
-                                    if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                                        return (
-                                            <text
-                                                x={viewBox.cx}
-                                                y={viewBox.cy}
-                                                textAnchor="middle"
-                                                dominantBaseline="middle"
-                                                className="flex flex-col items-center justify-center"
-                                            >
-                                                <tspan
+                {totalTasks === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                        <span className="text-muted-foreground">No Tasks Currently. Try creating some!</span>
+                    </div>
+                ) : (
+                    <ChartContainer
+                        config={chartConfig}
+                        className="mx-auto aspect-square max-h-[200px]"
+                    >
+                        <PieChart>
+                            <ChartTooltip
+                                cursor={false}
+                                content={<ChartTooltipContent hideLabel />}
+                            />
+                            <Pie
+                                data={chartData}
+                                dataKey="counts"
+                                nameKey="status"
+                                innerRadius={55}
+                                strokeWidth={10}
+                            >
+                                <Label
+                                    content={({ viewBox }) => {
+                                        if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                                            return (
+                                                <text
                                                     x={viewBox.cx}
                                                     y={viewBox.cy}
-                                                    className="fill-foreground text-3xl font-bold"
+                                                    textAnchor="middle"
+                                                    dominantBaseline="middle"
+                                                    className="flex flex-col items-center justify-center"
                                                 >
-                                                    {((tasksCompleted / totalTasks) * 100).toFixed(0) + '%'}
-                                                </tspan>
-                                                <tspan
-                                                    x={viewBox.cx}
-                                                    y={(viewBox.cy || 0) + 24}
-                                                    className="fill-muted-foreground"
-                                                >
-                                                    Completed
-                                                </tspan>
-                                            </text>
-                                        )
-                                    }
-                                }}
-                            />
-                        </Pie>
-                    </PieChart>
-                </ChartContainer>
+                                                    <tspan
+                                                        x={viewBox.cx}
+                                                        y={viewBox.cy}
+                                                        className="fill-foreground text-3xl font-bold"
+                                                    >
+                                                        {((tasksCompleted / totalTasks) * 100).toFixed(0) + '%'}
+                                                    </tspan>
+                                                    <tspan
+                                                        x={viewBox.cx}
+                                                        y={(viewBox.cy || 0) + 24}
+                                                        className="fill-muted-foreground"
+                                                    >
+                                                        Completed
+                                                    </tspan>
+                                                </text>
+                                            )
+                                        }
+                                    }}
+                                />
+                            </Pie>
+                        </PieChart>
+                    </ChartContainer>
+                )}
             </CardContent>
         </Card>
     )

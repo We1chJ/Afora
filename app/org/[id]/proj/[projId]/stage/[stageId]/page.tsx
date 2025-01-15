@@ -73,7 +73,7 @@ function StagePage({ params: { id, projId, stageId } }: {
               <Card className="w-full h-full bg-[#6F61EF] hover:shadow-lg transition-shadow">
                 <CardHeader className="p-3">
                   <CardTitle className="text-xl font-bold text-white">
-                    {'Stage ' + stage.order + '. ' + stage.title}
+                    {'Stage ' + (stage.order + 1) + '. ' + stage.title}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">

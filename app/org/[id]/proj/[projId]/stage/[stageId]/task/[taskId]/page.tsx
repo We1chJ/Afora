@@ -10,11 +10,28 @@ import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { Card, CardContent } from "@/components/ui/card";
 import SubmissionCard from "@/components/SubmissionCard";
 import { Separator } from "@/components/ui/separator";
-import { UserRoundPen, Users, ChevronDown, ChevronUp } from "lucide-react";
+import { UserRoundPen, Users, ChevronDown, ChevronUp, Edit3 } from "lucide-react";
 import CommentBox from "@/components/CommentBox";
 import { Comment, Task } from "@/types/types";
 import CommentView from "@/components/CommentView";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer"
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useTransition } from "react";
+import { updateTask } from "@/actions/actions";
+import { toast } from "sonner";
 
 function TaskPage({ params: { id, projId, stageId, taskId } }: {
   params: {
@@ -29,6 +46,26 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
   const router = useRouter();
   const [showPrivateComments, setShowPrivateComments] = useState(false);
   const [showSubmission, setShowSubmission] = useState(false);
+
+  const [isPending, startTransition] = useTransition();
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleSaveTaskEdits = () => {
+    const title = (document.getElementById('title') as HTMLInputElement).value;
+    const description = (document.getElementById('description') as HTMLTextAreaElement).value;
+    const assignedTo = (document.getElementById('assignedTo') as HTMLInputElement).value;
+
+    startTransition(async () => {
+      await updateTask(projId, stageId, taskId, title, description, assignedTo)
+        .then(() => {
+          toast.success('Task updated successfully!');
+          setIsEditing(false);
+        })
+        .catch((error) => {
+          toast.error(`Failed to update task: ${error.message}`);
+        });
+    });
+  };
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -82,9 +119,72 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
               <div className="col-span-1 md:col-span-5">
                 <Card className="w-full bg-[#6F61EF] hover:shadow-lg transition-shadow">
                   <CardContent className="p-4 md:p-6 space-y-4 md:space-y-8">
-                    <h1 className="text-2xl md:text-4xl font-bold text-white">
-                      {task?.title || "Task Title"}
-                    </h1>
+                    <div className="flex justify-between items-center">
+                      <h1 className="text-2xl md:text-4xl font-bold text-white">
+                        {task?.title || "Task Title"}
+                      </h1>
+                      <Drawer open={isEditing}>
+                        <DrawerTrigger asChild>
+                          <Button variant="ghost" className="text-white" onClick={() => setIsEditing(true)}>
+                            Edit
+                            <Edit3 />
+                          </Button>
+                        </DrawerTrigger>
+                        <DrawerContent className="p-4 w-full h-3/4">
+                          <DrawerTitle className="w-full text-xl">📝 Task Editor</DrawerTitle>
+                          <DrawerDescription className="w-full text-lg">
+                            Please edit your task below
+                          </DrawerDescription>
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                                Title
+                              </Label>
+                              <Input
+                                type="text"
+                                id="title"
+                                name="title"
+                                defaultValue={task?.title}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                                Description
+                              </Label>
+                              <Textarea
+                                id="description"
+                                name="description"
+                                defaultValue={task?.description}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="assignedTo" className="block text-sm font-medium text-gray-700">
+                                Assigned To
+                              </Label>
+                              <Input
+                                type="text"
+                                id="assignedTo"
+                                name="assignedTo"
+                                defaultValue={task?.assignedTo}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                              />
+                            </div>
+                          </div>
+                          <DrawerFooter className="w-full">
+                            <div className="w-full flex justify-center space-x-2">
+                              <DrawerClose asChild>
+                                <Button variant="outline">Cancel</Button>
+                              </DrawerClose>
+                              <Button variant="default" onClick={handleSaveTaskEdits} disabled={isPending}>
+                                {isPending ? 'Saving...' : 'Save'}
+                              </Button>
+                            </div>
+                          </DrawerFooter>
+                        </DrawerContent>
+                      </Drawer>
+                    </div>
                     <p className="text-sm text-white mt-2">
                       {task?.description || "No description available"}
                     </p>
@@ -165,8 +265,9 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
             </div>
           </div>
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }
 

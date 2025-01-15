@@ -511,3 +511,18 @@ export async function deleteTask(projId: string, stageId: string, taskId: string
         return { success: false, message: (error as Error).message };
     }
 }
+
+export async function updateTask(projId: string, stageId: string, taskId: string, title: string, description: string, assignedTo: string) {
+    auth().protect();
+
+    try {
+        await adminDb.collection('projects').doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId).set(
+            ({ title, description, assignedTo }), { merge: true }
+        );
+
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}

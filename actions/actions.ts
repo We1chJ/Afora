@@ -442,7 +442,7 @@ export async function postComment(isPublic: boolean, projId: string, stageId: st
     }
 }
 
-export async function updateStages(projId: string, stageUpdates: Stage[]) {
+export async function updateStages(projId: string, stageUpdates: Stage[], stagesToDelete: string[]) {
     auth().protect();
 
     try {
@@ -450,6 +450,7 @@ export async function updateStages(projId: string, stageUpdates: Stage[]) {
         const projRef = adminDb.collection('projects').doc(projId).collection("stages");
 
         stageUpdates.forEach((stage: Stage) => {
+            // add new stages
             if (stage.id === '-1') {
                 const newStageRef = projRef.doc();
                 batch.set(newStageRef, {
@@ -459,12 +460,15 @@ export async function updateStages(projId: string, stageUpdates: Stage[]) {
                     totalTasks: 0,
                     tasksCompleted: 0
                 });
-            } else if (stage.id === '-2') {
-                batch.delete(projRef.doc(stage.id));
             } else {
                 batch.set(projRef.doc(stage.id), { order: stage.order, title: stage.title }, { merge: true });
             }
         })
+
+        // delete stages
+        stagesToDelete.forEach((stageId: string) => {
+            batch.delete(projRef.doc(stageId));
+        });
 
         await batch.commit();
         return { success: true };

@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { CircleCheck, EditIcon, Loader2, LockKeyhole, NotepadText, PencilLine, Save } from "lucide-react";
+import { CircleCheck, EditIcon, Loader2, LockKeyhole, NotepadText, PencilLine, Save, Trash2 } from "lucide-react";
 import { Reorder, useDragControls } from "framer-motion";
 import { toast } from "sonner";
 import GenerateTasksButton from "@/components/GenerateTasksButton";
@@ -132,7 +132,6 @@ function ProjectPage({ params: { id, projId } }: {
       reorderedStages.forEach((stage, index) => {
         const originalStage = stages.find(s => s.id === stage.id);
         // id = -1 for adding a new stage
-        // id = -2 for deleting a existing stage
         // push change for new stages
         if (!originalStage) {
           stageUpdates.push({ ...stage, order: index });
@@ -140,7 +139,9 @@ function ProjectPage({ params: { id, projId } }: {
           stageUpdates.push({ ...stage, order: index, title: stage.title });
         }
       });
-      updateStages(projId, stageUpdates);
+      const stagesToDelete = stages.filter(stage => !reorderedStages.some(reorderedStage => reorderedStage.id === stage.id));
+      const stagesToDeleteIds = stagesToDelete.map(stage => stage.id);
+      updateStages(projId, stageUpdates, stagesToDeleteIds);
       toast.success('Stages updated successfully!');
     } catch (error) {
       console.error('Error updating stage order:', error);
@@ -156,18 +157,31 @@ function ProjectPage({ params: { id, projId } }: {
             <div className="flex flex-col justify-between h-full p-2">
               <h1 className="w-full text-xl flex justify-between font-bold text-white">
                 {proj.title}
-                <Button
-                  variant={isEditing ? "secondary" : "default"}
-                  onClick={() => {
-                    if (isEditing) {
-                      handleStageSave();
-                    }
-                    setIsEditing(!isEditing);
-                  }}
-                >
-                  {isEditing ? 'Save' : 'Edit'}
-                  {isEditing ? <Save className="ml-1" /> : <PencilLine className="ml-1" />}
-                </Button>
+                <div className="flex space-x-2">
+                  <Button
+                    variant={isEditing ? "secondary" : "default"}
+                    onClick={() => {
+                      if (isEditing) {
+                        handleStageSave();
+                      }
+                      setIsEditing(!isEditing);
+                    }}
+                  >
+                    {isEditing ? 'Save' : 'Edit'}
+                    {isEditing ? <Save className="ml-1" /> : <PencilLine className="ml-1" />}
+                  </Button>
+                  {isEditing && (
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setIsEditing(false);
+                        setReorderedStages(stages.map(stage => ({ ...stage })));
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                </div>
               </h1>
               <div className="flex w-full items-center justify-between">
                 <h1 className="text-4xl font-bold text-white">
@@ -253,7 +267,7 @@ function ProjectPage({ params: { id, projId } }: {
                   onReorder={setReorderedStages}
                   className="w-full px-4 space-y-4 py-2"
                 >
-                  {reorderedStages.map((stage, index) => (
+                  {reorderedStages.filter(stage => stage.id !== '-2').map((stage, index) => (
                     <Reorder.Item
                       key={stage.id}
                       value={stage}
@@ -316,6 +330,16 @@ function ProjectPage({ params: { id, projId } }: {
                               )}
                               {`${stage.tasksCompleted} / ${stage.totalTasks} tasks completed`}
                             </span>
+                            <Button
+                              variant="ghost"
+                              className="text-red-500"
+                              onClick={() => {
+                                const newStages = reorderedStages.filter((_, i) => i !== index);
+                                setReorderedStages(newStages);
+                              }}
+                            >
+                              <Trash2 />
+                            </Button>
                           </div>
                         </div>
                       </div>

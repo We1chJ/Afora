@@ -330,16 +330,39 @@ function ProjectPage({ params: { id, projId } }: {
                               )}
                               {`${stage.tasksCompleted} / ${stage.totalTasks} tasks completed`}
                             </span>
-                            <Button
-                              variant="ghost"
-                              className="text-red-500"
-                              onClick={() => {
-                                const newStages = reorderedStages.filter((_, i) => i !== index);
-                                setReorderedStages(newStages);
-                              }}
-                            >
-                              <Trash2 />
-                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="text-red-500"
+                                >
+                                  <Trash2 />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this stage? All information under this will be deleted forever!
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <Button variant="secondary" onClick={() => setIsOpen(false)}>
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    onClick={() => {
+                                      const newStages = reorderedStages.filter((_, i) => i !== index);
+                                      setReorderedStages(newStages);
+                                      setIsOpen(false);
+                                    }}
+                                  >
+                                    Delete
+                                  </Button>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </div>
                       </div>

@@ -526,3 +526,22 @@ export async function updateTask(projId: string, stageId: string, taskId: string
         return { success: false, message: (error as Error).message };
     }
 }
+
+export async function updateProjectTitle(projId: string, newTitle: string) {
+    auth().protect();
+
+    try {
+        if (!newTitle) {
+            throw new Error('Project title cannot be empty!');
+        }
+
+        await adminDb.collection('projects').doc(projId).set({
+            title: newTitle
+        }, { merge: true });
+
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}

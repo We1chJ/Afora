@@ -33,7 +33,7 @@ import {
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@radix-ui/react-label";
-import { setTeamCharter, updateStages } from "@/actions/actions";
+import { setTeamCharter, updateProjectTitle, updateStages } from "@/actions/actions";
 import { HoverCard, HoverCardTrigger } from "@radix-ui/react-hover-card";
 import { HoverCardContent } from "@/components/ui/hover-card";
 import { ReorderIcon } from "@/components/ReorderIcon";
@@ -68,6 +68,13 @@ function ProjectPage({ params: { id, projId } }: {
   }, [isLoaded, isSignedIn, router]);
 
   const [projData, projLoading, projError] = useDocument(doc(db, 'projects', projId));
+  const proj = projData?.data() as Project;
+  const [projTitle, setProjTitle] = useState(proj?.title || '');
+  useEffect(() => {
+    if (!isEditing) {
+      setProjTitle(proj?.title || '');
+    }
+  }, [proj]);
   const [stagesData, stagesLoading, stagesError] = useCollection(collection(db, 'projects', projId, 'stages'));
   const [teamCharterData, loading, error] = useDocument(doc(db, 'projects', projId));
   const stages: Stage[] = useMemo(() => {
@@ -105,7 +112,6 @@ function ProjectPage({ params: { id, projId } }: {
     return <div>Error: {projError.message}</div>;
   }
 
-  const proj = projData?.data() as Project;
 
   const handleOpenEditing = () => {
     if (!teamCharterData || loading || error) return;
@@ -114,7 +120,7 @@ function ProjectPage({ params: { id, projId } }: {
     setResponses(res);
   };
 
-  const handleSaving = () => startTransition(async () => {
+  const handleTeamCharterSave = () => startTransition(async () => {
     if (!teamCharterData || loading || error) return;
     try {
       await setTeamCharter(projId, responses);
@@ -126,7 +132,7 @@ function ProjectPage({ params: { id, projId } }: {
     setIsOpen(false);
   });
 
-  const handleStageSave = () => {
+  const handleEditSave = () => {
     try {
       const stageUpdates: Stage[] = [];
       reorderedStages.forEach((stage, index) => {
@@ -142,10 +148,14 @@ function ProjectPage({ params: { id, projId } }: {
       const stagesToDelete = stages.filter(stage => !reorderedStages.some(reorderedStage => reorderedStage.id === stage.id));
       const stagesToDeleteIds = stagesToDelete.map(stage => stage.id);
       updateStages(projId, stageUpdates, stagesToDeleteIds);
-      toast.success('Stages updated successfully!');
+
+      if (projTitle !== proj.title) {
+        updateProjectTitle(projId, projTitle);
+      }
+      toast.success('Roadmap & Stages updated successfully!');
     } catch (error) {
-      console.error('Error updating stage order:', error);
-      toast.error('Failed to update stage order');
+      console.error('Error updating Roadmap & Stages:', error);
+      toast.error('Failed to update Roadmap & Stages');
     }
   };
 
@@ -156,13 +166,25 @@ function ProjectPage({ params: { id, projId } }: {
           <div className="rounded-lg overflow-hidden bg-[#6F61EF] p-4 m-4 h-56">
             <div className="flex flex-col justify-between h-full p-2">
               <h1 className="w-full text-xl flex justify-between font-bold text-white">
-                {proj.title}
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={projTitle}
+                    onChange={(e) => {
+                      setProjTitle(e.target.value);
+                    }}
+                    className="focus:outline-none bg-transparent border-b border-white text-white w-auto"
+                    style={{ width: `${projTitle.length}ch` }}
+                  />
+                ) : (
+                  projTitle
+                )}
                 <div className="flex space-x-2">
                   <Button
                     variant={isEditing ? "secondary" : "default"}
                     onClick={() => {
                       if (isEditing) {
-                        handleStageSave();
+                        handleEditSave();
                       }
                       setIsEditing(!isEditing);
                     }}
@@ -249,7 +271,7 @@ function ProjectPage({ params: { id, projId } }: {
                       </div>
                       <AlertDialogFooter>
                         <Button onClick={() => setIsOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSaving} disabled={isPending}>
+                        <Button onClick={handleTeamCharterSave} disabled={isPending}>
                           {isPending ? <><Loader2 className="animate-spin mr-2" /> Loading</> : 'Save'}
                         </Button>
                       </AlertDialogFooter>

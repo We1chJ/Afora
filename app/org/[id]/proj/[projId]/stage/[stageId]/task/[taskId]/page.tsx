@@ -175,7 +175,7 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
                           <DrawerFooter className="w-full">
                             <div className="w-full flex justify-center space-x-2">
                               <DrawerClose asChild>
-                                <Button variant="outline">Cancel</Button>
+                                <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
                               </DrawerClose>
                               <Button variant="default" onClick={handleSaveTaskEdits} disabled={isPending}>
                                 {isPending ? 'Saving...' : 'Save'}

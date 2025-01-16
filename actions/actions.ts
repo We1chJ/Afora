@@ -545,3 +545,22 @@ export async function updateProjectTitle(projId: string, newTitle: string) {
         return { success: false, message: (error as Error).message };
     }
 }
+
+export async function getStageLockStatus(projId: string) {
+    auth().protect();
+
+    try {
+        const stagesSnapshot = await adminDb.collection("projects").doc(projId).collection("stages").orderBy("order").get();
+        const stages = stagesSnapshot.docs.map(doc => doc.data() as Stage);
+
+        const locked: boolean[] = stages.map((stage, index) => {
+            if (index === 0) return false; // First stage is never locked
+            return stages[index - 1].tasksCompleted < stages[index - 1].totalTasks;
+        });
+
+        return locked;
+    } catch (error) {
+        console.error(error);
+        return [];
+    }
+}

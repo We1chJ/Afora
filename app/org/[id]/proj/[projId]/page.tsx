@@ -37,6 +37,8 @@ import { setTeamCharter, updateProjectTitle, updateStages } from "@/actions/acti
 import { HoverCard, HoverCardTrigger } from "@radix-ui/react-hover-card";
 import { HoverCardContent } from "@/components/ui/hover-card";
 import { ReorderIcon } from "@/components/ReorderIcon";
+import { useDispatch } from "react-redux";
+import { updateStatus } from "@/lib/store/features/stageStatus/stageStatusSlice";
 
 export interface StageProgress {
   stageOrder: number;
@@ -94,11 +96,13 @@ function ProjectPage({ params: { id, projId } }: {
 
   // 0 = locked, 1 = in progress, 2 = completed
   const [stageStatus, setStageStatus] = useState<number[]>([]);
+  const dispatch = useDispatch();
   useEffect(() => {
     const newStageStatus = new Array(stages.length).fill(0);
     stages.forEach((stage, i) => {
       newStageStatus[i] = (i > 0 && newStageStatus[i - 1] !== 2) ? 0 : (stage.tasksCompleted == stage.totalTasks) ? 2 : 1;
     });
+    dispatch(updateStatus(newStageStatus.map((status) => status === 0)));
     setStageStatus(newStageStatus);
   }, [stages]);
 

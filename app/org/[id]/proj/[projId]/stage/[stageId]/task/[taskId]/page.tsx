@@ -3,7 +3,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/firebase";
 import { useAuth, useUser } from "@clerk/nextjs";
-import { collection, doc } from "firebase/firestore";
+import { collection, doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
@@ -22,7 +22,6 @@ import {
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
-  DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
@@ -30,8 +29,11 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useTransition } from "react";
-import { updateTask } from "@/actions/actions";
+import { getStageLockStatus, updateTask } from "@/actions/actions";
 import { toast } from "sonner";
+import { RootState } from "@/lib/store/store";
+import { useDispatch, useSelector } from "react-redux";
+import { updateStatus } from "@/lib/store/features/stageStatus/stageStatusSlice";
 
 function TaskPage({ params: { id, projId, stageId, taskId } }: {
   params: {
@@ -49,6 +51,34 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
 
   const [isPending, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
+  const stageStatus: boolean[] = useSelector((state: RootState) => state.stageStatus.status);
+  const [taskLocked, setTaskLocked] = useState(false);
+  const [stageData, stageLoading, stageError] = useDocument(doc(db, 'projects', projId, 'stages', stageId));
+  const dispatch = useDispatch();
+  useEffect(() => {
+    // check to make sure update lock status at least once
+    // in case user jumps directly to this page without going through project page
+    const fetchStageLockStatus = async () => {
+      const status: boolean[] = await getStageLockStatus(projId);
+      dispatch(updateStatus(status));
+    };
+    fetchStageLockStatus();
+  }, []);
+
+  useEffect(() => {
+    if (stageData) {
+      const stage = stageData.data();
+      if (stage) {
+        setTaskLocked(stageStatus[stage.order]);
+      }
+    }
+  }, [stageData, stageLoading, stageError]);
+
+  useEffect(() => {
+    if (taskLocked) {
+      toast.info('This task is currently locked. Try help others on their tasks first!');
+    }
+  }, [taskLocked]);
 
   const handleSaveTaskEdits = () => {
     const title = (document.getElementById('title') as HTMLInputElement).value;
@@ -207,12 +237,12 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
                   </button>
                   {showSubmission && (
                     <div className="mt-2">
-                      <SubmissionCard projId={projId} stageId={stageId} taskId={taskId} task={task} />
+                      <SubmissionCard projId={projId} stageId={stageId} taskId={taskId} task={task} taskLocked={taskLocked} />
                     </div>
                   )}
                 </div>
                 <div className="hidden md:block">
-                  <SubmissionCard projId={projId} stageId={stageId} taskId={taskId} task={task} />
+                  <SubmissionCard projId={projId} stageId={stageId} taskId={taskId} task={task} taskLocked={taskLocked} />
                 </div>
               </div>
             </div>

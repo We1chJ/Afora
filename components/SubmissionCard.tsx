@@ -7,13 +7,14 @@ import { File, X, Upload, Check, Loader, Undo } from 'lucide-react';
 import { Task } from '@/types/types';
 import { setTaskComplete } from '@/actions/actions';
 import { useTransition } from 'react';
+import { toast } from 'sonner';
 
 interface FileItem {
     id: string;
     file: File;
 }
 
-const SubmissionCard = ({ task, projId, stageId, taskId }: { task: Task, projId: string, stageId: string, taskId: string }) => {
+const SubmissionCard = ({ task, projId, stageId, taskId, taskLocked }: { task: Task, projId: string, stageId: string, taskId: string, taskLocked: boolean }) => {
     const [files, setFiles] = useState<FileItem[]>([]);
     const [isDragging, setIsDragging] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
@@ -71,6 +72,10 @@ const SubmissionCard = ({ task, projId, stageId, taskId }: { task: Task, projId:
 
     const handleToggleCompleteTask = () => {
         startTransition(() => {
+            if (taskLocked) {
+                toast("This task is locked, try to help others first.");
+                return;
+            }
             setTaskComplete(projId, stageId, taskId, !isCompleted).then(() => {
             }).catch(() => {
                 console.log("set task complete failed");

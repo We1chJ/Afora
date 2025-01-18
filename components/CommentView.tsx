@@ -29,7 +29,7 @@ const CommentView = ({ comment }: { comment: Comment }) => {
           className="prose"
           remarkPlugins={[gfm]}
           components={{
-            a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />
+            a: ({ ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />
           }}
         >
           {mdComment}

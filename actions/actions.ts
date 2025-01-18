@@ -2,6 +2,7 @@
 import { adminDb } from "@/firebase-admin";
 import { GeneratedTasks, Stage } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
+import { Timestamp } from "firebase/firestore";
 
 // IMPLEMENT THIS WITH FIREBASE FIRESTORE NOW THAT WE AREN'T USING LIVE BLOCKS
 
@@ -247,27 +248,6 @@ export async function inviteUserToOrg(orgId: string, email: string, access: stri
     }
 }
 
-export async function deleteTask(roomId: string, taskId: string) {
-    auth().protect(); // ensure the user is authenticated
-
-    console.log("deleteTask", roomId, taskId);
-
-    try {
-        await adminDb
-            .collection("documents")
-            .doc(roomId)
-            .collection("tasks")
-            .doc(taskId)
-            .delete();
-
-        console.log(`Task ${taskId} deleted successfully from room ${roomId}`);
-        return { success: true };
-    } catch (error) {
-        console.error("Error deleting task:", error);
-        return { success: false };
-    }
-}
-
 export async function setUserOnboardingSurvey(selectedTags: string[][]) {
     auth().protect();
 
@@ -379,7 +359,7 @@ export async function updateStagesTasks(projId: string, structure: GeneratedTask
             batch.set(stageRef, {
                 title: stage.stage_name,
                 id: stageRef.id,
-                order: stageIndex + 1,
+                order: stageIndex,
                 totalTasks: stage.tasks.length,
                 tasksCompleted: 0
             });
@@ -391,7 +371,7 @@ export async function updateStagesTasks(projId: string, structure: GeneratedTask
                     description: task.task_description,
                     assignedTo: task.assigned_user,
                     id: taskRef.id,
-                    order: taskIndex + 1
+                    order: taskIndex
                 });
             });
         });
@@ -422,5 +402,165 @@ export async function setTaskComplete(projId: string, stageId: string, taskId: s
     } catch (error) {
         console.error(error);
         return { success: false, message: (error as Error).message };
+    }
+}
+
+export async function postComment(isPublic: boolean, projId: string, stageId: string, taskId: string, message: string, time: Timestamp, uid: string) {
+    auth().protect();
+    try {
+        const newCommentRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId).collection((isPublic) ? 'public' : 'private').doc();
+        await newCommentRef.set({
+            message: message,
+            msgId: newCommentRef.id,
+            time: time,
+            uid: uid
+        });
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+export async function updateStages(projId: string, stageUpdates: Stage[], stagesToDelete: string[]) {
+    auth().protect();
+
+    try {
+        const batch = adminDb.batch();
+        const projRef = adminDb.collection('projects').doc(projId).collection("stages");
+
+        stageUpdates.forEach((stage: Stage) => {
+            // add new stages
+            if (stage.id === '-1') {
+                const newStageRef = projRef.doc();
+                batch.set(newStageRef, {
+                    title: stage.title,
+                    id: newStageRef.id,
+                    order: stage.order,
+                    totalTasks: 0,
+                    tasksCompleted: 0
+                });
+            } else {
+                batch.set(projRef.doc(stage.id), { order: stage.order, title: stage.title }, { merge: true });
+            }
+        })
+
+        // delete stages
+        stagesToDelete.forEach((stageId: string) => {
+            batch.delete(projRef.doc(stageId));
+        });
+
+        await batch.commit();
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+export async function createTask(projId: string, stageId: string, order: number) {
+    auth().protect();
+
+    try {
+        const taskRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId).collection("tasks").doc();
+        const defaultTask = {
+            title: "New Task",
+            description: "This is a default task description.",
+            assignedTo: "",
+            id: taskRef.id,
+            order: order,
+            isCompleted: false
+        };
+
+        await taskRef.set(defaultTask);
+
+        const stageRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId);
+        const stageDoc = await stageRef.get();
+        const stageData = stageDoc.data() as Stage;
+        const totalTasks = stageData.totalTasks + 1;
+
+        await stageRef.set({ totalTasks }, { merge: true });
+
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+export async function deleteTask(projId: string, stageId: string, taskId: string) {
+    auth().protect();
+
+    try {
+        const taskRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId);
+        const stageRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId);
+
+        const batch = adminDb.batch();
+        batch.delete(taskRef);
+
+        const stageDoc = await stageRef.get();
+        const stageData = stageDoc.data() as Stage;
+        const totalTasks = stageData.totalTasks - 1;
+        const tasksCompleted = stageData.tasksCompleted - (stageData.tasksCompleted > 0 ? 1 : 0);
+
+        batch.set(stageRef, { totalTasks, tasksCompleted }, { merge: true });
+
+        await batch.commit();
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+export async function updateTask(projId: string, stageId: string, taskId: string, title: string, description: string, assignedTo: string) {
+    auth().protect();
+
+    try {
+        await adminDb.collection('projects').doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId).set(
+            ({ title, description, assignedTo }), { merge: true }
+        );
+
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+export async function updateProjectTitle(projId: string, newTitle: string) {
+    auth().protect();
+
+    try {
+        if (!newTitle) {
+            throw new Error('Project title cannot be empty!');
+        }
+
+        await adminDb.collection('projects').doc(projId).set({
+            title: newTitle
+        }, { merge: true });
+
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+export async function getStageLockStatus(projId: string) {
+    auth().protect();
+
+    try {
+        const stagesSnapshot = await adminDb.collection("projects").doc(projId).collection("stages").orderBy("order").get();
+        const stages = stagesSnapshot.docs.map(doc => doc.data() as Stage);
+
+        const locked: boolean[] = stages.map((stage, index) => {
+            if (index === 0) return false; // First stage is never locked
+            return stages[index - 1].tasksCompleted < stages[index - 1].totalTasks;
+        });
+
+        return locked;
+    } catch (error) {
+        console.error(error);
+        return [];
     }
 }

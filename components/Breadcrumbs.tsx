@@ -22,9 +22,12 @@ function Breadcrumbs() {
 
     const segments = path.split("/").filter(segment => segment !== "");
     useEffect(() => {
+        if (segments.length >= 1 && segments[0] !== 'org') {
+            segments.length = 0;
+        }
         console.log(segments);
     }, [path]);
-    const orgDocRef = segments.length >= 1 ? doc(db, 'organizations', segments[1]) : null;
+    const orgDocRef = (segments.length >= 1 && segments[0] == 'org')? doc(db, 'organizations', segments[1]) : null;
     const [orgDoc] = useDocument(orgDocRef);
     const orgTitle = orgDoc && orgDoc.exists() ? (orgDoc.data() as Organization).title : null;
 

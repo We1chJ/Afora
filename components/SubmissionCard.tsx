@@ -1,3 +1,4 @@
+'use client'
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,17 +7,54 @@ import { File, X, Upload, Check, Loader, Undo } from 'lucide-react';
 import { Task } from '@/types/types';
 import { setTaskComplete } from '@/actions/actions';
 import { useTransition } from 'react';
+import { toast } from 'sonner';
+import { getDownloadURL, listAll, ref, uploadBytes } from 'firebase/storage';
+import { storage, storageBucket } from '@/firebase';
 
 interface FileItem {
     id: string;
     file: File;
 }
+interface DownloadableFile {
+    id: string;
+    name: string;
+    url: string;
+}
 
-const SubmissionCard = ({ task, projId, stageId, taskId }: { task: Task, projId: string, stageId: string, taskId: string }) => {
+const SubmissionCard = ({ task, projId, stageId, taskId, taskLocked }: { task: Task, projId: string, stageId: string, taskId: string, taskLocked: boolean }) => {
     const [files, setFiles] = useState<FileItem[]>([]);
     const [isDragging, setIsDragging] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
     const [isPending, startTransition] = useTransition();
+    const [isSubmittingPending, startSubmittingTransition] = useTransition();
+    const [submittedFiles, setSubmittedFiles] = useState<DownloadableFile[]>([]);
+    const fetchSubmittedFiles = async () => {
+        try {
+            const listRef = ref(storage, `tasksSubmission/${taskId}`);
+            listAll(listRef)
+                .then(async (res) => {
+                    const files = await Promise.all(res.items.map(async (itemRef) => {
+                        const url = await getDownloadURL(itemRef);
+                        console.log(url);
+                        return {
+                            id: itemRef.name,
+                            name: itemRef.name,
+                            url
+                        };
+                    }));
+                    setSubmittedFiles(files);
+                })
+                .catch((error) => {
+                    console.error("Failed to list files:", error);
+                });
+        } catch (error) {
+            console.error("Failed to fetch submitted files:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchSubmittedFiles();
+    }, [taskId]);
 
     useEffect(() => {
         if (task && task.isCompleted !== undefined) {
@@ -68,8 +106,31 @@ const SubmissionCard = ({ task, projId, stageId, taskId }: { task: Task, projId:
         }
     };
 
+    const handleSubmit = () => {
+        startSubmittingTransition(async () => {
+            try {
+                await Promise.all(files.map(async ({ file }) => {
+                    const storageRef = ref(storage, `tasksSubmission/${taskId}/${file.name}`);
+                    await uploadBytes(storageRef, file, {
+                        contentDisposition: `attachment; filename="${file.name}"`
+                    });
+                }));
+                toast.success("Files uploaded successfully!");
+                setFiles([]);
+                fetchSubmittedFiles();
+            } catch (error) {
+                toast.error("Failed to upload files.");
+                console.error("Upload error:", error);
+            }
+        });
+    }
+
     const handleToggleCompleteTask = () => {
         startTransition(() => {
+            if (taskLocked) {
+                toast("This task is locked, try to help others first.");
+                return;
+            }
             setTaskComplete(projId, stageId, taskId, !isCompleted).then(() => {
             }).catch(() => {
                 console.log("set task complete failed");
@@ -100,6 +161,20 @@ const SubmissionCard = ({ task, projId, stageId, taskId }: { task: Task, projId:
                     </span>
                 </CardTitle>
                 <CardContent className="h-full space-y-2 p-0 md:p-2">
+                    <div className="space-y-2 overflow-y-auto max-h-28">
+                        {submittedFiles.map(({ id, name, url }) => (
+                            <div key={id} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+                                <div className="flex items-center space-x-2 md:space-x-3">
+                                    <File className="h-4 w-4 md:h-6 md:w-6 text-gray-400" />
+                                    <div className="text-left">
+                                        <a href={url} download={name} className="text-xs md:text-sm font-medium text-blue-500 hover:underline">
+                                            {name.length > 12 ? `${name.slice(0, 12)}...` : name}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                     <div className="space-y-2 overflow-y-auto max-h-28">
                         {files.map(({ id, file }) => (
                             <div key={id} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
@@ -135,9 +210,15 @@ const SubmissionCard = ({ task, projId, stageId, taskId }: { task: Task, projId:
                                     className="text-xs md:text-sm"
                                 />
                             </div>
-                            <Button className="w-full md:w-auto">
-                                <span className="hidden md:inline">Submit</span>
-                                <Upload className="h-4 w-4 md:hidden" />
+                            <Button className="w-full md:w-auto" onClick={handleSubmit} disabled={isSubmittingPending}>
+                                {isSubmittingPending ? (
+                                    <Loader className="h-4 w-4 md:h-5 md:w-5 animate-spin" />
+                                ) : (
+                                    <>
+                                        <span className="hidden md:inline">Submit</span>
+                                        <Upload className="h-4 w-4 md:hidden" />
+                                    </>
+                                )}
                             </Button>
                         </div>
                     )}

@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import AppOnboarding from "@/components/AppOnboarding";
 import { SidebarProvider } from "@/components/ui/sidebar"
 import MySidebar from "@/components/MySidebar";
+import StoreProvider from "./StoreProvider";
 
 export const metadata: Metadata = {
   title: "Afora",
@@ -41,7 +42,9 @@ export default function RootLayout({
                   <div className="flex flex-col overflow-hidden w-full">
                     <AppOnboarding />
                     <main className="flex-1 overflow-auto w-full bg-gray-100">
-                      {children}
+                      <StoreProvider>
+                        {children}
+                      </StoreProvider>
                     </main>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-import { DocumentData } from "firebase/firestore";
+import { DocumentData, Timestamp } from "firebase/firestore";
 
 /**
  * - editor: members who can edit the documents
@@ -151,7 +151,7 @@ export type Task = {
     description: string;
     assignedTo: string; // TODO: one person per task or could be multiple?
     deadline: string;
-    order: string;
+    order: number;
     isCompleted: boolean;
 }
 
@@ -165,3 +165,10 @@ export type GeneratedTasks = {
         }[];
     }[];
 };
+
+export type Comment = {
+    message: string;
+    msgId: string;
+    time: Timestamp;
+    uid: string;
+}

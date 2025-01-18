@@ -10,7 +10,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
@@ -48,6 +48,7 @@ function StagePage({ params: { id, projId, stageId } }: {
     }
   }, [isLoaded, isSignedIn, router]);
 
+  const [isPending, startTransition] = useTransition();
   const [stageData, stageLoading, stageError] = useDocument(doc(db, 'projects', projId, 'stages', stageId));
   const [tasksData, tasksLoading, tasksError] = useCollection(collection(db, 'projects', projId, 'stages', stageId, 'tasks'));
   const tasks: Task[] = useMemo(() => {
@@ -92,17 +93,20 @@ function StagePage({ params: { id, projId, stageId } }: {
   }
 
   const handleDeleteTask = (taskId: string) => {
-    deleteTask(projId, stageId, taskId)
-      .then(() => {
-        toast.success("Task deleted successfully!");
-      })
-      .catch((error) => {
-        toast.error("Failed to delete task: " + error.message);
-      })
-      .finally(() => {
-        setIsOpen(false);
-        setIsEditing(false);
-      });
+
+    startTransition(() => {
+      deleteTask(projId, stageId, taskId)
+        .then(() => {
+          toast.success("Task deleted successfully!");
+        })
+        .catch((error) => {
+          toast.error("Failed to delete task: " + error.message);
+        })
+        .finally(() => {
+          setIsOpen(false);
+          setIsEditing(false);
+        });
+    });
   };
 
   return (
@@ -152,11 +156,12 @@ function StagePage({ params: { id, projId, stageId } }: {
                             <Clock7 className="text-yellow-500" />
                           )}
                           {isEditing && (
-                            <AlertDialog>
+                            <AlertDialog open={isOpen}>
                               <AlertDialogTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   className="text-red-500"
+                                  onClick={() => setIsOpen(true)}
                                 >
                                   <Trash />
                                 </Button>
@@ -175,8 +180,9 @@ function StagePage({ params: { id, projId, stageId } }: {
                                   <Button
                                     variant="destructive"
                                     onClick={() => { handleDeleteTask(task.id) }}
+                                    disabled={isPending}
                                   >
-                                    Delete
+                                    {isPending ? <Clock7 className="animate-spin" /> : "Delete"}
                                   </Button>
                                 </AlertDialogFooter>
                               </AlertDialogContent>

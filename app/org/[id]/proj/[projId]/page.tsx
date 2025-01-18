@@ -425,6 +425,7 @@ function ProjectPage({ params: { id, projId } }: {
               <div className="w-full px-4 space-y-4" >
                 {stages.map((stage, index) => (
                   <Link
+                    key={stage.id}
                     href={`/org/${id}/proj/${projId}/stage/${stage.id}`}
                     className="block p-4 bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-300"
                   >

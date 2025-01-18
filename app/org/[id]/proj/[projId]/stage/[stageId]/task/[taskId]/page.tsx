@@ -35,7 +35,7 @@ import { RootState } from "@/lib/store/store";
 import { useDispatch, useSelector } from "react-redux";
 import { updateStatus } from "@/lib/store/features/stageStatus/stageStatusSlice";
 
-function TaskPage({ params: { id, projId, stageId, taskId } }: {
+function TaskPage({ params: { projId, stageId, taskId } }: {
   params: {
     id: string;
     projId: string;

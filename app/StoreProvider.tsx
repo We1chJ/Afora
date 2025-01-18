@@ -1,5 +1,5 @@
 'use client'
-import { RootState, store } from '@/lib/store/store'
+import { store } from '@/lib/store/store'
 import { useRef } from 'react'
 import { Provider } from 'react-redux'
 

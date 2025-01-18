@@ -40,3 +40,7 @@ service_key.json
 .vercel
 
 aiconfig.json
+
+# firebase
+firebase-admin.ts
+firebase.ts

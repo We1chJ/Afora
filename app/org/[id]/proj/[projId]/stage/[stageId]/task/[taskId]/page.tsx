@@ -3,7 +3,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/firebase";
 import { useAuth, useUser } from "@clerk/nextjs";
-import { collection, doc, getDoc } from "firebase/firestore";
+import { collection, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
@@ -69,6 +69,7 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
     if (stageData) {
       const stage = stageData.data();
       if (stage) {
+        console.log('setting status');
         setTaskLocked(stageStatus[stage.order]);
       }
     }

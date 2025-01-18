@@ -9,7 +9,7 @@ import { setTaskComplete } from '@/actions/actions';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
 import { getDownloadURL, listAll, ref, uploadBytes } from 'firebase/storage';
-import { storage, storageBucket } from '@/firebase';
+import { storage } from '@/firebase';
 
 interface FileItem {
     id: string;
@@ -35,7 +35,6 @@ const SubmissionCard = ({ task, projId, stageId, taskId, taskLocked }: { task: T
                 .then(async (res) => {
                     const files = await Promise.all(res.items.map(async (itemRef) => {
                         const url = await getDownloadURL(itemRef);
-                        console.log(url);
                         return {
                             id: itemRef.name,
                             name: itemRef.name,
@@ -210,7 +209,7 @@ const SubmissionCard = ({ task, projId, stageId, taskId, taskLocked }: { task: T
                                     className="text-xs md:text-sm"
                                 />
                             </div>
-                            <Button className="w-full md:w-auto" onClick={handleSubmit} disabled={isSubmittingPending}>
+                            <Button className="w-full md:w-auto" onClick={handleSubmit} disabled={isSubmittingPending || taskLocked}>
                                 {isSubmittingPending ? (
                                     <Loader className="h-4 w-4 md:h-5 md:w-5 animate-spin" />
                                 ) : (

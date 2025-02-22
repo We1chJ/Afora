@@ -108,6 +108,10 @@ const SubmissionCard = ({ task, projId, stageId, taskId, taskLocked }: { task: T
     const handleSubmit = () => {
         startSubmittingTransition(async () => {
             try {
+                const totalSize = files.reduce((acc, { file }) => acc + file.size, 0);
+                if (totalSize > 10 * 1024 * 1024) { // 10 MB
+                    throw new Error("Total file size exceeds 10 MB.");
+                }
                 await Promise.all(files.map(async ({ file }) => {
                     const storageRef = ref(storage, `tasksSubmission/${taskId}/${file.name}`);
                     await uploadBytes(storageRef, file, {
@@ -118,7 +122,11 @@ const SubmissionCard = ({ task, projId, stageId, taskId, taskLocked }: { task: T
                 setFiles([]);
                 fetchSubmittedFiles();
             } catch (error) {
-                toast.error("Failed to upload files.");
+                if (error instanceof Error) {
+                    toast.error(`Failed to upload files: ${error.message}`);
+                } else {
+                    toast.error("Failed to upload files due to an unknown error.");
+                }
                 console.error("Upload error:", error);
             }
         });

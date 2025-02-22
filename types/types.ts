@@ -149,8 +149,9 @@ export type Task = {
     id: string;
     title: string;
     description: string;
-    assignedTo: string; // TODO: one person per task or could be multiple?
-    deadline: string;
+    soft_deadline: string;
+    hard_deadline: string;
+    assignee: string;
     order: number;
     isCompleted: boolean;
 }
@@ -161,7 +162,8 @@ export type GeneratedTasks = {
         tasks: {
             task_name: string; // The name of the task
             task_description: string; // The detailed description of the task
-            assigned_user: string; // The user to whom the task is assigned
+            soft_deadline: string;
+            hard_deadline: string;
         }[];
     }[];
 };

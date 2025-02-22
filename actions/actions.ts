@@ -369,9 +369,11 @@ export async function updateStagesTasks(projId: string, structure: GeneratedTask
                 batch.set(taskRef, {
                     title: task.task_name,
                     description: task.task_description,
-                    assignedTo: task.assigned_user,
+                    assignee: null,
                     id: taskRef.id,
-                    order: taskIndex
+                    order: taskIndex,
+                    soft_deadline: task.soft_deadline,
+                    hard_deadline: task.hard_deadline
                 });
             });
         });
@@ -512,12 +514,12 @@ export async function deleteTask(projId: string, stageId: string, taskId: string
     }
 }
 
-export async function updateTask(projId: string, stageId: string, taskId: string, title: string, description: string, assignedTo: string) {
+export async function updateTask(projId: string, stageId: string, taskId: string, title: string, description: string, soft_deadline: string, hard_deadline: string) {
     auth().protect();
 
     try {
         await adminDb.collection('projects').doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId).set(
-            ({ title, description, assignedTo }), { merge: true }
+            ({ title, description, soft_deadline, hard_deadline }), { merge: true }
         );
 
         return { success: true };

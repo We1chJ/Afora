@@ -20,7 +20,7 @@ const apiRequest = async ({context, responseFormat, input}) => {
             ],
             n: 1, // only return 1 output
             temperature: 0.5, // lower temperature ensures deterministic and consistent output logics
-            max_tokens: 700,
+            max_tokens: 1000,
             top_p: 1,
             frequency_penalty: 0,
             presence_penalty: 0,

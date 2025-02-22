@@ -123,7 +123,10 @@ const GenerateTasksButton = ({ orgId, projId, teamCharterResponses }: { orgId: s
                           <AccordionItem key={taskIndex} value={`task-${taskIndex}`}>
                             <AccordionTrigger>{`Task ${taskIndex + 1}: ${task.task_name}`}</AccordionTrigger>
                             <AccordionContent>
-                              <p>Assigned User: {task.assigned_user}</p>
+                                <div className="space-y-2">
+                                  <p><strong>Soft Deadline:</strong> {task.soft_deadline}</p>
+                                  <p><strong>Hard Deadline:</strong> {task.hard_deadline}</p>
+                                </div>
                             </AccordionContent>
                           </AccordionItem>
                         ))}

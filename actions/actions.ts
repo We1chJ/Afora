@@ -97,9 +97,13 @@ export async function deleteOrg(orgId: string) {
 export async function inviteUserToOrg(orgId: string, email: string, access: string) {
     auth().protect();
 
-    console.log("inviteUserToOrg", orgId, email);
-
     try {
+        const userDoc = await adminDb.collection('users').doc(email).get();
+        // TODO: consider adding sending emails invitations
+        if (!userDoc.exists) {
+            throw new Error(`User with email ${email} not found!`);
+        }
+        
         orgId = orgId.trim();
         if (!orgId) {
             throw new Error('Organization id cannot be empty');

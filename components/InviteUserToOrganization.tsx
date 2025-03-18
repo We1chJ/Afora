@@ -40,13 +40,13 @@ function InviteUser() {
         if (!organizationId) return;
 
         startTransition(async () => {
-            const { success } = await inviteUserToOrg(organizationId, email, access); // Updated function call
+            const { success, message } = await inviteUserToOrg(organizationId, email, access); // Updated function call
 
             if (success) {
                 setIsOpen(false);
                 toast.success("User added to organization successfully")
             } else {
-                toast.error("Failed to add user to organization!")
+                toast.error(message);
             }
         })
     }

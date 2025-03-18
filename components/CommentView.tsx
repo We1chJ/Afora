@@ -1,9 +1,11 @@
 'use client'
 
+import { db } from '@/firebase'
 import { Comment } from '@/types/types'
-import { Timestamp } from 'firebase/firestore'
+import { doc, Timestamp } from 'firebase/firestore'
 import { CircleUser } from 'lucide-react'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { useDocument } from 'react-firebase-hooks/firestore'
 import ReactMarkdown from 'react-markdown'
 import gfm from "remark-gfm";
 import TurndownService from 'turndown';
@@ -11,15 +13,21 @@ const turndownService = new TurndownService();
 
 const CommentView = ({ comment }: { comment: Comment }) => {
   const mdComment = turndownService.turndown(comment.message);
+  const [userData, loading, error] = useDocument(doc(db, "users", comment.uid));
+  const [pfp, setPfp] = useState<string>();
+  useEffect(() => {
+    if (userData) {
+      setPfp(userData.data()!.userImage);
+    }
+  }, [userData])
 
   return (
     <div className='w-full flex space-x-2'>
-      {/* {(user && user.imageUrl) ?
-        <Image src={user.imageUrl} alt="User profile image" width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" />
-        :
+      {pfp ? (
+        <img src={pfp} alt="User profile image" width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" />
+      ) : (
         <CircleUser className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
-      } */}
-      <CircleUser className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+      )}
       <div className='flex flex-col'>
         <div className="flex items-center space-x-2 w-full">
           <span className="">{comment.uid}</span>

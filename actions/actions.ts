@@ -11,15 +11,13 @@ export async function createNewUser(userEmail: string, username: string, userIma
 
     try {
         const userRef = adminDb.collection('users').doc(userEmail);
-        const userDoc = await userRef.get();
 
-        if (!userDoc.exists) {
-            await userRef.set({
-                email: userEmail,
-                username: username,
-                userImage: userImage
-            }, { merge: true });
-        }
+        // update current user's profile info whenever it is changed/updated
+        await userRef.set({
+            email: userEmail,
+            username: username,
+            userImage: userImage
+        }, { merge: true });
     }
     catch (e) {
         return { success: false, message: (e as Error).message };
@@ -103,7 +101,7 @@ export async function inviteUserToOrg(orgId: string, email: string, access: stri
         if (!userDoc.exists) {
             throw new Error(`User with email ${email} not found!`);
         }
-        
+
         orgId = orgId.trim();
         if (!orgId) {
             throw new Error('Organization id cannot be empty');

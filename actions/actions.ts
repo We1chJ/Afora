@@ -3,6 +3,7 @@ import { adminDb } from "@/firebase-admin";
 import { GeneratedTasks, Stage } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 import { Timestamp } from "firebase/firestore";
+import axios from 'axios';
 
 // IMPLEMENT THIS WITH FIREBASE FIRESTORE NOW THAT WE AREN'T USING LIVE BLOCKS
 
@@ -464,5 +465,22 @@ export async function getStageLockStatus(projId: string) {
     } catch (error) {
         console.error(error);
         return [];
+    }
+}
+
+export async function searchPexelsImages(searchQuery: string) {
+    auth().protect();
+
+    try {
+        const response = await axios.get("https://api.pexels.com/v1/search", {
+            headers: { Authorization: process.env.PEXELS_API_KEY },
+            params: { query: searchQuery, per_page: 9 },
+        });
+
+        const imageUrls = response.data.photos.map((photo: any) => photo.src.original);
+        return { success: true, urls: imageUrls };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
     }
 }

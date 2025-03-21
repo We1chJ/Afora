@@ -33,6 +33,7 @@ export type Organization = {
     description: string;
     admins: string[];
     members: string[];
+    bgImg: string;
 }
 
 // this structure describes the subcollection 'org' document under each user

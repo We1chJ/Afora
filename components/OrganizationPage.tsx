@@ -10,9 +10,8 @@ import ProjOnboarding from './ProjOnboarding'
 import { Organization, UserOrgData } from '@/types/types'
 import { useUser } from '@clerk/nextjs'
 import ProjTab from './ProjTab'
-import { Copy, Image } from 'lucide-react';
+import { Copy } from 'lucide-react';
 import { toast } from 'sonner'
-import { Button } from './ui/button'
 import ImageSearchDialog from './ImageSearchDialog'
 
 const OrganizationPage = ({ id }: { id: string }) => {

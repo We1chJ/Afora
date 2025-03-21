@@ -10,8 +10,10 @@ import ProjOnboarding from './ProjOnboarding'
 import { Organization, UserOrgData } from '@/types/types'
 import { useUser } from '@clerk/nextjs'
 import ProjTab from './ProjTab'
-import { Copy } from 'lucide-react';
+import { Copy, Image } from 'lucide-react';
 import { toast } from 'sonner'
+import { Button } from './ui/button'
+import ImageSearchDialog from './ImageSearchDialog'
 
 const OrganizationPage = ({ id }: { id: string }) => {
   const { user } = useUser();
@@ -73,6 +75,9 @@ const OrganizationPage = ({ id }: { id: string }) => {
             </h2>
           </div>
         }
+        <div className='w-full'>
+          <ImageSearchDialog />
+        </div>
       </div>
       <Tabs defaultValue="projects" className="mt-2 w-full">
         <TabsList className="grid w-full grid-cols-2">

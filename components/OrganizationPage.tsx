@@ -51,7 +51,7 @@ const OrganizationPage = ({ id }: { id: string }) => {
     <div className="overflow-x-hidden p-4">
       <div
         className="flex items-center justify-between bg-cover bg-center p-4 h-64 rounded-lg relative"
-        style={{ backgroundImage: "url('https://imagifly.co/web/img/articles/abstract-wallpaper/midjourney-wallpaper-1.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}
+        style={{ backgroundImage: `url(${orgData.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         {user && user.primaryEmailAddress && orgData && orgData.admins &&
           !orgData.admins.includes(user.primaryEmailAddress.toString()) && <ProjOnboarding orgId={id} />}
@@ -75,7 +75,7 @@ const OrganizationPage = ({ id }: { id: string }) => {
           </div>
         }
         <div className='w-full'>
-          <ImageSearchDialog />
+          <ImageSearchDialog orgId={id} />
         </div>
       </div>
       <Tabs defaultValue="projects" className="mt-2 w-full">

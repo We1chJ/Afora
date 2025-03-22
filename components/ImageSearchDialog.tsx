@@ -7,12 +7,12 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useDropzone } from "react-dropzone"
 import { Image } from "lucide-react"
-import { searchPexelsImages } from "@/actions/actions"
+import { searchPexelsImages, uploadBgImage } from "@/actions/actions"
 import { toast } from "sonner"
 import { Skeleton } from "./ui/skeleton"
 import { Loader } from "lucide-react"
 
-export default function ImageSearchDialog() {
+export default function ImageSearchDialog({ orgId }: { orgId: string }) {
     const [isOpen, setIsOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [searchQuery, setSearchQuery] = useState<string | null>("")
@@ -219,9 +219,16 @@ export default function ImageSearchDialog() {
     }, [imagePreview, thumbnailCache]);
 
     // Memoize these handlers to prevent unnecessary re-renders
-    const handleConfirm = useCallback(() => {
+    const handleConfirm = useCallback(async () => {
         // Here you would typically upload the file to your server
-        console.log("Uploading file:", uploadedFile)
+        try {
+            await uploadBgImage(orgId, imagePreview!);
+            toast.success("Background image changed successfully!");
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            toast.error("Failed to upload the image. Please try again.");
+        }
+        // console.log("Uploading file:", uploadedFile)
         setUploadedFile(null)
         setImagePreview(null)
         setIsOpen(false)

@@ -484,3 +484,22 @@ export async function searchPexelsImages(searchQuery: string) {
         return { success: false, message: (error as Error).message };
     }
 }
+
+export async function uploadBgImage(orgId: string, imageUrl: string) {
+    auth().protect();
+
+    try {
+        if (!imageUrl) {
+            throw new Error('Image URL cannot be empty!');
+        }
+
+        await adminDb.collection('organizations').doc(orgId).set({
+            backgroundImage: imageUrl
+        }, { merge: true });
+
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}

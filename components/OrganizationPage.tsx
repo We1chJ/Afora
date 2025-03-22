@@ -55,9 +55,11 @@ const OrganizationPage = ({ id }: { id: string }) => {
       >
         {user && user.primaryEmailAddress && orgData && orgData.admins &&
           !orgData.admins.includes(user.primaryEmailAddress.toString()) && <ProjOnboarding orgId={id} />}
-        <h1 className="text-4xl font-bold m-4 text-white">
-          {orgData && orgData.title}
-        </h1>
+        <div style={{ background: 'rgba(255,255,255,0.45)', WebkitBackdropFilter: 'blur(5px)', backdropFilter: 'blur(5px)' }} className="rounded-lg p-1">
+          <h1 className="text-4xl font-bold m-2 text-black">
+            {orgData && orgData.title}
+          </h1>
+        </div>
         {userOrgData && userOrgData.role === 'admin' &&
           <div className="absolute bottom-4 left-4 bg-white bg-opacity-75 p-3 shadow-md rounded-lg">
             <h2 className="text-m font-semibold">

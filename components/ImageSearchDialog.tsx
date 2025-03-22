@@ -7,10 +7,12 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useDropzone } from "react-dropzone"
 import { Image } from "lucide-react"
-import { searchPexelsImages, uploadBgImage } from "@/actions/actions"
+import { searchPexelsImages, setBgImage } from "@/actions/actions"
 import { toast } from "sonner"
 import { Skeleton } from "./ui/skeleton"
 import { Loader } from "lucide-react"
+import { storage } from "@/firebase"
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage"
 
 export default function ImageSearchDialog({ orgId }: { orgId: string }) {
     const [isOpen, setIsOpen] = useState(false)
@@ -113,7 +115,7 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
                 setSearchRes(response.urls);
 
                 // Pre-generate all thumbnails URLs for cache
-                response.urls.slice(0, 9).forEach((url : string) => {
+                response.urls.slice(0, 9).forEach((url: string) => {
                     generateThumbnailUrl(url);
                 });
             } else {
@@ -220,13 +222,36 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
 
     // Memoize these handlers to prevent unnecessary re-renders
     const handleConfirm = useCallback(async () => {
-        // Here you would typically upload the file to your server
-        try {
-            await uploadBgImage(orgId, imagePreview!);
-            toast.success("Background image changed successfully!");
-        } catch (error) {
-            console.error("Error uploading image:", error);
-            toast.error("Failed to upload the image. Please try again.");
+        if (uploadedFile && imagePreview && imagePreview.startsWith('blob:')) {
+            if (uploadedFile.size > 10 * 1024 * 1024) { // 10MB limit
+                toast.error("Image size exceeds the 10MB limit. Please choose a smaller image.");
+                return;
+            }
+            try {
+                const storageRef = ref(storage, `backgroundImages/${uploadedFile.name}`);
+                await uploadBytes(storageRef, uploadedFile, {
+                    contentDisposition: `attachment; filename="${uploadedFile.name}"`
+                });
+                const downloadURL = await getDownloadURL(storageRef);
+                console.log(downloadURL);
+                await setBgImage(orgId, downloadURL);
+                toast.success("Image uploaded and background image changed successfully!");
+            } catch (error) {
+                if (error instanceof Error) {
+                    toast.error(`Failed to upload image: ${error.message}`);
+                } else {
+                    toast.error("Failed to upload image due to an unknown error.");
+                }
+                console.error("Upload error:", error);
+            }
+        } else {
+            try {
+                await setBgImage(orgId, imagePreview!);
+                toast.success("Background image changed successfully!");
+            } catch (error) {
+                console.error("Error uploading image:", error);
+                toast.error("Failed to upload the image. Please try again.");
+            }
         }
         // console.log("Uploading file:", uploadedFile)
         setUploadedFile(null)

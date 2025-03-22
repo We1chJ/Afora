@@ -485,7 +485,7 @@ export async function searchPexelsImages(searchQuery: string) {
     }
 }
 
-export async function uploadBgImage(orgId: string, imageUrl: string) {
+export async function setBgImage(orgId: string, imageUrl: string) {
     auth().protect();
 
     try {

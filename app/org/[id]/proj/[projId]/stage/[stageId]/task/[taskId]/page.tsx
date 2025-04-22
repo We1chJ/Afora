@@ -84,10 +84,19 @@ function TaskPage({ params: { projId, stageId, taskId } }: {
   const handleSaveTaskEdits = () => {
     const title = (document.getElementById('title') as HTMLInputElement).value;
     const description = (document.getElementById('description') as HTMLTextAreaElement).value;
-    const assignedTo = (document.getElementById('assignedTo') as HTMLInputElement).value;
+    const softDeadline = (document.getElementById('soft_deadline') as HTMLInputElement).value;
+    const hardDeadline = (document.getElementById('hard_deadline') as HTMLInputElement).value;
+    const validateDate = (date: string) => {
+      const regex = /^\d{4}-\d{2}-\d{2}$/;
+      return regex.test(date);
+    };
 
+    if (!validateDate(softDeadline) || !validateDate(hardDeadline)) {
+      toast.error('Please enter valid dates in the format of yyyy-mm-dd for both deadlines.');
+      return;
+    }
     startTransition(async () => {
-      await updateTask(projId, stageId, taskId, title, description, assignedTo)
+      await updateTask(projId, stageId, taskId, title, description, softDeadline, hardDeadline)
         .then(() => {
           toast.success('Task updated successfully!');
           setIsEditing(false);
@@ -161,7 +170,7 @@ function TaskPage({ params: { projId, stageId, taskId } }: {
                             <Edit3 />
                           </Button>
                         </DrawerTrigger>
-                        <DrawerContent className="p-4 w-full h-3/4">
+                        <DrawerContent className="p-4 w-full h-5/6">
                           <DrawerTitle className="w-full text-xl">📝 Task Editor</DrawerTitle>
                           <DrawerDescription className="w-full text-lg">
                             Please edit your task below
@@ -191,14 +200,38 @@ function TaskPage({ params: { projId, stageId, taskId } }: {
                               />
                             </div>
                             <div>
-                              <Label htmlFor="assignedTo" className="block text-sm font-medium text-gray-700">
-                                Assigned To
+                              <Label htmlFor="assignee" className="block text-sm font-medium text-gray-700">
+                                Assignee
                               </Label>
                               <Input
                                 type="text"
-                                id="assignedTo"
-                                name="assignedTo"
-                                defaultValue={task?.assignedTo}
+                                id="assignee"
+                                name="assignee"
+                                defaultValue={task?.assignee || "No assignee"}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                              />
+                            </div>
+                            <div className="flex flex-col">
+                              <Label htmlFor="soft_deadline" className="block text-sm font-medium text-gray-700">
+                                Soft Deadline
+                              </Label>
+                              <Input
+                                type="date"
+                                id="soft_deadline"
+                                name="soft_deadline"
+                                defaultValue={task?.soft_deadline || ""}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                              />
+                            </div>
+                            <div className="flex flex-col">
+                              <Label htmlFor="hard_deadline" className="block text-sm font-medium text-gray-700">
+                                Hard Deadline
+                              </Label>
+                              <Input
+                                type="date"
+                                id="hard_deadline"
+                                name="hard_deadline"
+                                defaultValue={task?.hard_deadline || ""}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                               />
                             </div>
@@ -219,8 +252,18 @@ function TaskPage({ params: { projId, stageId, taskId } }: {
                     <p className="text-sm text-white mt-2">
                       {task?.description || "No description available"}
                     </p>
-                    <div className="text-sm text-white">
-                      <strong>Assigned to:</strong> {task?.assignedTo || "No assignee"}
+                    <div className="w-full text-sm text-white flex flex-col md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <strong>Assigned to:</strong> {task?.assignee || "No assignee"}
+                      </div>
+                      <div className="flex flex-col md:flex-row md:items-center md:space-x-4">
+                        <div>
+                          <strong>Soft Deadline:</strong> {task?.soft_deadline || "No soft deadline"}
+                        </div>
+                        <div>
+                          <strong>Hard Deadline:</strong> {task?.hard_deadline || "No hard deadline"}
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

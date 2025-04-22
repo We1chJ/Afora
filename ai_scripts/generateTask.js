@@ -34,15 +34,20 @@ const responseFormat = {
                                         "task_description": {
                                             "type": "string",
                                         },
-                                        "assigned_user": {
+                                        "soft_deadline": {
                                             "type": "string",
-                                            "description": "The user to whom the task is assigned."
+                                            "description": "The first soft deadline for the task"
+                                        },
+                                        "hard_deadline": {
+                                            "type": "string",
+                                            "description": "The final hard deadline for the task"
                                         }
                                     },
                                     "required": [
                                         "task_name",
                                         "task_description",
-                                        "assigned_user"
+                                        "soft_deadline",
+                                        "hard_deadline"
                                     ],
                                     "additionalProperties": false
                                 }
@@ -67,14 +72,14 @@ const responseFormat = {
 
 
 export const generateTask = async (questions, userResponses, charterQuestions, teamCharterResponses) => {
-    const context = `Just in titles without numbers like stage 1, come up with a project road map with various levels, each with detailed actionable steps for the sub-goal. Based on each user's onboarding info, assign each task a user's email based on their fields of interests and skills in each area that works the best.`;
-
+    const today = new Date().toISOString().split('T')[0];
+    const context = `Using titles without numbers like stage 1, come up with a project road map with various levels, each with detailed actionable steps for the sub-goal. Give each task a soft and hard deadline each in the format of YYYY-MM-DD as of today is ${today}`;
     if (!userResponses || userResponses.length === 0) {
         throw new Error('There are no users to assign tasks to.');
     }
     if (!teamCharterResponses || teamCharterResponses.length === 0) {
         throw new Error('The team charter is empty.');
     }
-    const input = `User onboarding project questions: ${questions}. Users' responses: ${userResponses}. Team Charter Questions: ${charterQuestions}. Team Charter Responses: ${teamCharterResponses}`;
+    const input = `Team Charter Questions: ${charterQuestions}. Team Charter Responses: ${teamCharterResponses}`;
     return await apiRequest({ context, responseFormat, input });
 }

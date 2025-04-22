@@ -13,7 +13,7 @@ import {
 import { Button } from './ui/button';
 import { appHeader, appQuestions, appTags } from '@/types/types';
 import { Progress } from "@/components/ui/progress"
-import { setUserOnboardingSurvey } from '@/actions/actions';
+import { createNewUser, setUserOnboardingSurvey } from '@/actions/actions';
 import { toast } from 'sonner';
 import { db } from '@/firebase';
 import { useDocument } from 'react-firebase-hooks/firestore';
@@ -57,10 +57,17 @@ const AppOnboarding = () => {
     }
 
     const { user } = useUser();
+    useEffect(() => {
+        if (user) {
+            if (user.primaryEmailAddress && user.username && user.imageUrl) {
+                createNewUser(user.primaryEmailAddress.toString(), user.username, user.imageUrl);
+            }
+        }
+    }, [user]);
 
     const [userData, loading, error] = useDocument(user && user.primaryEmailAddress && doc(db, 'users', user.primaryEmailAddress.toString()));
-    if (loading) return ;
-    if (error) return  <div> error: { error.message }</div>
+    if (loading) return;
+    if (error) return <div> error: {error.message}</div>
     if (!userData || userData.data()?.onboardingSurveyResponse) {
         return null;
     }

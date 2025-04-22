@@ -3,128 +3,25 @@ import { adminDb } from "@/firebase-admin";
 import { GeneratedTasks, Stage } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 import { Timestamp } from "firebase/firestore";
+import axios from 'axios';
 
 // IMPLEMENT THIS WITH FIREBASE FIRESTORE NOW THAT WE AREN'T USING LIVE BLOCKS
 
-export async function createNewDocument() {
+export async function createNewUser(userEmail: string, username: string, userImage: string) {
     auth().protect();
 
-    const { sessionClaims } = await auth();
-    const userId = sessionClaims?.email!;
-
-    const docCollectionRef = adminDb.collection("documents");
-    const docRef = await docCollectionRef.add({
-        title: "New Doc",
-        admins: [userId],
-        members: []
-    })
-
-    await adminDb.collection('users').doc(userId).collection
-        ('rooms').doc(docRef.id).set({
-            userId: userId,
-            role: "owner",
-            createdAt: new Date(),
-            roomId: docRef.id
-        })
-    return { docId: docRef.id }
-}
-
-export async function deleteDocument(roomId: string) {
-    auth().protect(); // ensure the user is authenticated
-
-    console.log("deleteDocument", roomId);
-
     try {
-        await adminDb.collection("documents").doc(roomId).delete();
+        const userRef = adminDb.collection('users').doc(userEmail);
 
-        const query = await adminDb
-            .collectionGroup("rooms")
-            .where("roomId", "==", roomId)
-            .get();
-
-        const batch = adminDb.batch();
-        // delete the room reference in the user's collection for every user in the room
-        query.docs.forEach((doc) => {
-            batch.delete(doc.ref);
-        })
-
-        batch.commit();
-
-        return { success: true }
-    } catch (error) {
-        console.error(error);
-        return { success: false }
+        // update current user's profile info whenever it is changed/updated
+        await userRef.set({
+            email: userEmail,
+            username: username,
+            userImage: userImage
+        }, { merge: true });
     }
-}
-
-export async function inviteUserToDocument(roomId: string, email: string, access: string) {
-    auth().protect();
-
-    console.log("inviteUserToDocument", roomId, email);
-
-    try {
-        roomId = roomId.trim();
-        if (!roomId) {
-            throw new Error('Doccument id cannot be empty');
-        }
-
-        const docSnapshot = await adminDb.collection("documents").doc(roomId).get();
-
-        // Check if the document exists
-        if (!docSnapshot.exists) {
-            throw new Error(`Document with id ${roomId} not found`);
-        }
-
-        // Check if the user is already a member of the document
-        const documentData = docSnapshot.data();
-        const members = documentData?.members || [];
-        const admins = documentData?.admins || [];
-
-        if (members.includes(email) || admins.includes(email)) {
-            throw new Error(`You are already a member of the document`);
-        }
-
-        // Add the user to the document's members array
-        await adminDb.collection("documents").doc(roomId).set(
-            (access === 'editor') ? { members: [...members, email] } : { admins: [...admins, email] }, // append the new email to the corresponding array
-            { merge: true } // use merge to only update the members field without overwriting the document
-        );
-
-        await adminDb
-            .collection("users")
-            .doc(email)
-            .collection("rooms")
-            .doc(roomId)
-            .set({
-                userId: email,
-                role: access,
-                createdAt: new Date(),
-                roomId,
-            })
-
-        return { success: true, message: 'success' };
-    } catch (error) {
-        console.error(error);
-        return { success: false, message: (error as Error).message };
-    }
-}
-
-export async function removeUserFromDocument(roomId: string, email: string) {
-    auth().protect(); // Ensure the user is authenticated
-
-    console.log("removeUserFromDocument", roomId, email);
-
-    try {
-        await adminDb
-            .collection("users")
-            .doc(email)
-            .collection("rooms")
-            .doc(roomId)
-            .delete();
-
-    } catch (error) {
-        console.error(error);
-        return { success: false };
+    catch (e) {
+        return { success: false, message: (e as Error).message };
     }
 }
 
@@ -199,9 +96,13 @@ export async function deleteOrg(orgId: string) {
 export async function inviteUserToOrg(orgId: string, email: string, access: string) {
     auth().protect();
 
-    console.log("inviteUserToOrg", orgId, email);
-
     try {
+        const userDoc = await adminDb.collection('users').doc(email).get();
+        // TODO: consider adding sending emails invitations
+        if (!userDoc.exists) {
+            throw new Error(`User with email ${email} not found!`);
+        }
+
         orgId = orgId.trim();
         if (!orgId) {
             throw new Error('Organization id cannot be empty');
@@ -369,9 +270,11 @@ export async function updateStagesTasks(projId: string, structure: GeneratedTask
                 batch.set(taskRef, {
                     title: task.task_name,
                     description: task.task_description,
-                    assignedTo: task.assigned_user,
+                    assignee: null,
                     id: taskRef.id,
-                    order: taskIndex
+                    order: taskIndex,
+                    soft_deadline: task.soft_deadline,
+                    hard_deadline: task.hard_deadline
                 });
             });
         });
@@ -512,12 +415,12 @@ export async function deleteTask(projId: string, stageId: string, taskId: string
     }
 }
 
-export async function updateTask(projId: string, stageId: string, taskId: string, title: string, description: string, assignedTo: string) {
+export async function updateTask(projId: string, stageId: string, taskId: string, title: string, description: string, soft_deadline: string, hard_deadline: string) {
     auth().protect();
 
     try {
         await adminDb.collection('projects').doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId).set(
-            ({ title, description, assignedTo }), { merge: true }
+            ({ title, description, soft_deadline, hard_deadline }), { merge: true }
         );
 
         return { success: true };
@@ -562,5 +465,41 @@ export async function getStageLockStatus(projId: string) {
     } catch (error) {
         console.error(error);
         return [];
+    }
+}
+
+export async function searchPexelsImages(searchQuery: string) {
+    auth().protect();
+
+    try {
+        const response = await axios.get("https://api.pexels.com/v1/search", {
+            headers: { Authorization: process.env.PEXELS_API_KEY },
+            params: { query: searchQuery, per_page: 9 },
+        });
+
+        const imageUrls = response.data.photos.map((photo: any) => photo.src.original);
+        return { success: true, urls: imageUrls };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+export async function setBgImage(orgId: string, imageUrl: string) {
+    auth().protect();
+
+    try {
+        if (!imageUrl) {
+            throw new Error('Image URL cannot be empty!');
+        }
+
+        await adminDb.collection('organizations').doc(orgId).set({
+            backgroundImage: imageUrl
+        }, { merge: true });
+
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
     }
 }

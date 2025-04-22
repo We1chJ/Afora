@@ -125,6 +125,11 @@ const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId }: { us
             }
             {userRole === 'editor' &&
                 <div>
+                    {!userLoading && !userError && userProjList.length === 0 && (
+                        <div className="flex flex-col items-center justify-center h-80 text-center space-y-4">
+                            <p className="text-lg font-bold">No projects found yet. Wait for the admins to create groups.</p>
+                        </div>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {userLoading && (
                             <div className="col-span-1 md:col-span-2 lg:col-span-3">

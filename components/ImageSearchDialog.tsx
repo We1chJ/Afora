@@ -20,7 +20,7 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
     const [searchQuery, setSearchQuery] = useState<string | null>("")
     const [uploadedFile, setUploadedFile] = useState<File | null>(null)
     const [imagePreview, setImagePreview] = useState<string | null>("")
-    const [isDragging, setIsDragging] = useState(false)
+    const [, setIsDragging] = useState(false)
     const [searchRes, setSearchRes] = useState<string[]>([]);
     const [isSelecting, setIsSelecting] = useState(false);
     const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
@@ -408,7 +408,6 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
                                 ) : (
                                     // Limited to 9 search results with improved progressive loading
                                     searchRes.slice(0, 9).map((url, i) => {
-                                        const thumbnailUrl = i < 3 ? generateThumbnailUrl(url) : "";
                                         return (
                                             <div
                                                 key={i}

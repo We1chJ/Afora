@@ -13,7 +13,7 @@ const turndownService = new TurndownService();
 
 const CommentView = ({ comment }: { comment: Comment }) => {
   const mdComment = turndownService.turndown(comment.message);
-  const [userData, loading, error] = useDocument(doc(db, "users", comment.uid));
+  const [userData,] = useDocument(doc(db, "users", comment.uid));
   const [pfp, setPfp] = useState<string>();
   useEffect(() => {
     if (userData) {

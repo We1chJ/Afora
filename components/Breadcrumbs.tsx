@@ -59,12 +59,12 @@ function Breadcrumbs() {
                     const title = titles[index / 2];
                     return (
                         <Fragment key={segment}>
-                            {title && <BreadcrumbSeparator className="text-white" />}
+                            {title !== null && <BreadcrumbSeparator className="text-white" />}
                             <BreadcrumbItem key={segment}>
                                 {isLast ? (
-                                    <BreadcrumbPage className="text-white">{title}</BreadcrumbPage>
+                                    <BreadcrumbPage className="text-white">{title && title.length > 10 ? `${title.slice(0, 10)}...` : title}</BreadcrumbPage>
                                 ) : (
-                                    <BreadcrumbLink href={`/${href}`} className="text-white">{title}</BreadcrumbLink>
+                                    <BreadcrumbLink href={`/${href}`} className="text-white">{title && title.length > 10 ? `${title.slice(0, 10)}...` : title}</BreadcrumbLink>
                                 )}
                             </BreadcrumbItem>
                         </Fragment>

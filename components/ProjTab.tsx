@@ -61,7 +61,7 @@ const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId }: { us
                     })
                     .catch((error) => {
                         console.error('Failed to update groups:', error);
-                        toast.error('Failed to update groups');
+                        toast.error('Failed to update groups. Please try again!');
                     });
             });
             setOutput('');
@@ -108,9 +108,12 @@ const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId }: { us
                                 })
                                 .map((doc) => {
                                     const proj = doc.data() as Project;
-                                    return (
-                                        <ProjectCard key={proj.projId} orgId={orgId} projId={proj.projId} projectName={proj.title} backgroundImage={''} tasks={[]} />
-                                    );
+                                    if (proj.projId !== undefined) {
+                                        return (
+                                            <ProjectCard key={proj.projId} orgId={orgId} projId={proj.projId} projectName={proj.title} backgroundImage={''} tasks={[]} />
+                                        );
+                                    }
+                                    return null;
                                 })
                         )}
                     </div>

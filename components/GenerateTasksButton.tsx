@@ -87,6 +87,7 @@ const GenerateTasksButton = ({ orgId, projId, teamCharterResponses }: { orgId: s
       .catch((error: Error) => {
         console.error("Error:", error); // Handle any errors
         toast.error(error.message);
+        toast.error('Error occurred, try it again!');
       }));
   };
   return (

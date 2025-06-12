@@ -8,7 +8,10 @@ import axios from 'axios';
 // IMPLEMENT THIS WITH FIREBASE FIRESTORE NOW THAT WE AREN'T USING LIVE BLOCKS
 
 export async function createNewUser(userEmail: string, username: string, userImage: string) {
-    auth().protect();
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
 
     try {
         const userRef = adminDb.collection('users').doc(userEmail);
@@ -26,10 +29,12 @@ export async function createNewUser(userEmail: string, username: string, userIma
 }
 
 export async function createNewOrganization(orgName: string, orgDescription: string) {
-    auth().protect();
+    const { userId, sessionClaims } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
 
     try {
-        const { sessionClaims } = await auth();
         const userId = sessionClaims!.email!;
         if (!userId) {
             throw new Error('Current user not authenticated or invalid email');
@@ -66,7 +71,10 @@ export async function createNewOrganization(orgName: string, orgDescription: str
 }
 
 export async function deleteOrg(orgId: string) {
-    auth().protect(); // ensure the user is authenticated
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
 
     console.log(orgId);
     try {
@@ -94,7 +102,10 @@ export async function deleteOrg(orgId: string) {
 }
 
 export async function inviteUserToOrg(orgId: string, email: string, access: string) {
-    auth().protect();
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
 
     try {
         const userDoc = await adminDb.collection('users').doc(email).get();
@@ -150,10 +161,11 @@ export async function inviteUserToOrg(orgId: string, email: string, access: stri
 }
 
 export async function setUserOnboardingSurvey(selectedTags: string[][]) {
-    auth().protect();
-
     const { sessionClaims } = await auth();
     const userId = sessionClaims?.email!;
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
     try {
         const formatted = selectedTags.map((tags) => tags.join(','));
 
@@ -173,10 +185,11 @@ export async function setUserOnboardingSurvey(selectedTags: string[][]) {
 }
 
 export async function setProjOnboardingSurvey(orgId: string, responses: string[]) {
-    auth().protect();
-
     const { sessionClaims } = await auth();
     const userId = sessionClaims?.email!;
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
     try {
 
         // Check if any of the responses are empty
@@ -195,9 +208,11 @@ export async function setProjOnboardingSurvey(orgId: string, responses: string[]
 }
 
 export async function updateProjects(orgId: string, groups: string[][]) {
-    auth().protect();
     const { sessionClaims } = await auth();
     const userId = sessionClaims?.email!;
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
     try {
         groups.map(async (group, index) => {
             const projectRef = await adminDb.collection('projects')
@@ -227,10 +242,11 @@ export async function updateProjects(orgId: string, groups: string[][]) {
 }
 
 export async function setTeamCharter(projId: string, teamCharterResponse: string[]) {
-    auth().protect();
-
     const { sessionClaims } = await auth();
     const userId = sessionClaims?.email!;
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
     try {
         if (!teamCharterResponse) {
             throw new Error('Team charter cannot be empty!');
@@ -247,7 +263,10 @@ export async function setTeamCharter(projId: string, teamCharterResponse: string
 };
 
 export async function updateStagesTasks(projId: string, structure: GeneratedTasks): Promise<{ success: boolean; message?: string; }> {
-    auth().protect();
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
 
     try {
         if (!structure) {
@@ -287,7 +306,10 @@ export async function updateStagesTasks(projId: string, structure: GeneratedTask
 }
 
 export async function setTaskComplete(projId: string, stageId: string, taskId: string, isCompleted: boolean) {
-    auth().protect();
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
     try {
         const taskRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId);
         const stageRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId);
@@ -309,7 +331,10 @@ export async function setTaskComplete(projId: string, stageId: string, taskId: s
 }
 
 export async function postComment(isPublic: boolean, projId: string, stageId: string, taskId: string, message: string, time: Timestamp, uid: string) {
-    auth().protect();
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
     try {
         const newCommentRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId).collection((isPublic) ? 'public' : 'private').doc();
         await newCommentRef.set({
@@ -325,7 +350,10 @@ export async function postComment(isPublic: boolean, projId: string, stageId: st
 }
 
 export async function updateStages(projId: string, stageUpdates: Stage[], stagesToDelete: string[]) {
-    auth().protect();
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
 
     try {
         const batch = adminDb.batch();
@@ -361,7 +389,10 @@ export async function updateStages(projId: string, stageUpdates: Stage[], stages
 }
 
 export async function createTask(projId: string, stageId: string, order: number) {
-    auth().protect();
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
 
     try {
         const taskRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId).collection("tasks").doc();
@@ -391,7 +422,10 @@ export async function createTask(projId: string, stageId: string, order: number)
 }
 
 export async function deleteTask(projId: string, stageId: string, taskId: string) {
-    auth().protect();
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
 
     try {
         const taskRef = adminDb.collection("projects").doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId);
@@ -416,7 +450,10 @@ export async function deleteTask(projId: string, stageId: string, taskId: string
 }
 
 export async function updateTask(projId: string, stageId: string, taskId: string, title: string, description: string, soft_deadline: string, hard_deadline: string) {
-    auth().protect();
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
 
     try {
         await adminDb.collection('projects').doc(projId).collection("stages").doc(stageId).collection("tasks").doc(taskId).set(
@@ -431,7 +468,10 @@ export async function updateTask(projId: string, stageId: string, taskId: string
 }
 
 export async function updateProjectTitle(projId: string, newTitle: string) {
-    auth().protect();
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
 
     try {
         if (!newTitle) {
@@ -450,7 +490,10 @@ export async function updateProjectTitle(projId: string, newTitle: string) {
 }
 
 export async function getStageLockStatus(projId: string) {
-    auth().protect();
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
 
     try {
         const stagesSnapshot = await adminDb.collection("projects").doc(projId).collection("stages").orderBy("order").get();
@@ -469,7 +512,10 @@ export async function getStageLockStatus(projId: string) {
 }
 
 export async function searchPexelsImages(searchQuery: string) {
-    auth().protect();
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
 
     try {
         const response = await axios.get("https://api.pexels.com/v1/search", {
@@ -486,7 +532,10 @@ export async function searchPexelsImages(searchQuery: string) {
 }
 
 export async function setBgImage(orgId: string, imageUrl: string) {
-    auth().protect();
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
 
     try {
         if (!imageUrl) {
@@ -505,7 +554,10 @@ export async function setBgImage(orgId: string, imageUrl: string) {
 }
 
 export async function getOrganizationMembersResponses(orgId: string) {
-    auth().protect();
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
 
     try {
         // Get organization data

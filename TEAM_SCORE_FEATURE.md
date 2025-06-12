@@ -153,3 +153,180 @@ interface TeamCompatibilityAnalysis {
 - TypeScript support
 
 This feature provides data-driven insights for team management, helping organizations better understand team structure, identify potential issues, and develop improvement strategies. 
+
+
+
+
+# Mock GPT Testing Guide
+
+## Overview
+
+This testing system allows you to test real GPT API team compatibility analysis functionality using mock team member data, without worrying about authentication issues.
+
+## 🔧 Setup Requirements
+
+### 1. Environment Variable Configuration
+
+Ensure your `.env.local` file contains a valid OpenAI API key:
+
+```bash
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+### 2. Dependency Check
+
+Ensure the project has the required dependencies installed:
+```bash
+npm install openai dotenv
+```
+
+## 🧪 Test Cases
+
+### Mock Team Member Data
+
+The system uses the following 4 virtual team members:
+
+| Member | Email | Role | Main Skills |
+|--------|-------|------|-------------|
+| Alice | alice@test.com | Frontend Development Expert | React, TypeScript, UI/UX Design |
+| Bob | bob@test.com | Backend Architect | Node.js, PostgreSQL, Docker, AWS |
+| Charlie | charlie@test.com | Project Manager | Project Management, Scrum, Business Analysis |
+| David | david@test.com | Test Engineer | Testing, Quality Assurance, Automation |
+
+### Survey Response Examples
+
+Mock survey responses for each member:
+
+**Alice's Responses:**
+- Q1: React,TypeScript,UI/UX Design,CSS,JavaScript
+- Q2: Web Development,Frontend Development,Mobile Development
+- Q3: Senior Frontend Developer,UI/UX Designer,Product Manager
+
+**Bob's Responses:**
+- Q1: Node.js,PostgreSQL,Docker,AWS,System Architecture
+- Q2: Backend Development,Cloud Computing,DevOps
+- Q3: Backend Architect,DevOps Engineer,Technical Lead
+
+## 🚀 Usage Methods
+
+### Method 1: Simple Direct Test
+
+1. Start the development server:
+```bash
+npm run dev
+```
+
+2. Visit the simple test page:
+```
+http://localhost:3000/simple-test
+```
+
+3. Click the "Start Team Analysis" button
+4. Wait for GPT API analysis completion (usually takes 5-10 seconds)
+
+### Method 2: Complete Test Flow
+
+1. Visit the complete test page:
+```
+http://localhost:3000/test-group-score
+```
+
+2. Click "Create Mock Test Data"
+3. View the generated organization and member information
+4. Click "Start Team Analysis"
+5. Observe GPT analysis results
+
+## 📊 Analysis Results
+
+GPT API will return analysis containing the following content:
+
+### Overall Analysis
+- **Overall Compatibility Score** (0-100)
+- **Team Strengths** list
+- **Potential Gaps** identification
+- **Collaboration Potential** assessment
+- **Improvement Recommendations** list
+
+### Individual Analysis
+Detailed analysis for each member includes:
+- **Core Strengths** list
+- **Technical Skills** tags
+- **Areas of Interest** tags
+- **Compatibility Score** (0-100)
+- **Role Suggestions**
+
+### Visualization Charts
+- **Pie Chart**: Overall compatibility display
+- **Bar Chart**: Member compatibility comparison
+- **Skills Distribution Chart**: Team skill coverage
+
+## 🔍 Test Verification Points
+
+### 1. API Call Success
+- Confirm seeing the success message "Team analysis completed! (Using mock data)"
+- Analysis results are not pre-set hardcoded data
+
+### 2. Data Quality Check
+- Analysis results should reflect the skill combinations in mock data
+- Scores should be reasonable (expected 80-90 points due to good team complementarity)
+- Role suggestions should match members' skill backgrounds
+
+### 3. Error Handling
+- If API call fails, backup mock analysis results will be displayed
+- Error messages will clearly indicate the reason for failure
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **"GPT Analysis Failed" Error**
+   - Check if OPENAI_API_KEY is correctly set
+   - Confirm API key has valid quota
+   - Check network connection
+
+2. **Long Loading Times**
+   - GPT API calls usually take 5-15 seconds
+   - If over 30 seconds, may be network or API issues
+
+3. **Empty Analysis Results**
+   - Check console for error messages
+   - Confirm mock data is loaded correctly
+
+### Debugging Tips
+
+1. Open browser developer tools Console tab
+2. Check if network requests are successful
+3. Check for JavaScript errors
+
+## 📝 Expected Output Example
+
+A successful GPT analysis might return results similar to the following:
+
+```json
+{
+  "overall_score": 87,
+  "member_analyses": [
+    {
+      "member_email": "alice@test.com",
+      "strengths": ["Frontend Excellence", "UI/UX Design", "Modern Framework Expertise"],
+      "skills": ["React", "TypeScript", "CSS", "JavaScript", "Figma"],
+      "interests": ["User Experience", "Component Design", "Mobile-First Development"],
+      "compatibility_score": 89,
+      "role_suggestion": "Frontend Team Lead"
+    }
+    // ... other members
+  ],
+  "team_analysis": {
+    "team_strengths": ["Full-stack Coverage", "Clear Role Separation", "Complementary Skills"],
+    "potential_gaps": ["Mobile Native Development", "DevOps Automation"],
+    "collaboration_potential": "High synergy expected with clear specialization areas",
+    "recommendations": ["Add mobile specialist", "Implement code review process"]
+  }
+}
+```
+
+This testing system allows you to:
+- ✅ Test real GPT API integration
+- ✅ Verify data processing workflow
+- ✅ Check UI component rendering
+- ✅ Bypass authentication complexity 

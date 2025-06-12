@@ -23,17 +23,19 @@ function NewOrgButton({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (isOp
   const router = useRouter();
 
   const handleCreateNewOrganization = () => {
-    startTransition(async () => {
-      const { orgId, success, message } = await createNewOrganization(orgName, orgDescription);
-      if (success) {
-        toast.success("Organization created successfully!");
-        setIsOpen(false);
-        router.push(`/org/${orgId}`);
-        setOrgName('');
-        setOrgDescription('');
-      } else {
-        toast.error(message);
-      }
+    startTransition(() => {
+      (async () => {
+        const { orgId, success, message } = await createNewOrganization(orgName, orgDescription);
+        if (success) {
+          toast.success("Organization created successfully!");
+          setIsOpen(false);
+          router.push(`/org/${orgId}`);
+          setOrgName('');
+          setOrgDescription('');
+        } else {
+          toast.error(message);
+        }
+      })();
     })
   }
 

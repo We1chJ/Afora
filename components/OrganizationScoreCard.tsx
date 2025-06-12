@@ -8,6 +8,7 @@ import { Loader2, Users, TrendingUp, AlertCircle, CheckCircle } from 'lucide-rea
 import { analyzeTeamCompatibility } from '@/ai_scripts/analyzeTeamCompatibility'
 import { appQuestions, TeamCompatibilityAnalysis } from '@/types/types'
 import { getOrganizationMembersResponses } from '@/actions/actions'
+import { getMockOrganizationMembersResponses } from '@/actions/mockActions'
 import { toast } from 'sonner'
 import {
   Accordion,
@@ -89,47 +90,55 @@ Question 3 Answer: Project Manager,Product Manager,Business Analyst`
   };
 
   const handleAnalyzeTeam = async () => {
-    if (mockData) {
-      // Use mock data
-      setAnalysis(mockAnalysis);
-      toast.success('Team analysis completed! (Using mock data)');
-      return;
-    }
+    // Always use real GPT API, but data source depends on mockData flag
+    startTransition(() => {
+      (async () => {
+        try {
+          // Get user survey responses (use mock data if mockData is true)
+          const membersData = mockData 
+            ? await getMockOrganizationMembersResponses(orgId)
+            : await getOrganizationMembersResponses(orgId);
+          
+          if (!membersData.success || !membersData.data || membersData.data.length === 0) {
+            const errorMessage = mockData 
+              ? 'Mock data not found, using generated mock responses'
+              : 'No team member survey responses found, using mock data for demonstration';
+            toast.error(errorMessage);
+            
+            // If no data, use generated mock responses
+            const memberResponses = generateMockMemberResponses();
+            const result = await analyzeTeamCompatibility(appQuestions, memberResponses);
+            const parsedResult: TeamCompatibilityAnalysis = JSON.parse(result);
+            setAnalysis(parsedResult);
+            return;
+          }
 
-    // Actual API call logic
-    startTransition(async () => {
-      try {
-        // Get real user survey responses from Firebase
-        const membersData = await getOrganizationMembersResponses(orgId);
-        
-        if (!membersData.success || !membersData.data || membersData.data.length === 0) {
-          toast.error('No team member survey responses found, using mock data for demonstration');
-          // If no real data, use mock data
-          const memberResponses = generateMockMemberResponses();
-          const result = await analyzeTeamCompatibility(appQuestions, memberResponses);
-          const parsedResult: TeamCompatibilityAnalysis = JSON.parse(result);
-          setAnalysis(parsedResult);
-          return;
-        }
-
-        // Format member response data
-        const memberResponses = membersData.data.map((member: any) => {
-          return `User: ${member.email}
+          // Format member response data
+          const memberResponses = membersData.data.map((member: any) => {
+            return `User: ${member.email}
 Question 1 Answer: ${member.responses[0] || 'No answer'}
 Question 2 Answer: ${member.responses[1] || 'No answer'}
 Question 3 Answer: ${member.responses[2] || 'No answer'}`;
-        });
-        
-        const result = await analyzeTeamCompatibility(appQuestions, memberResponses);
-        const parsedResult: TeamCompatibilityAnalysis = JSON.parse(result);
-        setAnalysis(parsedResult);
-        toast.success('Team analysis completed!');
-      } catch (error) {
-        console.error('Analysis failed:', error);
-        toast.error('Analysis failed, using mock data for demonstration');
-        // Fallback to mock data on error
-        setAnalysis(mockAnalysis);
-      }
+          });
+          
+          const result = await analyzeTeamCompatibility(appQuestions, memberResponses);
+          const parsedResult: TeamCompatibilityAnalysis = JSON.parse(result);
+          setAnalysis(parsedResult);
+          
+          const successMessage = mockData 
+            ? 'GPT team analysis completed!'
+            : 'Team analysis completed!';
+          toast.success(successMessage);
+        } catch (error) {
+          console.error('Analysis failed:', error);
+          const errorMessage = mockData
+            ? 'GPT analysis failed, using mock data for demonstration'
+            : 'Analysis failed, using mock data for demonstration';
+          toast.error(errorMessage);
+          // Fallback to mock data on error
+          setAnalysis(mockAnalysis);
+        }
+      })();
     });
   };
 
@@ -170,7 +179,7 @@ Question 3 Answer: ${member.responses[2] || 'No answer'}`;
               </Button>
               <p className="text-sm text-muted-foreground mt-2">
                 Current team member count: {members.length}
-                {mockData && <span className="text-blue-600"> (Using mock data)</span>}
+                {mockData && <span className="text-blue-600"> (Will use mock data to call real GPT API)</span>}
               </p>
             </div>
           ) : (

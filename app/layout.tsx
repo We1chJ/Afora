@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type Metadata from "next";
 import "./globals.css";
 import { ClerkProvider, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import Header from "@/components/Header";

@@ -175,3 +175,21 @@ export type Comment = {
     time: Timestamp;
     uid: string;
 }
+
+export type TeamCompatibilityAnalysis = {
+    overall_score: number;
+    member_analyses: {
+        member_email: string;
+        strengths: string[];
+        skills: string[];
+        interests: string[];
+        compatibility_score: number;
+        role_suggestion: string;
+    }[];
+    team_analysis: {
+        team_strengths: string[];
+        potential_gaps: string[];
+        collaboration_potential: string;
+        recommendations: string[];
+    };
+}

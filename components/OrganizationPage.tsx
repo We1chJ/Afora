@@ -13,6 +13,7 @@ import ProjTab from './ProjTab'
 import { Copy } from 'lucide-react';
 import { toast } from 'sonner'
 import ImageSearchDialog from './ImageSearchDialog'
+import OrganizationScoreCard from './OrganizationScoreCard'
 
 const OrganizationPage = ({ id }: { id: string }) => {
   const { user } = useUser();
@@ -81,14 +82,14 @@ const OrganizationPage = ({ id }: { id: string }) => {
         </div>
       </div>
       <Tabs defaultValue="projects" className="mt-2 w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="projects">Projects</TabsTrigger>
           <TabsTrigger value="members">Members</TabsTrigger>
-          {/* <TabsTrigger value="settings">Settings</TabsTrigger> */}
+          <TabsTrigger value="score">Team Score</TabsTrigger>
         </TabsList>
         <TabsContent value="projects">{user && user.primaryEmailAddress && userOrgData && <ProjTab userRole={userOrgData.role} userId={user.primaryEmailAddress.toString()} orgId={id} projectsData={projectsData} loading={projLoading} error={projError} />}</TabsContent>
         <TabsContent value="members">{orgData && userOrgData && <MemberList userRole={userOrgData.role} admins={orgData.admins} members={orgData.members} />}</TabsContent>
-        {/* <TabsContent value="settings">Organization settings and preferences.</TabsContent> */}
+        <TabsContent value="score">{orgData && <OrganizationScoreCard orgId={id} members={orgData.members} mockData={true} />}</TabsContent>
       </Tabs>
     </div>
   )

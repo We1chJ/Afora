@@ -503,3 +503,46 @@ export async function setBgImage(orgId: string, imageUrl: string) {
         return { success: false, message: (error as Error).message };
     }
 }
+
+export async function getOrganizationMembersResponses(orgId: string) {
+    auth().protect();
+
+    try {
+        // Get organization data
+        const orgDoc = await adminDb.collection('organizations').doc(orgId).get();
+        if (!orgDoc.exists) {
+            throw new Error('Organization not found');
+        }
+
+        const orgData = orgDoc.data();
+        const members = [...(orgData?.members || []), ...(orgData?.admins || [])];
+
+        if (members.length === 0) {
+            return { success: true, data: [] };
+        }
+
+        // Get all members' onboardingSurveyResponse
+        const memberResponses = await Promise.all(
+            members.map(async (memberEmail) => {
+                const userDoc = await adminDb.collection('users').doc(memberEmail).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    const responses = userData?.onboardingSurveyResponse || [];
+                    return {
+                        email: memberEmail,
+                        responses: responses
+                    };
+                }
+                return null;
+            })
+        );
+
+        // Filter out null values
+        const validResponses = memberResponses.filter(response => response !== null);
+
+        return { success: true, data: validResponses };
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: (error as Error).message };
+    }
+}

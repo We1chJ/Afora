@@ -51,7 +51,7 @@ const ProjOnboarding = ({ orgId }: { orgId: string }) => {
     // const [userData, loading, error] = useDocument(user && user.primaryEmailAddress && doc(db, 'users', user.primaryEmailAddress.toString(), 'orgs', orgId));
     const [userData] = useDocument(user && user.primaryEmailAddress && doc(db, 'users', user.primaryEmailAddress.toString(), 'orgs', orgId));
 
-    if (!userData || userData.data()!.projOnboardingSurveyResponse) {
+    if (!userData || userData.data()?.projOnboardingSurveyResponse) {
         return null;
     }
 

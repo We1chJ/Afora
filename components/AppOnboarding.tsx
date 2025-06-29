@@ -26,7 +26,7 @@ const AppOnboarding = () => {
     const [page, setPage] = useState(0);
     useEffect(() => {
         // Open the dialog automatically when the component mounts
-        //setIsOpen(true);
+        // setIsOpen(true);
         setPage(0);
         setSelectedTags(Array(appQuestions.length).fill([]));
     }, []);
@@ -59,18 +59,26 @@ const AppOnboarding = () => {
     const { user } = useUser();
     useEffect(() => {
         if (user) {
-            if (user.primaryEmailAddress && user.username && user.imageUrl) {
-                createNewUser(user.primaryEmailAddress.toString(), user.username, user.imageUrl);
+            const { primaryEmailAddress, username, imageUrl } = user;
+
+            console.log("userObj");
+            console.log(user);
+
+            if (primaryEmailAddress && username && imageUrl) {
+                
+                createNewUser(primaryEmailAddress.toString(), username, imageUrl);
             }
         }
     }, [user]);
 
     const [userData, loading, error] = useDocument(user && user.primaryEmailAddress && doc(db, 'users', user.primaryEmailAddress.toString()));
     if (loading) return;
-    if (error) return <div> error: {error.message}</div>
+    if (error) return <div> Onboarding error: {error.message}</div>
     if (!userData || userData.data()?.onboardingSurveyResponse) {
         return null;
     }
+
+    // return <div>TEST TEST TEST TEST</div>;
 
     return (
         <div>

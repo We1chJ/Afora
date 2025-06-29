@@ -20,12 +20,13 @@ function Breadcrumbs() {
     // Adds a path that a user can refer to know where they are and click to "parent" directories
     const path = usePathname();
 
+    console.log(`Path: "${path}"`);
+
     const segments = path ? path.split("/").filter(segment => segment !== "") : [];
     useEffect(() => {
         if (segments.length >= 1 && segments[0] !== 'org') {
             segments.length = 0;
         }
-        console.log(segments);
     }, [path, segments]);
     const orgDocRef = (segments.length >= 1 && segments[0] == 'org')? doc(db, 'organizations', segments[1]) : null;
     const [orgDoc] = useDocument(orgDocRef);
@@ -51,6 +52,7 @@ function Breadcrumbs() {
                 <BreadcrumbItem>
                     <BreadcrumbLink href="/" className="text-white">Home</BreadcrumbLink>
                 </BreadcrumbItem>
+
                 {segments.map((segment, index) => {
                     if (!segment) return null;
                     if (index % 2 == 1 || index + 1 >= segments.length) return null; // skip the even ones and make sure there is an ID afterwards

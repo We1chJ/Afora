@@ -8,6 +8,7 @@ import axios from 'axios';
 // IMPLEMENT THIS WITH FIREBASE FIRESTORE NOW THAT WE AREN'T USING LIVE BLOCKS
 
 export async function createNewUser(userEmail: string, username: string, userImage: string) {
+    console.log(`createNewUser(${userEmail}, ${username}, ${userImage})`)
     const { userId } = await auth();
     if (!userId) {
         throw new Error('Unauthorized');
@@ -29,13 +30,17 @@ export async function createNewUser(userEmail: string, username: string, userIma
 }
 
 export async function createNewOrganization(orgName: string, orgDescription: string) {
-    const { userId, sessionClaims } = await auth();
+    const x = await auth();
+    const { userId, sessionClaims } = x; //await auth();
+    
     if (!userId) {
         throw new Error('Unauthorized');
     }
 
     try {
-        const userId = sessionClaims!.email!;
+        console.log("blah");
+        console.log(x);
+        const userId = sessionClaims!.sub!;
         if (!userId) {
             throw new Error('Current user not authenticated or invalid email');
         }
@@ -161,8 +166,8 @@ export async function inviteUserToOrg(orgId: string, email: string, access: stri
 }
 
 export async function setUserOnboardingSurvey(selectedTags: string[][]) {
-    const { sessionClaims } = await auth();
-    const userId = sessionClaims?.email!;
+    const { userId, sessionClaims } = await auth();
+
     if (!userId) {
         throw new Error('Unauthorized');
     }
@@ -185,8 +190,7 @@ export async function setUserOnboardingSurvey(selectedTags: string[][]) {
 }
 
 export async function setProjOnboardingSurvey(orgId: string, responses: string[]) {
-    const { sessionClaims } = await auth();
-    const userId = sessionClaims?.email!;
+    const { userId, sessionClaims } = await auth();
     if (!userId) {
         throw new Error('Unauthorized');
     }
@@ -209,7 +213,7 @@ export async function setProjOnboardingSurvey(orgId: string, responses: string[]
 
 export async function updateProjects(orgId: string, groups: string[][]) {
     const { sessionClaims } = await auth();
-    const userId = sessionClaims?.email!;
+    const userId = sessionClaims?.email;
     if (!userId) {
         throw new Error('Unauthorized');
     }
@@ -243,7 +247,7 @@ export async function updateProjects(orgId: string, groups: string[][]) {
 
 export async function setTeamCharter(projId: string, teamCharterResponse: string[]) {
     const { sessionClaims } = await auth();
-    const userId = sessionClaims?.email!;
+    const userId = sessionClaims?.email;
     if (!userId) {
         throw new Error('Unauthorized');
     }

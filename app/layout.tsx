@@ -1,4 +1,4 @@
-import type Metadata from "next";
+import type { Metadata } from "next";
 import "./globals.css";
 import { ClerkProvider, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import Header from "@/components/Header";
@@ -22,12 +22,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <head>
-          <link
-            rel="icon"
-            href="/icon.svg"
-            type="image/svg"
-            sizes="any"
-          />
+          <link rel="icon" href="/icon.svg" type="image/svg" sizes="any"/>
         </head>
         <body>
           <SidebarProvider className="flex flex-col h-screen" style={{

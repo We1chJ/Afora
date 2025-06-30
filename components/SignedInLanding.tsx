@@ -15,7 +15,7 @@ function SignedInLanding() {
     const [orgs, setOrgs] = useState<UserOrgData[]>([]);
     const { user } = useUser();
     const email = user?.primaryEmailAddress?.emailAddress || ''; // Ensure `email` is always a string
-    console.log(email)
+    
     // Only attempt to create a collection reference if `email` is not empty
     const [orgsData, orgsLoading, orgsError] = useCollection(
         user && user.primaryEmailAddress && collection(db, "users", user.primaryEmailAddress.toString(), "orgs"));
@@ -33,6 +33,8 @@ function SignedInLanding() {
     if (orgsError) {
         return <div>Error loading organizations</div>;
     }
+
+    console.log(`email: ${email}`)
 
     console.log("Organizations:", orgs);
     return (

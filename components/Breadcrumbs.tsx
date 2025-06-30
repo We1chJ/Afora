@@ -28,6 +28,8 @@ function Breadcrumbs() {
     const path = usePathname();
     const [isMockMode, setIsMockMode] = useState(false);
 
+    console.log(`Path: "${path}"`);
+
     const segments = path ? path.split("/").filter(segment => segment !== "") : [];
     
     useEffect(() => {

@@ -155,6 +155,12 @@ export type Task = {
     assignee: string;
     order: number;
     isCompleted: boolean;
+    // Task pool related fields
+    points: number; // Points earned for completing the task (default: 1)
+    status: 'available' | 'assigned' | 'completed' | 'overdue'; // Task status
+    assignedAt?: string; // When the task was assigned
+    completedAt?: string; // When the task was completed
+    canBeReassigned?: boolean; // Whether the task can be reassigned after soft deadline
 }
 
 export type GeneratedTasks = {
@@ -192,4 +198,31 @@ export type TeamCompatibilityAnalysis = {
         collaboration_potential: string;
         recommendations: string[];
     };
+}
+
+// Task pool and leaderboard types
+export type UserScore = {
+    userId: string;
+    email: string;
+    totalPoints: number;
+    tasksCompleted: number;
+    tasksAssigned: number;
+    averageCompletionTime: number; // in hours
+    streak: number; // consecutive days with completed tasks
+}
+
+export type ProjectLeaderboard = {
+    projectId: string;
+    projectTitle: string;
+    scores: UserScore[];
+    lastUpdated: string;
+}
+
+export type TaskPoolStats = {
+    stageId: string;
+    totalTasks: number;
+    availableTasks: number;
+    assignedTasks: number;
+    completedTasks: number;
+    overdueTasks: number;
 }

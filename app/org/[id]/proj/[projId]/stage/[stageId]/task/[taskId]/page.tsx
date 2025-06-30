@@ -150,127 +150,131 @@ function TaskPage({ params: { projId, stageId, taskId } }: {
   const task = taskData?.data() as Task;
 
   return (
-    <div className="min-h-screen w-full pb-20">
+    <div className="min-h-screen w-full bg-gray-50">
       {isSignedIn && (
-        <div className="p-4 md:p-6">
-          <div className="space-y-4 md:space-y-8">
-            {/* Task Info Section */}
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-4 md:gap-8">
-              <div className="col-span-1 md:col-span-5">
-                <Card className="w-full bg-[#6F61EF] hover:shadow-lg transition-shadow">
-                  <CardContent className="p-4 md:p-6 space-y-4 md:space-y-8">
-                    <div className="flex justify-between items-center">
-                      <h1 className="text-2xl md:text-4xl font-bold text-white">
-                        {task?.title || "Task Title"}
-                      </h1>
-                      <Drawer open={isEditing}>
-                        <DrawerTrigger asChild>
-                          <Button variant="ghost" className="text-white" onClick={() => setIsEditing(true)}>
-                            Edit
-                            <Edit3 />
+        <div className="flex flex-col">
+          {/* Header Section */}
+          <div className="bg-gradient-to-r from-[#6F61EF] to-purple-600 shadow-lg">
+            <div className="px-4 md:px-6 py-6">
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between mb-2">
+                  <h1 className="text-2xl md:text-3xl font-bold text-white">
+                    {task?.title || "Task Title"}
+                  </h1>
+                  <Drawer open={isEditing}>
+                    <DrawerTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={() => setIsEditing(true)}>
+                        Edit
+                        <Edit3 className="ml-1 h-4 w-4" />
+                      </Button>
+                    </DrawerTrigger>
+                    <DrawerContent className="p-4 w-full h-5/6">
+                      <DrawerTitle className="w-full text-xl">📝 Task Editor</DrawerTitle>
+                      <DrawerDescription className="w-full text-lg">
+                        Please edit your task below
+                      </DrawerDescription>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                            Title
+                          </Label>
+                          <Input
+                            type="text"
+                            id="title"
+                            name="title"
+                            defaultValue={task?.title}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                            Description
+                          </Label>
+                          <Textarea
+                            id="description"
+                            name="description"
+                            defaultValue={task?.description}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="assignee" className="block text-sm font-medium text-gray-700">
+                            Assignee
+                          </Label>
+                          <Input
+                            type="text"
+                            id="assignee"
+                            name="assignee"
+                            defaultValue={task?.assignee || "No assignee"}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          <Label htmlFor="soft_deadline" className="block text-sm font-medium text-gray-700">
+                            Soft Deadline
+                          </Label>
+                          <Input
+                            type="date"
+                            id="soft_deadline"
+                            name="soft_deadline"
+                            defaultValue={task?.soft_deadline || ""}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          <Label htmlFor="hard_deadline" className="block text-sm font-medium text-gray-700">
+                            Hard Deadline
+                          </Label>
+                          <Input
+                            type="date"
+                            id="hard_deadline"
+                            name="hard_deadline"
+                            defaultValue={task?.hard_deadline || ""}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          />
+                        </div>
+                      </div>
+                      <DrawerFooter className="w-full">
+                        <div className="w-full flex justify-center space-x-2">
+                          <DrawerClose asChild>
+                            <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
+                          </DrawerClose>
+                          <Button variant="default" onClick={handleSaveTaskEdits} disabled={isPending}>
+                            {isPending ? 'Saving...' : 'Save'}
                           </Button>
-                        </DrawerTrigger>
-                        <DrawerContent className="p-4 w-full h-5/6">
-                          <DrawerTitle className="w-full text-xl">📝 Task Editor</DrawerTitle>
-                          <DrawerDescription className="w-full text-lg">
-                            Please edit your task below
-                          </DrawerDescription>
-                          <div className="space-y-4">
-                            <div>
-                              <Label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                                Title
-                              </Label>
-                              <Input
-                                type="text"
-                                id="title"
-                                name="title"
-                                defaultValue={task?.title}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                                Description
-                              </Label>
-                              <Textarea
-                                id="description"
-                                name="description"
-                                defaultValue={task?.description}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="assignee" className="block text-sm font-medium text-gray-700">
-                                Assignee
-                              </Label>
-                              <Input
-                                type="text"
-                                id="assignee"
-                                name="assignee"
-                                defaultValue={task?.assignee || "No assignee"}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                              />
-                            </div>
-                            <div className="flex flex-col">
-                              <Label htmlFor="soft_deadline" className="block text-sm font-medium text-gray-700">
-                                Soft Deadline
-                              </Label>
-                              <Input
-                                type="date"
-                                id="soft_deadline"
-                                name="soft_deadline"
-                                defaultValue={task?.soft_deadline || ""}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                              />
-                            </div>
-                            <div className="flex flex-col">
-                              <Label htmlFor="hard_deadline" className="block text-sm font-medium text-gray-700">
-                                Hard Deadline
-                              </Label>
-                              <Input
-                                type="date"
-                                id="hard_deadline"
-                                name="hard_deadline"
-                                defaultValue={task?.hard_deadline || ""}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                              />
-                            </div>
-                          </div>
-                          <DrawerFooter className="w-full">
-                            <div className="w-full flex justify-center space-x-2">
-                              <DrawerClose asChild>
-                                <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-                              </DrawerClose>
-                              <Button variant="default" onClick={handleSaveTaskEdits} disabled={isPending}>
-                                {isPending ? 'Saving...' : 'Save'}
-                              </Button>
-                            </div>
-                          </DrawerFooter>
-                        </DrawerContent>
-                      </Drawer>
+                        </div>
+                      </DrawerFooter>
+                    </DrawerContent>
+                  </Drawer>
+                </div>
+                <div className="text-white/90 space-y-2">
+                  <p className="text-sm md:text-base">
+                    {task?.description || "No description available"}
+                  </p>
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between text-sm">
+                    <div>
+                      <strong>Assigned to:</strong> {task?.assignee || "No assignee"}
                     </div>
-                    <p className="text-sm text-white mt-2">
-                      {task?.description || "No description available"}
-                    </p>
-                    <div className="w-full text-sm text-white flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div className="flex flex-col md:flex-row md:items-center md:gap-4">
                       <div>
-                        <strong>Assigned to:</strong> {task?.assignee || "No assignee"}
+                        <strong>Soft Deadline:</strong> {task?.soft_deadline || "No soft deadline"}
                       </div>
-                      <div className="flex flex-col md:flex-row md:items-center md:space-x-4">
-                        <div>
-                          <strong>Soft Deadline:</strong> {task?.soft_deadline || "No soft deadline"}
-                        </div>
-                        <div>
-                          <strong>Hard Deadline:</strong> {task?.hard_deadline || "No hard deadline"}
-                        </div>
+                      <div>
+                        <strong>Hard Deadline:</strong> {task?.hard_deadline || "No hard deadline"}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </div>
+            </div>
+          </div>
 
+          {/* Content Section */}
+          <div className="p-4 md:p-6 space-y-6">
+            {/* Task Info and Submission Section */}
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-4 md:gap-8">
               {/* Submission Card - Collapsible on Mobile */}
-              <div className="col-span-1 md:col-span-2">
+              <div className="col-span-1 md:col-span-5 md:order-2">
                 <div className="md:hidden">
                   <button
                     onClick={() => setShowSubmission(!showSubmission)}
@@ -339,9 +343,8 @@ function TaskPage({ params: { projId, stageId, taskId } }: {
             </div>
           </div>
         </div>
-      )
-      }
-    </div >
+      )}
+    </div>
   );
 }
 

@@ -17,32 +17,90 @@ import OrganizationScoreCard from './OrganizationScoreCard'
 
 const OrganizationPage = ({ id }: { id: string }) => {
   const { user } = useUser();
+  const [isMockMode, setIsMockMode] = useState(false);
+  const [mockOrgData, setMockOrgData] = useState<Organization | null>(null);
+  const [mockUserOrgData, setMockUserOrgData] = useState<UserOrgData | null>(null);
 
-  const [org, loading, error] = useDocument(doc(db, 'organizations', id));
-  const [projectsData, projLoading, projError] = useCollection(collection(db, 'organizations', id, 'projs'));
-  const [data] = useDocument(user && user.primaryEmailAddress && doc(db, 'users', user.primaryEmailAddress.toString(), 'orgs', id));
+  // Check if this is the mock organization
+  useEffect(() => {
+    if (id === 'mock-org-123') {
+      setIsMockMode(true);
+      // Create mock organization data
+      setMockOrgData({
+        title: 'Test Organization',
+        description: 'This is a mock organization for testing group score functionality',
+        admins: ['admin@test.com'],
+        members: ['alice@test.com', 'bob@test.com', 'charlie@test.com', 'david@test.com'],
+        backgroundImage: '/logoFull.svg'
+      });
+      // Create mock user org data
+      setMockUserOrgData({
+        createdAt: new Date().toISOString(),
+        role: 'admin',
+        orgId: 'mock-org-123',
+        userId: user?.primaryEmailAddress?.toString() || 'admin@test.com'
+      });
+    }
+  }, [id, user]);
+
+  const [org, loading, error] = useDocument(isMockMode ? null : doc(db, 'organizations', id));
+  const [projectsData, projLoading, projError] = useCollection(isMockMode ? null : collection(db, 'organizations', id, 'projs'));
+  const [data] = useDocument(user && user.primaryEmailAddress && !isMockMode ? doc(db, 'users', user.primaryEmailAddress.toString(), 'orgs', id) : null);
 
   const [userOrgData, setUserOrgData] = useState<UserOrgData>();
+  
   useEffect(() => {
-    if (data) {
+    if (isMockMode) {
+      setUserOrgData(mockUserOrgData || undefined);
+    } else if (data) {
       const userOrg = data.data() as UserOrgData;
       setUserOrgData(userOrg);
     }
-  }, [data])
+  }, [data, isMockMode, mockUserOrgData])
 
-  if (loading) {
-    return;
+  // Mock projects data
+  const mockProjectsData = {
+    docs: [
+      {
+        id: 'proj-1',
+        data: () => ({
+          id: 'proj-1',
+          title: 'Frontend Development Project',
+          members: ['alice@test.com', 'bob@test.com'],
+          orgId: 'mock-org-123'
+        })
+      },
+      {
+        id: 'proj-2',
+        data: () => ({
+          id: 'proj-2',
+          title: 'Backend Architecture Project',
+          members: ['charlie@test.com', 'david@test.com'],
+          orgId: 'mock-org-123'
+        })
+      }
+    ]
+  };
+
+  if (isMockMode) {
+    if (!mockOrgData) {
+      return <div>Loading mock data...</div>;
+    }
+  } else {
+    if (loading) {
+      return;
+    }
+
+    if (error) {
+      return <div>Error: {error.message}</div>;
+    }
+
+    if (!org) {
+      return <div>No organization found</div>;
+    }
   }
 
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  }
-
-  if (!org) {
-    return <div>No organization found</div>;
-  }
-
-  const orgData = org!.data()! as Organization;
+  const orgData = isMockMode ? mockOrgData! : org!.data()! as Organization;
 
   if (!orgData) {
     return <div>No organization found</div>;
@@ -55,11 +113,16 @@ const OrganizationPage = ({ id }: { id: string }) => {
         style={{ backgroundImage: `url(${orgData.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         {user && user.primaryEmailAddress && orgData && orgData.admins &&
-          !orgData.admins.includes(user.primaryEmailAddress.toString()) && <ProjOnboarding orgId={id} />}
+          !orgData.admins.includes(user.primaryEmailAddress.toString()) && !isMockMode && <ProjOnboarding orgId={id} />}
         <div style={{ background: 'rgba(255,255,255,0.45)', WebkitBackdropFilter: 'blur(5px)', backdropFilter: 'blur(5px)' }} className="rounded-lg p-1">
           <h1 className="text-4xl font-bold m-2 text-black">
             {orgData && orgData.title}
           </h1>
+          {isMockMode && (
+            <div className="text-sm text-gray-700 m-2 bg-yellow-200 bg-opacity-75 p-2 rounded">
+              🧪 Mock Organization Mode - For testing team score functionality
+            </div>
+          )}
         </div>
         {userOrgData && userOrgData.role === 'admin' &&
           <div className="absolute bottom-4 left-4 bg-white bg-opacity-75 p-3 shadow-md rounded-lg">
@@ -78,7 +141,7 @@ const OrganizationPage = ({ id }: { id: string }) => {
           </div>
         }
         <div className='w-full'>
-          <ImageSearchDialog orgId={id} />
+          {!isMockMode && <ImageSearchDialog orgId={id} />}
         </div>
       </div>
       <Tabs defaultValue="projects" className="mt-2 w-full">
@@ -87,7 +150,7 @@ const OrganizationPage = ({ id }: { id: string }) => {
           <TabsTrigger value="members">Members</TabsTrigger>
           <TabsTrigger value="score">Team Score</TabsTrigger>
         </TabsList>
-        <TabsContent value="projects">{user && user.primaryEmailAddress && userOrgData && <ProjTab userRole={userOrgData.role} userId={user.primaryEmailAddress.toString()} orgId={id} projectsData={projectsData} loading={projLoading} error={projError} />}</TabsContent>
+        <TabsContent value="projects">{user && user.primaryEmailAddress && userOrgData && <ProjTab userRole={userOrgData.role} userId={user.primaryEmailAddress.toString()} orgId={id} projectsData={isMockMode ? mockProjectsData as any : projectsData} loading={isMockMode ? false : projLoading} error={isMockMode ? undefined : projError} isMockMode={isMockMode} />}</TabsContent>
         <TabsContent value="members">{orgData && userOrgData && <MemberList userRole={userOrgData.role} admins={orgData.admins} members={orgData.members} />}</TabsContent>
         <TabsContent value="score">{orgData && <OrganizationScoreCard orgId={id} members={orgData.members} mockData={true} />}</TabsContent>
       </Tabs>

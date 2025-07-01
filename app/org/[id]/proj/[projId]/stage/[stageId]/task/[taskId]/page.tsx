@@ -7,10 +7,10 @@ import { collection, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import SubmissionCard from "@/components/SubmissionCard";
 import { Separator } from "@/components/ui/separator";
-import { UserRoundPen, Users, ChevronDown, ChevronUp, Edit3 } from "lucide-react";
+import { MessageSquare, Edit3, Clock, User, Calendar } from "lucide-react";
 import CommentBox from "@/components/CommentBox";
 import { Comment, Task } from "@/types/types";
 import CommentView from "@/components/CommentView";
@@ -46,8 +46,6 @@ function TaskPage({ params: { projId, stageId, taskId } }: {
   const { isSignedIn, isLoaded } = useAuth();
   const { user } = useUser();
   const router = useRouter();
-  const [showPrivateComments, setShowPrivateComments] = useState(false);
-  const [showSubmission, setShowSubmission] = useState(false);
 
   const [isPending, startTransition] = useTransition();
   const [isEditing, setIsEditing] = useState(false);
@@ -55,6 +53,7 @@ function TaskPage({ params: { projId, stageId, taskId } }: {
   const [taskLocked, setTaskLocked] = useState(false);
   const [stageData, stageLoading, stageError] = useDocument(doc(db, 'projects', projId, 'stages', stageId));
   const dispatch = useDispatch();
+  
   useEffect(() => {
     // check to make sure update lock status at least once
     // in case user jumps directly to this page without going through project page
@@ -77,7 +76,7 @@ function TaskPage({ params: { projId, stageId, taskId } }: {
 
   useEffect(() => {
     if (taskLocked) {
-      toast.info('This task is currently locked. Try help others on their tasks first!');
+      toast.info('This task is currently locked. Try helping others with their tasks first!');
     }
   }, [taskLocked]);
 
@@ -117,9 +116,6 @@ function TaskPage({ params: { projId, stageId, taskId } }: {
   const [publicComments, publicCommentsLoading, publicCommentsError] = useCollection(
     collection(db, 'projects', projId, 'stages', stageId, 'tasks', taskId, 'public')
   );
-  const [privateComments, privateCommentsLoading, privateCommentsError] = useCollection(
-    collection(db, 'projects', projId, 'stages', stageId, 'tasks', taskId, 'private')
-  );
 
   const sortedPublicComments = useMemo(() => {
     if (!publicComments) return [];
@@ -131,215 +127,209 @@ function TaskPage({ params: { projId, stageId, taskId } }: {
       .sort((a, b) => (a.time?.seconds || 0) - (b.time?.seconds || 0));
   }, [publicComments]);
 
-  const sortedPrivateComments = useMemo(() => {
-    if (!privateComments) return [];
-    return privateComments.docs
-      .map(doc => ({
-        id: doc.id,
-        ...doc.data() as Comment
-      }))
-      .sort((a, b) => (a.time?.seconds || 0) - (b.time?.seconds || 0));
-  }, [privateComments]);
-
-  if (publicCommentsLoading || privateCommentsLoading) return <Skeleton className="w-full h-96" />;
-  if (publicCommentsError) return <div>Error loading public comments: {publicCommentsError.message}</div>;
-  if (privateCommentsError) return <div>Error loading private comments: {privateCommentsError.message}</div>;
+  if (publicCommentsLoading) return <Skeleton className="w-full h-96" />;
+  if (publicCommentsError) return <div>Error loading comments: {publicCommentsError.message}</div>;
   if (!user || taskLoading) return <Skeleton className="w-full h-96" />;
   if (taskError) return <div>Error: {taskError.message}</div>;
 
   const task = taskData?.data() as Task;
 
   return (
-    <div className="min-h-screen w-full bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
       {isSignedIn && (
-        <div className="flex flex-col">
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
           {/* Header Section */}
-          <div className="bg-gradient-to-r from-[#6F61EF] to-purple-600 shadow-lg">
-            <div className="px-4 md:px-6 py-6">
-              <div className="flex flex-col">
-                <div className="flex items-center justify-between mb-2">
-                  <h1 className="text-2xl md:text-3xl font-bold text-white">
-                    {task?.title || "Task Title"}
-                  </h1>
+          <div className="mb-8">
+            <Card className="border-0 shadow-xl bg-gradient-to-r from-[#6F61EF] to-purple-600 text-white overflow-hidden">
+              <CardHeader className="pb-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-3xl font-bold mb-3">
+                      {task?.title || "Task Title"}
+                    </CardTitle>
+                    <p className="text-white/90 text-lg mb-4 leading-relaxed">
+                      {task?.description || "No description available"}
+                    </p>
+                    
+                    {/* Task Meta Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div className="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-2">
+                        <User className="h-4 w-4" />
+                        <span className="font-medium">Assigned to:</span>
+                        <span>{task?.assignee || "Unassigned"}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-2">
+                        <Calendar className="h-4 w-4" />
+                        <span className="font-medium">Soft Deadline:</span>
+                        <span>{task?.soft_deadline || "None"}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-2">
+                        <Clock className="h-4 w-4" />
+                        <span className="font-medium">Hard Deadline:</span>
+                        <span>{task?.hard_deadline || "None"}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
                   <Drawer open={isEditing}>
                     <DrawerTrigger asChild>
-                      <Button variant="ghost" size="sm" className="text-white hover:bg-white/10" onClick={() => setIsEditing(true)}>
-                        Edit
-                        <Edit3 className="ml-1 h-4 w-4" />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-white hover:bg-white/20 transition-all duration-200 backdrop-blur-sm border border-white/20" 
+                        onClick={() => setIsEditing(true)}
+                      >
+                        <Edit3 className="mr-2 h-4 w-4" />
+                        Edit Task
                       </Button>
                     </DrawerTrigger>
-                    <DrawerContent className="p-4 w-full h-5/6">
-                      <DrawerTitle className="w-full text-xl">📝 Task Editor</DrawerTitle>
-                      <DrawerDescription className="w-full text-lg">
-                        Please edit your task below
+                    <DrawerContent className="p-6 w-full h-5/6">
+                      <DrawerTitle className="text-2xl font-bold mb-2">📝 Edit Task</DrawerTitle>
+                      <DrawerDescription className="text-gray-600 mb-6">
+                        Please edit the task information below
                       </DrawerDescription>
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         <div>
-                          <Label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                            Title
+                          <Label htmlFor="title" className="text-sm font-semibold text-gray-700 mb-2 block">
+                            Task Title
                           </Label>
                           <Input
                             type="text"
                             id="title"
                             name="title"
                             defaultValue={task?.title}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            className="w-full"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                            Description
+                          <Label htmlFor="description" className="text-sm font-semibold text-gray-700 mb-2 block">
+                            Task Description
                           </Label>
                           <Textarea
                             id="description"
                             name="description"
                             defaultValue={task?.description}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            rows={4}
+                            className="w-full"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="assignee" className="block text-sm font-medium text-gray-700">
+                          <Label htmlFor="assignee" className="text-sm font-semibold text-gray-700 mb-2 block">
                             Assignee
                           </Label>
                           <Input
                             type="text"
                             id="assignee"
                             name="assignee"
-                            defaultValue={task?.assignee || "No assignee"}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            defaultValue={task?.assignee || "Unassigned"}
+                            className="w-full"
                           />
                         </div>
-                        <div className="flex flex-col">
-                          <Label htmlFor="soft_deadline" className="block text-sm font-medium text-gray-700">
-                            Soft Deadline
-                          </Label>
-                          <Input
-                            type="date"
-                            id="soft_deadline"
-                            name="soft_deadline"
-                            defaultValue={task?.soft_deadline || ""}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                          />
-                        </div>
-                        <div className="flex flex-col">
-                          <Label htmlFor="hard_deadline" className="block text-sm font-medium text-gray-700">
-                            Hard Deadline
-                          </Label>
-                          <Input
-                            type="date"
-                            id="hard_deadline"
-                            name="hard_deadline"
-                            defaultValue={task?.hard_deadline || ""}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                          />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="soft_deadline" className="text-sm font-semibold text-gray-700 mb-2 block">
+                              Soft Deadline
+                            </Label>
+                            <Input
+                              type="date"
+                              id="soft_deadline"
+                              name="soft_deadline"
+                              defaultValue={task?.soft_deadline || ""}
+                              className="w-full"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="hard_deadline" className="text-sm font-semibold text-gray-700 mb-2 block">
+                              Hard Deadline
+                            </Label>
+                            <Input
+                              type="date"
+                              id="hard_deadline"
+                              name="hard_deadline"
+                              defaultValue={task?.hard_deadline || ""}
+                              className="w-full"
+                            />
+                          </div>
                         </div>
                       </div>
-                      <DrawerFooter className="w-full">
-                        <div className="w-full flex justify-center space-x-2">
-                          <DrawerClose asChild>
-                            <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-                          </DrawerClose>
-                          <Button variant="default" onClick={handleSaveTaskEdits} disabled={isPending}>
-                            {isPending ? 'Saving...' : 'Save'}
+                      <DrawerFooter className="flex flex-row justify-end space-x-4 pt-6">
+                        <DrawerClose asChild>
+                          <Button variant="outline" onClick={() => setIsEditing(false)}>
+                            Cancel
                           </Button>
-                        </div>
+                        </DrawerClose>
+                        <Button onClick={handleSaveTaskEdits} disabled={isPending}>
+                          {isPending ? 'Saving...' : 'Save'}
+                        </Button>
                       </DrawerFooter>
                     </DrawerContent>
                   </Drawer>
                 </div>
-                <div className="text-white/90 space-y-2">
-                  <p className="text-sm md:text-base">
-                    {task?.description || "No description available"}
-                  </p>
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between text-sm">
-                    <div>
-                      <strong>Assigned to:</strong> {task?.assignee || "No assignee"}
-                    </div>
-                    <div className="flex flex-col md:flex-row md:items-center md:gap-4">
-                      <div>
-                        <strong>Soft Deadline:</strong> {task?.soft_deadline || "No soft deadline"}
-                      </div>
-                      <div>
-                        <strong>Hard Deadline:</strong> {task?.hard_deadline || "No hard deadline"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+              </CardHeader>
+            </Card>
           </div>
 
-          {/* Content Section */}
-          <div className="p-4 md:p-6 space-y-6">
-            {/* Task Info and Submission Section */}
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-4 md:gap-8">
-              {/* Submission Card - Collapsible on Mobile */}
-              <div className="col-span-1 md:col-span-5 md:order-2">
-                <div className="md:hidden">
-                  <button
-                    onClick={() => setShowSubmission(!showSubmission)}
-                    className="w-full flex justify-between items-center p-4 bg-white rounded-lg shadow"
-                  >
-                    <span className="font-semibold">Submission Details</span>
-                    {showSubmission ? <ChevronUp /> : <ChevronDown />}
-                  </button>
-                  {showSubmission && (
-                    <div className="mt-2">
-                      <SubmissionCard projId={projId} stageId={stageId} taskId={taskId} task={task} taskLocked={taskLocked} />
-                    </div>
-                  )}
-                </div>
-                <div className="hidden md:block">
+          {/* Main Content - Left/Right Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left Side - Submission/Results */}
+            <div className="lg:col-span-7">
+              <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl font-semibold text-gray-800 flex items-center space-x-2">
+                    <div className="w-2 h-6 bg-gradient-to-b from-[#6F61EF] to-purple-600 rounded-full"></div>
+                    <span>Submissions</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
                   <SubmissionCard projId={projId} stageId={stageId} taskId={taskId} task={task} taskLocked={taskLocked} />
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Comments Section */}
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-4 md:gap-8">
-              {/* Public Comments */}
-              <div className="col-span-1 md:col-span-5">
-                <div className="flex flex-col w-full bg-white rounded-lg shadow">
-                  <div className="flex items-center space-x-2 text-lg md:text-xl font-semibold text-gray-800 p-4">
-                    <Users />
-                    <p>Public Comments ({sortedPublicComments.length})</p>
-                  </div>
-                  <Separator className="bg-gray-400" />
-                  <div className="p-4 space-y-4">
-                    {sortedPublicComments.map((comment) => (
-                      <CommentView key={comment.id} comment={comment} />
-                    ))}
-                    <CommentBox isPublic={true} projId={projId} stageId={stageId} taskId={taskId} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Private Comments - Collapsible on Mobile */}
-              <div className="col-span-1 md:col-span-2">
-                <div className="flex flex-col w-full bg-white rounded-lg shadow">
-                  <button
-                    onClick={() => setShowPrivateComments(!showPrivateComments)}
-                    className="md:hidden flex items-center justify-between w-full p-4 text-lg font-semibold text-gray-800"
-                  >
+            {/* Right Side - Comments */}
+            <div className="lg:col-span-5">
+              <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm h-fit">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl font-semibold text-gray-800 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <UserRoundPen />
-                      <p>Private Comments ({sortedPrivateComments.length})</p>
+                      <MessageSquare className="h-5 w-5 text-[#6F61EF]" />
+                      <span>Comments</span>
+                      <span className="text-sm font-normal text-gray-500">
+                        ({sortedPublicComments.length})
+                      </span>
                     </div>
-                    {showPrivateComments ? <ChevronUp /> : <ChevronDown />}
-                  </button>
-                  <div className="hidden md:flex items-center space-x-2 text-xl font-semibold text-gray-800 p-4">
-                    <UserRoundPen />
-                    <p>Private Comments ({sortedPrivateComments.length})</p>
+                  </CardTitle>
+                </CardHeader>
+                <Separator className="mx-6" />
+                <CardContent className="pt-6">
+                  {/* Comments List */}
+                  <div className="space-y-4 max-h-96 overflow-y-auto mb-6 pr-2">
+                    {sortedPublicComments.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm">No comments yet. Be the first to comment!</p>
+                      </div>
+                    ) : (
+                      sortedPublicComments.map((comment) => (
+                        <div key={comment.id} className="border-b border-gray-100 last:border-b-0 pb-4 last:pb-0">
+                          <CommentView comment={comment} />
+                        </div>
+                      ))
+                    )}
                   </div>
-                  <Separator className="bg-gray-400" />
-                  <div className={`p-4 space-y-4 ${!showPrivateComments && 'hidden md:block'}`}>
-                    {sortedPrivateComments.map((comment) => (
-                      <CommentView key={comment.id} comment={comment} />
-                    ))}
-                    <CommentBox isPublic={false} projId={projId} stageId={stageId} taskId={taskId} className="shadow-none" />
+                  
+                  {/* Comment Input */}
+                  <div className="border-t pt-4">
+                    <CommentBox 
+                      isPublic={true} 
+                      projId={projId} 
+                      stageId={stageId} 
+                      taskId={taskId} 
+                      className="shadow-none border-0" 
+                    />
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>

@@ -286,7 +286,7 @@ function ProjectPage({ params: { id, projId } }: {
         >
           {/* 半透明卡片 - 类似组织页面的设计 */}
           <div 
-            className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-6 m-6 w-full max-w-6xl"
+            className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-6 m-6 w-full max-w-8xl"
             style={{ 
               background: 'rgba(255,255,255,0.15)', 
               WebkitBackdropFilter: 'blur(10px)', 
@@ -296,7 +296,7 @@ function ProjectPage({ params: { id, projId } }: {
           >
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               {/* 项目信息部分 */}
-              <div className="flex-1">
+              <div className="flex-1 space-y-4">
                 <div className="flex items-center justify-between mb-3">
                   <h1 className="text-3xl md:text-4xl font-bold text-white">
                     {isEditing ? (
@@ -345,39 +345,33 @@ function ProjectPage({ params: { id, projId } }: {
                         Cancel
                       </Button>
                     )}
-                  </div>
+      </div>
+                  
                 </div>
                 
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center justify-between mb-2">
                   <h2 className="text-xl md:text-2xl font-semibold text-white">
-                    Project Roadmap 🗺️
+                    Project Roadmap
                   </h2>
-                  {isMockMode && (
-                    <div className="bg-yellow-500 bg-opacity-30 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm">
-                      🧪 Mock Mode
-                    </div>
-                  )}
-                </div>
-                
-                {/* 进度条 - 新设计 */}
-                {stages && stages.length > 0 && (
-                  <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg px-4 py-3 inline-flex items-center gap-4">
-                    <div className="flex items-center gap-3">
-                      <span className="text-white text-sm font-medium">Progress:</span>
-                      <div className="bg-white bg-opacity-30 rounded-full h-2 w-48 overflow-hidden">
-                        <div 
-                          className="h-full bg-white rounded-full transition-all duration-500"
-                          style={{ 
-                            width: `${(stages.reduce((acc, stage) => acc + stage.tasksCompleted, 0) / stages.reduce((acc, stage) => acc + stage.totalTasks, 0)) * 100}%` 
-                          }}
-                        />
+                  {stages && stages.length > 0 && (
+                      <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg px-4 py-3 inline-flex items-center gap-4">
+                        <div className="flex items-center gap-3">
+                          <span className="text-white text-sm font-medium">Progress:</span>
+                          <div className="bg-white bg-opacity-30 rounded-full h-2 w-48 overflow-hidden">
+                            <div 
+                              className="h-full bg-white rounded-full transition-all duration-500"
+                              style={{ 
+                                width: `${(stages.reduce((acc, stage) => acc + stage.tasksCompleted, 0) / stages.reduce((acc, stage) => acc + stage.totalTasks, 0)) * 100}%` 
+                              }}
+                            />
+                          </div>
+                          <span className="font-bold text-white text-lg min-w-[3rem]">
+                            {Math.round((stages.reduce((acc, stage) => acc + stage.tasksCompleted, 0) / stages.reduce((acc, stage) => acc + stage.totalTasks, 0)) * 100)}%
+                          </span>
+                        </div>
                       </div>
-                      <span className="font-bold text-white text-lg min-w-[3rem]">
-                        {Math.round((stages.reduce((acc, stage) => acc + stage.tasksCompleted, 0) / stages.reduce((acc, stage) => acc + stage.totalTasks, 0)) * 100)}%
-                      </span>
-                    </div>
-                  </div>
-                )}
+                    )}
+                </div>          
               </div>
             </div>
           </div>

@@ -278,23 +278,18 @@ function StagePage({ params: { id, projId, stageId } }: {
         <div className="px-4 md:px-6 py-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             {/* Title Section */}
-            <div className="flex-1">
+            <div className="flex-1 space-y-4">
               <div className="flex items-center justify-between mb-2">
                 <h1 className="text-2xl md:text-3xl font-bold text-white">
                   {'Stage ' + (stage.order + 1) + '. ' + stage.title}
                 </h1>
                 <div className="flex items-center gap-2">
-                  {isMockMode && (
-                    <span className="text-sm text-yellow-200 px-2 py-1 bg-yellow-500/20 rounded-full">
-                      🧪 Mock Mode
-                    </span>
-                  )}
-                                     <Link href={`/org/${id}/proj/${projId}/leaderboard`}>
-                     <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
-                       <Trophy className="h-4 w-4 mr-1" />
-                       Leaderboard
-                     </Button>
-                   </Link>
+                  <Link href={`/org/${id}/proj/${projId}/leaderboard`}>
+                      <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
+                        <Trophy className="h-4 w-4 mr-1" />
+                        Leaderboard
+                      </Button>
+                    </Link>
                   <Button 
                     variant="ghost" 
                     size="sm"
@@ -309,11 +304,7 @@ function StagePage({ params: { id, projId, stageId } }: {
                 Tasks & Task Pool
               </h2>
             </div>
-            
-            {/* Progress Section */}
-            <div className="flex-shrink-0">
-              <PieChartProgress tasksCompleted={tasksCompleted} totalTasks={tasks.length} />
-            </div>
+          
           </div>
         </div>
       </div>
@@ -328,7 +319,7 @@ function StagePage({ params: { id, projId, stageId } }: {
 
           {/* Traditional Task Management View */}
           <TabsContent value="tasks" className="mt-0">
-            <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               {tasks.map((task, index) => (
                 <div key={index} className="flex flex-1">
                   <Link
@@ -388,7 +379,7 @@ function StagePage({ params: { id, projId, stageId } }: {
               ))}
               
               {(isEditing || tasks.length == 0) && (
-                <div>
+                <div className="col-span-full">
                   <div className="w-full flex-1 p-4 bg-gray-200 rounded-lg shadow hover:shadow-lg transition-shadow duration-300 cursor-pointer">
                     <div className="flex justify-between items-center">
                       <Button

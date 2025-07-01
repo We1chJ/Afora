@@ -212,55 +212,58 @@ const TaskPool: React.FC<TaskPoolProps> = ({
       </Card>
 
       {/* Task List */}
-      <div className="grid gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {tasks.map((task) => (
-          <Card key={task.id} className="transition-shadow hover:shadow-md">
+          <Card key={task.id} className="transition-shadow hover:shadow-md h-fit">
             <CardContent className="p-4">
-              <div className="flex items-start justify-between">
+              <div className="flex flex-col h-full">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold text-lg">{task.title}</h3>
-                    {getTaskStatusBadge(task)}
-                    <Badge variant="outline" className="text-xs">
-                      {task.points} pt{task.points !== 1 ? 's' : ''}
-                    </Badge>
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <h3 className="font-semibold text-base line-clamp-2">{task.title}</h3>
+                    <div className="flex flex-wrap gap-1">
+                      {getTaskStatusBadge(task)}
+                      <Badge variant="outline" className="text-xs">
+                        {task.points} pt{task.points !== 1 ? 's' : ''}
+                      </Badge>
+                    </div>
                   </div>
                   
-                  <p className="text-gray-600 text-sm mb-3">{task.description}</p>
+                  <p className="text-gray-600 text-sm mb-3 line-clamp-3">{task.description}</p>
                   
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                  <div className="flex flex-col gap-1 text-sm text-gray-500">
                     <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      <span>Soft: {formatDeadline(task.soft_deadline)}</span>
+                      <Calendar className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">Soft: {formatDeadline(task.soft_deadline)}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Timer className="h-4 w-4" />
-                      <span>Hard: {formatDeadline(task.hard_deadline)}</span>
+                      <Timer className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">Hard: {formatDeadline(task.hard_deadline)}</span>
                     </div>
                   </div>
 
                   {task.assignee && (
                     <div className="flex items-center gap-2 mt-2">
-                      <Avatar className="h-6 w-6">
+                      <Avatar className="h-6 w-6 flex-shrink-0">
                         <AvatarFallback className="text-xs">
                           {task.assignee.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm text-gray-600">{task.assignee}</span>
+                      <span className="text-sm text-gray-600 truncate">{task.assignee}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="flex flex-col gap-2 ml-4">
+                <div className="flex flex-col gap-2 mt-4 pt-4 border-t">
                   {task.status === 'available' && (
                     <Button
                       size="sm"
                       onClick={() => handleAssignTask(task.id)}
                       disabled={loading}
-                      className="flex items-center gap-1"
+                      className="flex items-center gap-1 w-full"
                     >
                       <UserPlus className="h-4 w-4" />
-                      Assign to Me
+                      <span className="hidden sm:inline">Assign to Me</span>
+                      <span className="sm:hidden">Assign</span>
                     </Button>
                   )}
 
@@ -271,20 +274,22 @@ const TaskPool: React.FC<TaskPoolProps> = ({
                         variant="outline"
                         onClick={() => handleCompleteTask(task.id)}
                         disabled={loading}
-                        className="flex items-center gap-1"
+                        className="flex items-center gap-1 w-full"
                       >
                         <CheckCircle className="h-4 w-4" />
-                        Complete
+                        <span className="hidden sm:inline">Complete</span>
+                        <span className="sm:hidden">Done</span>
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => handleUnassignTask(task.id)}
                         disabled={loading}
-                        className="flex items-center gap-1"
+                        className="flex items-center gap-1 w-full"
                       >
                         <UserMinus className="h-4 w-4" />
-                        Unassign
+                        <span className="hidden sm:inline">Unassign</span>
+                        <span className="sm:hidden">Remove</span>
                       </Button>
                     </div>
                   )}
@@ -295,15 +300,16 @@ const TaskPool: React.FC<TaskPoolProps> = ({
                       variant="destructive"
                       onClick={() => handleAssignTask(task.id)}
                       disabled={loading}
-                      className="flex items-center gap-1"
+                      className="flex items-center gap-1 w-full"
                     >
                       <AlertTriangle className="h-4 w-4" />
-                      Reassign
+                      <span className="hidden sm:inline">Reassign</span>
+                      <span className="sm:hidden">Take</span>
                     </Button>
                   )}
 
                   {task.status === 'completed' && (
-                    <div className="flex items-center gap-1 text-green-600 text-sm">
+                    <div className="flex items-center justify-center gap-1 text-green-600 text-sm py-2">
                       <CheckCircle className="h-4 w-4" />
                       <span>+{task.points} pts</span>
                     </div>

@@ -114,15 +114,10 @@ const OrganizationPage = ({ id }: { id: string }) => {
       >
         {user && user.primaryEmailAddress && orgData && orgData.admins &&
           !orgData.admins.includes(user.primaryEmailAddress.toString()) && !isMockMode && <ProjOnboarding orgId={id} />}
-        <div style={{ background: 'rgba(255,255,255,0.45)', WebkitBackdropFilter: 'blur(5px)', backdropFilter: 'blur(5px)' }} className="rounded-lg p-1">
+        <div className="rounded-lg p-1 bg-white bg-opacity-75 backdrop-blur-sm">
           <h1 className="text-4xl font-bold m-2 text-black">
             {orgData && orgData.title}
           </h1>
-          {isMockMode && (
-            <div className="text-sm text-gray-700 m-2 bg-yellow-200 bg-opacity-75 p-2 rounded">
-              🧪 Mock Organization Mode - For testing team score functionality
-            </div>
-          )}
         </div>
         {userOrgData && userOrgData.role === 'admin' &&
           <div className="absolute bottom-4 left-4 bg-white bg-opacity-75 p-3 shadow-md rounded-lg">

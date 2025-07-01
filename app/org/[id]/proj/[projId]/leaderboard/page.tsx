@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ function LeaderboardPage({ params: { id, projId } }: {
   }
 }) {
   const { isSignedIn, isLoaded } = useAuth();
+  const { user } = useUser();
   const router = useRouter();
   const [userScores, setUserScores] = useState<UserScore[]>([]);
   const [projectTitle, setProjectTitle] = useState("");
@@ -77,7 +78,17 @@ function LeaderboardPage({ params: { id, projId } }: {
         tasksAssigned: 8,
         averageCompletionTime: 7.3,
         streak: 2
-      }
+      },
+      // Add current user to mock data if we have user info
+      ...(user?.primaryEmailAddress ? [{
+        userId: user.id || 'current-user',
+        email: user.primaryEmailAddress.emailAddress,
+        totalPoints: 10,
+        tasksCompleted: 10,
+        tasksAssigned: 12,
+        averageCompletionTime: 5.0,
+        streak: 1
+      }] : [])
     ];
 
     const mockProjectTitles = {
@@ -135,6 +146,7 @@ function LeaderboardPage({ params: { id, projId } }: {
         projectId={projId}
         projectTitle={projectTitle}
         userScores={userScores}
+        currentUserEmail={user?.primaryEmailAddress?.emailAddress}
         isMockMode={isMockMode}
       />
     </div>

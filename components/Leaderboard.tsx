@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { UserScore, ProjectLeaderboard } from "@/types/types";
 import { 
   Trophy, 
@@ -14,29 +15,56 @@ import {
   Clock,
   CheckCircle,
   Target,
-  Flame
+  Flame,
+  Crown
 } from "lucide-react";
 
 interface LeaderboardProps {
   projectId: string;
   projectTitle: string;
   userScores: UserScore[];
+  currentUserEmail?: string;
   isMockMode?: boolean;
 }
+
+type DisplayLimit = 3 | 5 | 10 | 'all';
 
 const Leaderboard: React.FC<LeaderboardProps> = ({
   projectId,
   projectTitle,
   userScores,
+  currentUserEmail,
   isMockMode = false
 }) => {
   const [sortedScores, setSortedScores] = useState<UserScore[]>([]);
+  const [displayLimit, setDisplayLimit] = useState<DisplayLimit>(10);
 
   useEffect(() => {
     // Sort users by total points (descending)
     const sorted = [...userScores].sort((a, b) => b.totalPoints - a.totalPoints);
     setSortedScores(sorted);
   }, [userScores]);
+
+  // Get available display options based on total member count
+  const getAvailableDisplayOptions = (): DisplayLimit[] => {
+    const totalMembers = sortedScores.length;
+    const options: DisplayLimit[] = [];
+    
+    if (totalMembers >= 3) options.push(3);
+    if (totalMembers >= 5) options.push(5);
+    if (totalMembers >= 10) options.push(10);
+    options.push('all');
+    
+    return options;
+  };
+
+  // Auto-adjust display limit if current selection is not available
+  useEffect(() => {
+    const availableOptions = getAvailableDisplayOptions();
+    if (!availableOptions.includes(displayLimit)) {
+      setDisplayLimit(availableOptions[availableOptions.length - 1]); // Default to 'all' or highest available
+    }
+  }, [sortedScores.length]);
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -78,8 +106,40 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     return email.length > 20 ? email.substring(0, 20) + '...' : email;
   };
 
-  const topPerformers = sortedScores.slice(0, 3);
-  const otherPerformers = sortedScores.slice(3);
+  const isCurrentUser = (email: string) => {
+    return currentUserEmail && (email === currentUserEmail || email.includes(currentUserEmail));
+  };
+
+  // Find current user's rank
+  const currentUserRank = currentUserEmail ? 
+    sortedScores.findIndex(user => isCurrentUser(user.email)) + 1 : 0;
+
+  // Get top users for display
+  const getTopUsers = () => {
+    if (displayLimit === 'all') {
+      return sortedScores;
+    }
+    return sortedScores.slice(0, displayLimit);
+  };
+
+  // Get current user if they're not in the top display
+  const getCurrentUserIfNotInTop = () => {
+    if (displayLimit === 'all') {
+      return null; // All users are already shown
+    }
+    
+    if (currentUserEmail && currentUserRank > displayLimit) {
+      return sortedScores.find(user => isCurrentUser(user.email)) || null;
+    }
+    
+    return null; // Current user is in top or no current user
+  };
+
+  const topUsers = getTopUsers();
+  const currentUserOutOfTop = getCurrentUserIfNotInTop();
+
+  const topPerformers = topUsers.slice(0, 3);
+  const otherPerformers = topUsers.slice(3);
 
   // Calculate team stats
   const teamStats = {
@@ -93,39 +153,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Project Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5" />
-            {projectTitle} Leaderboard
-            {isMockMode && (
-              <Badge variant="outline" className="ml-2">Mock Mode</Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{teamStats.totalPoints}</div>
-              <div className="text-sm text-gray-500">Total Points</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{teamStats.totalTasksCompleted}</div>
-              <div className="text-sm text-gray-500">Tasks Completed</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">{teamStats.totalTasksAssigned}</div>
-              <div className="text-sm text-gray-500">Tasks Assigned</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{teamStats.averageCompletionTime.toFixed(1)}h</div>
-              <div className="text-sm text-gray-500">Avg. Completion</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       <Tabs defaultValue="rankings" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="rankings">Rankings</TabsTrigger>
@@ -142,9 +169,18 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               <CardContent>
                 <div className="grid gap-4">
                   {topPerformers.map((user, index) => {
-                    const rank = index + 1;
+                    const rank = sortedScores.findIndex(u => u.userId === user.userId) + 1;
+                    const isCurrentUserCard = isCurrentUser(user.email);
+                    const isOutOfRange = displayLimit !== 'all' && rank > displayLimit;
+                    
+                    const cardClassName = `flex items-center gap-4 p-4 rounded-lg border ${
+                      isCurrentUserCard 
+                        ? 'bg-gradient-to-r from-blue-50 to-blue-100 border-blue-300 ring-2 ring-blue-200' 
+                        : 'bg-gradient-to-r from-gray-50 to-white'
+                    } ${isOutOfRange ? 'border-dashed border-orange-300 bg-orange-50' : ''}`;
+                    
                     return (
-                      <div key={user.userId} className="flex items-center gap-4 p-4 rounded-lg border bg-gradient-to-r from-gray-50 to-white">
+                      <div key={user.userId} className={cardClassName}>
                         <div className="flex items-center gap-3">
                           {getRankIcon(rank)}
                           <Avatar className="h-10 w-10">
@@ -156,9 +192,17 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                         
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold">{formatEmail(user.email)}</span>
+                            <span className={`font-semibold ${isCurrentUserCard ? 'text-blue-800' : ''}`}>
+                              {formatEmail(user.email)}
+                              {isCurrentUserCard && ' (You)'}
+                            </span>
                             <Badge variant={getRankBadgeVariant(rank)}>#{rank}</Badge>
                             {getStreakDisplay(user.streak)}
+                            {isOutOfRange && (
+                              <Badge variant="outline" className="text-orange-600 border-orange-300">
+                                Your Rank
+                              </Badge>
+                            )}
                           </div>
                           <div className="text-sm text-gray-500">
                             {user.tasksCompleted} tasks completed • {user.averageCompletionTime.toFixed(1)}h avg
@@ -177,7 +221,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             </Card>
           )}
 
-          {/* Other Performers */}
+          {/* Other Performers - only show if there are non-top-3 users in the top display */}
           {otherPerformers.length > 0 && (
             <Card>
               <CardHeader>
@@ -186,9 +230,17 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               <CardContent>
                 <div className="space-y-3">
                   {otherPerformers.map((user, index) => {
-                    const rank = index + 4; // Starting from 4th place
+                    const rank = sortedScores.findIndex(u => u.userId === user.userId) + 1;
+                    const isCurrentUserCard = isCurrentUser(user.email);
+                    
+                    const cardClassName = `flex items-center gap-4 p-3 rounded-lg border ${
+                      isCurrentUserCard 
+                        ? 'bg-gradient-to-r from-blue-50 to-blue-100 border-blue-300 ring-2 ring-blue-200' 
+                        : 'hover:bg-gray-50'
+                    }`;
+                    
                     return (
-                      <div key={user.userId} className="flex items-center gap-4 p-3 rounded-lg border">
+                      <div key={user.userId} className={cardClassName}>
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 flex items-center justify-center text-gray-500 font-bold">
                             {rank}
@@ -202,7 +254,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                         
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium">{formatEmail(user.email)}</span>
+                            <span className={`font-medium ${isCurrentUserCard ? 'text-blue-800' : ''}`}>
+                              {formatEmail(user.email)}
+                              {isCurrentUserCard && ' (You)'}
+                            </span>
                             {getStreakDisplay(user.streak)}
                           </div>
                           <div className="text-sm text-gray-500">
@@ -216,6 +271,62 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                       </div>
                     );
                   })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Current User (if not in top display) */}
+          {currentUserOutOfTop && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  Your Rank
+                  <span className="text-sm font-normal text-gray-500 ml-2">
+                    (#{currentUserRank} out of {sortedScores.length})
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {(() => {
+                    const user = currentUserOutOfTop;
+                    const rank = currentUserRank;
+                    
+                    return (
+                      <div className="flex items-center gap-4 p-3 rounded-lg border bg-gradient-to-r from-blue-50 to-blue-100 border-blue-300 ring-2 ring-blue-200">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 flex items-center justify-center text-gray-500 font-bold">
+                            {rank}
+                          </div>
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="text-sm">
+                              {user.email.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
+                        
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-blue-800">
+                              {formatEmail(user.email)} (You)
+                            </span>
+                            {getStreakDisplay(user.streak)}
+                            <Badge variant="outline" className="text-orange-600 border-orange-300">
+                              Your Rank
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {user.tasksCompleted} completed • {user.tasksAssigned} assigned
+                          </div>
+                        </div>
+                        
+                        <div className="text-lg font-semibold text-blue-600">
+                          {user.totalPoints}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </CardContent>
             </Card>
@@ -251,21 +362,33 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedScores.map((user, index) => (
-                      <tr key={user.userId} className="border-b hover:bg-gray-50">
-                        <td className="py-3">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarFallback className="text-xs">
-                                {user.email.charAt(0).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium">{formatEmail(user.email)}</span>
-                          </div>
-                        </td>
-                        <td className="text-center py-3">
-                          <Badge variant="outline">{user.totalPoints}</Badge>
-                        </td>
+                    {sortedScores.map((user, index) => {
+                      const isCurrentUserRow = isCurrentUser(user.email);
+                      return (
+                        <tr 
+                          key={user.userId} 
+                          className={`border-b hover:bg-gray-50 ${
+                            isCurrentUserRow ? 'bg-blue-50 hover:bg-blue-100' : ''
+                          }`}
+                        >
+                          <td className="py-3">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarFallback className="text-xs">
+                                  {user.email.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className={`font-medium ${isCurrentUserRow ? 'text-blue-800' : ''}`}>
+                                {formatEmail(user.email)}
+                                {isCurrentUserRow && ' (You)'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="text-center py-3">
+                            <Badge variant={isCurrentUserRow ? "default" : "outline"}>
+                              {user.totalPoints}
+                            </Badge>
+                          </td>
                         <td className="text-center py-3">
                           <div className="flex items-center justify-center gap-1">
                             <CheckCircle className="h-4 w-4 text-green-500" />
@@ -294,8 +417,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                             <span className="text-gray-400">-</span>
                           )}
                         </td>
-                      </tr>
-                    ))}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

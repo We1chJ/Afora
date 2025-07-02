@@ -22,9 +22,10 @@ interface OrganizationScoreCardProps {
   orgId: string;
   members: string[];
   mockData?: boolean; // Used for displaying mock data
+  projectFilter?: string; // Optional project filter for project-specific analysis
 }
 
-const OrganizationScoreCard = ({ orgId, members, mockData = false }: OrganizationScoreCardProps) => {
+const OrganizationScoreCard = ({ orgId, members, mockData = false, projectFilter }: OrganizationScoreCardProps) => {
   const [analysis, setAnalysis] = useState<TeamCompatibilityAnalysis | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -164,10 +165,13 @@ Question 3 Answer: ${member.responses[2] || 'No answer'}`;
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Team Compatibility Analysis
+            {projectFilter ? 'Project Team Compatibility Analysis' : 'Team Compatibility Analysis'}
           </CardTitle>
           <CardDescription>
-            Analyze team's overall compatibility and collaboration potential based on member onboarding surveys
+            {projectFilter 
+              ? 'Analyze this project team\'s compatibility and collaboration potential based on member profiles'
+              : 'Analyze team\'s overall compatibility and collaboration potential based on member onboarding surveys'
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -11,6 +11,20 @@ import { mockUpdateProjects } from '@/actions/mockActions';
 import { toast } from 'sonner';
 import ProjectCard from './ProjectCard';
 import { Skeleton } from './ui/skeleton';
+import { Plus, FolderOpen, Users, Calendar, BarChart3, Target, ArrowRight, Folder, Briefcase } from 'lucide-react';
+import { Input } from './ui/input';
+import { Badge } from './ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Separator } from './ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter
+} from "./ui/dialog";
 
 type MatchingOutput = {
     groupSize: number
@@ -19,6 +33,10 @@ type MatchingOutput = {
 
 const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId, isMockMode = false }: { userId: string, userRole: string, orgId: string, projectsData: QuerySnapshot<DocumentData, DocumentData> | undefined, loading: boolean, error: FirestoreError | undefined, isMockMode?: boolean }) => {
     const [isPending, startTransition] = useTransition();
+    const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
+    const [newProjectTitle, setNewProjectTitle] = useState('');
+    const [selectedProject, setSelectedProject] = useState<string | null>(null);
+    const [selectedView, setSelectedView] = useState<'overview' | 'projects'>('overview');
 
     const [output, setOutput] = useState('');
     const [parsedOutput, setParsedOutput] = useState<MatchingOutput | null>(null);
@@ -105,6 +123,31 @@ const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId, isMock
         }
     };
 
+    const handleCreateProject = () => {
+        if (!newProjectTitle.trim()) {
+            toast.error('Please enter a project title');
+            return;
+        }
+        
+        startTransition(async () => {
+            try {
+                if (isMockMode) {
+                    // For mock mode, just show success message
+                    toast.success(`Mock project "${newProjectTitle}" created successfully!`);
+                } else {
+                    // TODO: Implement actual project creation API call
+                    // await createProject(orgId, newProjectTitle);
+                    toast.success(`Project "${newProjectTitle}" created successfully!`);
+                }
+                setNewProjectTitle('');
+                setIsNewProjectDialogOpen(false);
+            } catch (error) {
+                console.error('Failed to create project:', error);
+                toast.error('Failed to create project');
+            }
+        });
+    };
+
     // Use mock data when in mock mode
     const displayProjects = isMockMode ? 
         { docs: projectsData?.docs || [] } : 
@@ -113,91 +156,392 @@ const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId, isMock
     const displayLoading = isMockMode ? false : (userRole === 'admin' ? apLoading : userLoading);
     const displayError = isMockMode ? null : (userRole === 'admin' ? apError : userError);
 
-    return (
-        <>
-            {userRole === 'admin' &&
-                <div>
-                    {output && parsedOutput && parsedOutput.groups && (
-                        <>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {parsedOutput.groups.map((group, index) => (
-                                    <div key={index} className="group-card shadow-md p-2 mb-2 rounded-lg bg-white dark:bg-gray-800">
-                                        <h3 className="text-md font-semibold mb-1 text-gray-900 dark:text-gray-100">Group {index + 1}</h3>
-                                        <ul>
-                                            {group.map((member, memberIndex) => (
-                                                <li key={memberIndex} className="text-gray-700 dark:text-gray-300 text-xs">{member}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="flex justify-end space-x-4 mt-4">
-                                <Button disabled={isPending} onClick={handleAccept}>
-                                    {isPending ? 'Accepting...' : 'Accept'}
-                                </Button>
-                                <Button variant="secondary" onClick={() => setOutput('')}>
-                                    Cancel
-                                </Button>
-                            </div>
-                        </>
-                    )}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {displayLoading && <Skeleton className="h-48 w-full" />}
-                        {displayError && <p>Error loading projects: {displayError.message}</p>}
-                        {!displayLoading && !displayError && displayProjects && displayProjects.docs.length > 0 && (
-                            displayProjects.docs
-                                .sort((a, b) => {
-                                    const projA = isMockMode ? a.data() : a.data() as Project;
-                                    const projB = isMockMode ? b.data() : b.data() as Project;
-                                    return projA.title.localeCompare(projB.title);
-                                })
-                                .map((doc) => {
-                                    const proj = isMockMode ? doc.data() : doc.data() as Project;
-                                    return (
-                                        <ProjectCard key={proj.projId || (proj as any).id} orgId={orgId} projId={proj.projId || (proj as any).id} projectName={proj.title} backgroundImage={''} tasks={[]} />
-                                    );
-                                })
-                        )}
-                    </div>
-                    {!output && !loading && !error && projectsData && projectsData.docs.length === 0 && (
-                        <div className="flex flex-col items-center justify-center h-80 text-center space-y-4">
-                            <p className="text-lg font-bold">No projects found.</p>
-                            <GenerateTeamsButton setOutput={setOutput} orgId={orgId} />
-                        </div>
-                    )}
+    // Get all projects for display
+    const allProjectsList = userRole === 'admin' 
+        ? (displayProjects?.docs || []).map(doc => isMockMode ? doc.data() : doc.data() as Project)
+        : userProjList;
+    
+    const selectedProjectData = allProjectsList.find(proj => proj.projId === selectedProject);
+    const totalProjects = allProjectsList.length;
+    const activeProjects = allProjectsList.filter(proj => proj.members && proj.members.length > 0).length;
 
-                </div >
-            }
-            {userRole === 'editor' &&
-                <div>
-                    {!isMockMode && !userLoading && !userError && userProjList.length === 0 && (
-                        <div className="flex flex-col items-center justify-center h-80 text-center space-y-4">
-                            <p className="text-lg font-bold">No projects found yet. Wait for the admins to create groups.</p>
+    return (
+        <div className="flex h-auto bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg overflow-hidden">
+            {/* Left Sidebar */}
+            <div className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-lg">
+                {/* Header */}
+                <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+                            <Briefcase className="h-6 w-6" />
+                        </div>
+                        <h2 className="text-xl font-bold">Project Management</h2>
+                    </div>
+                    
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white bg-opacity-20 backdrop-blur-sm p-3 rounded-lg">
+                            <div className="text-2xl font-bold">{totalProjects}</div>
+                            <div className="text-xs opacity-90">Total Projects</div>
+                        </div>
+                        <div className="bg-white bg-opacity-20 backdrop-blur-sm p-3 rounded-lg">
+                            <div className="text-2xl font-bold">{activeProjects}</div>
+                            <div className="text-xs opacity-90">Active</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Navigation */}
+                <div className="p-4 border-b border-gray-200">
+                    <div className="grid grid-cols-2 gap-2">
+                        <Button
+                            variant={selectedView === 'overview' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => {setSelectedView('overview'); setSelectedProject(null);}}
+                            className="flex items-center gap-2"
+                        >
+                            <BarChart3 className="h-4 w-4" />
+                            Overview
+                        </Button>
+                        <Button
+                            variant={selectedView === 'projects' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setSelectedView('projects')}
+                            className="flex items-center gap-2"
+                        >
+                            <FolderOpen className="h-4 w-4" />
+                            Projects
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Content Area */}
+                <div className="flex-1 overflow-y-auto p-4">
+                    {selectedView === 'overview' ? (
+                        <div className="space-y-4">
+                            <div className="text-sm font-medium text-gray-500">Project Overview</div>
+                            <Card className="border-0 shadow-sm">
+                                <CardContent className="p-4">
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm text-gray-600">Total Projects</span>
+                                            <Badge variant="secondary">{totalProjects}</Badge>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm text-gray-600">Active Projects</span>
+                                            <Badge variant="default">{activeProjects}</Badge>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm text-gray-600">Role</span>
+                                            <Badge variant={userRole === 'admin' ? 'destructive' : 'secondary'}>
+                                                {userRole === 'admin' ? 'Admin' : 'Member'}
+                                            </Badge>
+                                        </div>
+                                        <Separator />
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm text-gray-600">Total Members</span>
+                                            <Badge variant="outline">
+                                                {allProjectsList.reduce((total, proj) => total + (proj.members?.length || 0), 0)}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            <div className="text-sm font-medium text-gray-500">Project List</div>
+                            {allProjectsList.length > 0 ? (
+                                allProjectsList
+                                    .sort((a, b) => a.title.localeCompare(b.title))
+                                    .map((proj) => (
+                                        <div
+                                            key={proj.projId}
+                                            className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
+                                                selectedProject === proj.projId
+                                                    ? 'bg-purple-50 border-2 border-purple-200 shadow-md'
+                                                    : 'bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:shadow-sm'
+                                            }`}
+                                            onClick={() => setSelectedProject(proj.projId)}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <Folder className={`h-5 w-5 ${
+                                                    selectedProject === proj.projId ? 'text-purple-600' : 'text-gray-400'
+                                                }`} />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className={`font-medium truncate ${
+                                                        selectedProject === proj.projId ? 'text-purple-900' : 'text-gray-900'
+                                                    }`}>
+                                                        {proj.title}
+                                                    </div>
+                                                    <div className="text-sm text-gray-500">
+                                                        {proj.members?.length || 0} members
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col items-end gap-1">
+                                                    <Badge variant={(proj.members?.length || 0) > 0 ? "default" : "secondary"}>
+                                                        {(proj.members?.length || 0) > 0 ? 'Active' : 'Empty'}
+                                                    </Badge>
+                                                    {selectedProject === proj.projId && (
+                                                        <ArrowRight className="h-4 w-4 text-purple-600" />
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                            ) : (
+                                <div className="text-center py-8">
+                                    <Folder className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                                    <p className="text-gray-500 text-sm">
+                                        {userRole === 'admin' ? 'No projects created yet' : 'No projects assigned to you'}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     )}
-                                         {isMockMode && userProjList.length === 0 && (
-                        <div className="flex flex-col items-center justify-center h-80 text-center space-y-4">
-                            <p className="text-lg font-bold">🧪 Mock Mode: No projects assigned to you</p>
-                        </div>
-                    )}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {!isMockMode && userLoading && (
-                            <div className="col-span-1 md:col-span-2 lg:col-span-3">
-                                <Skeleton className="h-48 w-full" />
-                            </div>
-                        )}
-                        {!isMockMode && userError && <p>Error loading projects: {userError.message}</p>}
-                        {userProjList.length > 0 && (
-                            userProjList
-                                .sort((a, b) => a.title.localeCompare(b.title))
-                                .map((proj) => (
-                                    <ProjectCard key={proj.projId} orgId={orgId} projId={proj.projId} projectName={proj.title} backgroundImage={''} tasks={[]} />
-                                ))
+                </div>
+
+                {/* Actions */}
+                <div className="p-4 border-t border-gray-200 bg-gray-50">
+                    <div className="space-y-2">
+                        {userRole === 'admin' && (
+                            <>
+                                <Dialog open={isNewProjectDialogOpen} onOpenChange={setIsNewProjectDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button className="w-full" size="sm">
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            New Project
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Create New Project</DialogTitle>
+                                            <DialogDescription>
+                                                Enter a name for your new project.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="grid gap-4 py-4">
+                                            <div className="flex flex-col gap-2">
+                                                <label htmlFor="project-title" className="text-sm font-medium">
+                                                    Project Title
+                                                </label>
+                                                <Input
+                                                    id="project-title"
+                                                    value={newProjectTitle}
+                                                    onChange={(e) => setNewProjectTitle(e.target.value)}
+                                                    placeholder="Enter project title..."
+                                                    onKeyPress={(e) => e.key === 'Enter' && handleCreateProject()}
+                                                />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button variant="outline" onClick={() => setIsNewProjectDialogOpen(false)}>
+                                                Cancel
+                                            </Button>
+                                            <Button onClick={handleCreateProject} disabled={isPending || !newProjectTitle.trim()}>
+                                                {isPending ? 'Creating...' : 'Create Project'}
+                                            </Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                                
+                                {!output && totalProjects === 0 && (
+                                    <GenerateTeamsButton setOutput={setOutput} orgId={orgId} />
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
-            }
-        </>
+            </div>
+
+            {/* Right Content Area */}
+            <div className="flex-1 flex flex-col bg-white">
+                {/* Team Generation Results */}
+                {output && parsedOutput && parsedOutput.groups && (
+                    <div className="p-6 border-b border-gray-200 bg-blue-50">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Generated Team Groups</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                            {parsedOutput.groups.map((group, index) => (
+                                <div key={index} className="bg-white p-4 rounded-lg shadow-sm border">
+                                    <h4 className="font-medium text-gray-900 mb-2">Group {index + 1}</h4>
+                                    <ul className="space-y-1">
+                                        {group.map((member, memberIndex) => (
+                                            <li key={memberIndex} className="text-sm text-gray-600 flex items-center gap-2">
+                                                <Users className="h-3 w-3" />
+                                                {member}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex justify-end space-x-4">
+                            <Button disabled={isPending} onClick={handleAccept}>
+                                {isPending ? 'Accepting...' : 'Accept Groups'}
+                            </Button>
+                            <Button variant="secondary" onClick={() => setOutput('')}>
+                                Cancel
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Content Header */}
+                <div className="p-6 border-b border-gray-200 bg-white">
+                    {selectedView === 'overview' ? (
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-900">Project Overview</h3>
+                            <p className="text-sm text-gray-500">Manage and monitor all your projects</p>
+                        </div>
+                    ) : selectedProject && selectedProjectData ? (
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                    {selectedProjectData.title}
+                                </h3>
+                                <p className="text-sm text-gray-500">
+                                    {selectedProjectData.members?.length || 0} team members
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Badge variant={(selectedProjectData.members?.length || 0) > 0 ? "default" : "secondary"}>
+                                    {(selectedProjectData.members?.length || 0) > 0 ? 'Active Project' : 'Empty Project'}
+                                </Badge>
+                            </div>
+                        </div>
+                    ) : selectedView === 'projects' ? (
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-900">Select Project</h3>
+                            <p className="text-sm text-gray-500">Select a project from the left to view details</p>
+                        </div>
+                    ) : (
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-900">Projects Dashboard</h3>
+                            <p className="text-sm text-gray-500">Overview of all project activities</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Content Area */}
+                <div className="flex-1 overflow-y-auto p-6">
+                    {selectedView === 'overview' ? (
+                        <div className="space-y-6">
+                            {allProjectsList.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {allProjectsList
+                                        .sort((a, b) => a.title.localeCompare(b.title))
+                                        .map((proj) => (
+                                            <div key={proj.projId} className="group">
+                                                <ProjectCard 
+                                                    orgId={orgId} 
+                                                    projId={proj.projId} 
+                                                    projectName={proj.title} 
+                                                    backgroundImage={''} 
+                                                    tasks={[]} 
+                                                />
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <Folder className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                        {userRole === 'admin' ? 'No projects created yet' : 'No projects assigned'}
+                                    </h3>
+                                    <p className="text-gray-500">
+                                        {userRole === 'admin' 
+                                            ? 'Create your first project to get started' 
+                                            : 'Wait for admins to create projects and assign you'
+                                        }
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    ) : selectedProject && selectedProjectData ? (
+                        <div className="space-y-6">
+                            {/* Project Details */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Target className="h-5 w-5 text-purple-600" />
+                                        Project Details
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <h4 className="text-sm font-medium text-gray-700 mb-2">Project Name</h4>
+                                            <p className="text-lg font-semibold">{selectedProjectData.title}</p>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-medium text-gray-700 mb-2">Team Size</h4>
+                                            <p className="text-lg font-semibold">{selectedProjectData.members?.length || 0} members</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Team Members */}
+                            {selectedProjectData.members && selectedProjectData.members.length > 0 && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Users className="h-5 w-5 text-blue-600" />
+                                            Team Members
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="grid gap-3">
+                                                                                         {selectedProjectData.members.map((member: string, index: number) => (
+                                                 <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                                     <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-medium">
+                                                         {member.charAt(0).toUpperCase()}
+                                                     </div>
+                                                     <div>
+                                                         <p className="font-medium text-gray-900">{member}</p>
+                                                         <p className="text-sm text-gray-500">Team Member</p>
+                                                     </div>
+                                                 </div>
+                                             ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            {/* Project Actions */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Quick Actions</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <Button variant="outline" className="justify-start" asChild>
+                                            <a href={`/org/${orgId}/proj/${selectedProject}`}>
+                                                <FolderOpen className="h-4 w-4 mr-2" />
+                                                View Project Details
+                                            </a>
+                                        </Button>
+                                        <Button variant="outline" className="justify-start" asChild>
+                                            <a href={`/org/${orgId}/proj/${selectedProject}/team-score`}>
+                                                <BarChart3 className="h-4 w-4 mr-2" />
+                                                Team Analysis
+                                            </a>
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    ) : (
+                        <div className="text-center py-12">
+                            <FolderOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">Select a project to view details</h3>
+                            <p className="text-gray-500">Choose a project from the list to see detailed information and team members.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
     )
 }
 

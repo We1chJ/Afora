@@ -64,7 +64,7 @@ const OrganizationPage = ({ id }: { id: string }) => {
       {
         id: 'proj-1',
         data: () => ({
-          id: 'proj-1',
+          projId: 'proj-1',
           title: 'Frontend Development Project',
           members: ['alice@test.com', 'bob@test.com'],
           orgId: 'mock-org-123'
@@ -73,7 +73,7 @@ const OrganizationPage = ({ id }: { id: string }) => {
       {
         id: 'proj-2',
         data: () => ({
-          id: 'proj-2',
+          projId: 'proj-2',
           title: 'Backend Architecture Project',
           members: ['charlie@test.com', 'david@test.com'],
           orgId: 'mock-org-123'
@@ -108,46 +108,105 @@ const OrganizationPage = ({ id }: { id: string }) => {
 
   return (
     <div className="overflow-x-hidden p-4">
-      <div
-        className="flex items-center justify-between bg-cover bg-center p-4 h-64 rounded-lg relative"
-        style={{ backgroundImage: `url(${orgData.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-      >
-        {user && user.primaryEmailAddress && orgData && orgData.admins &&
-          !orgData.admins.includes(user.primaryEmailAddress.toString()) && !isMockMode && <ProjOnboarding orgId={id} />}
-        <div className="rounded-lg p-1 bg-white bg-opacity-75 backdrop-blur-sm">
-          <h1 className="text-4xl font-bold m-2 text-black">
-            {orgData && orgData.title}
-          </h1>
-        </div>
-        {userOrgData && userOrgData.role === 'admin' &&
-          <div className="absolute bottom-4 left-4 bg-white bg-opacity-75 p-3 shadow-md rounded-lg">
-            <h2 className="text-m font-semibold">
-              Access Code:
-              <br />
-              {userOrgData.orgId}
-              <Copy
-                className="inline-block ml-2 cursor-pointer hover:bg-gray-200 rounded-md p-0.5"
-                onClick={() => {
-                  navigator.clipboard.writeText(userOrgData.orgId);
-                  toast.success('Access code copied to clipboard!');
-                }}
-              />
-            </h2>
+      {/* Hero Section with Background Image */}
+      <div className="relative w-full h-80 rounded-lg overflow-hidden">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${orgData.backgroundImage})` }}
+        />
+        
+        {/* Content Container */}
+        <div className="relative h-full flex flex-col justify-between p-6">
+          {/* Top Section */}
+          <div className="flex justify-between items-start">
+            {/* Project Onboarding */}
+            {user && user.primaryEmailAddress && orgData && orgData.admins &&
+              !orgData.admins.includes(user.primaryEmailAddress.toString()) && !isMockMode && (
+              <div className="backdrop-blur-md bg-white/90 rounded-xl p-3 shadow-lg">
+                <ProjOnboarding orgId={id} />
+              </div>
+            )}
+            
+            {/* Image Search Dialog */}
+            <div className="ml-auto">
+              {!isMockMode && (
+                <div className="backdrop-blur-md bg-white/90 rounded-xl p-2 shadow-lg">
+                  <ImageSearchDialog orgId={id} />
+                </div>
+              )}
+            </div>
           </div>
-        }
-        <div className='w-full'>
-          {!isMockMode && <ImageSearchDialog orgId={id} />}
+
+          {/* Bottom Section */}
+          <div className="flex justify-between items-end">
+            {/* Organization Title */}
+            <div className="flex-1">
+              <div className="backdrop-blur-md bg-white/75 rounded-xl p-4 inline-block">
+                <h1 className="text-5xl font-bold text-gray-900 mb-2">
+                  {orgData && orgData.title}
+                </h1>
+                {orgData && orgData.description && (
+                  <p className="text-gray-700 text-lg max-w-2xl">
+                    {orgData.description}
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            {/* Access Code Card */}
+            {userOrgData && userOrgData.role === 'admin' && (
+              <div className="backdrop-blur-md bg-white/75 rounded-xl p-4 min-w-[200px]">
+                <div className="text-sm font-medium text-gray-600 mb-1">Access Code</div>
+                <div className="flex items-center gap-2">
+                  <code className="text-lg font-mono font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded">
+                    {userOrgData.orgId}
+                  </code>
+                  <Copy
+                    className="w-5 h-5 cursor-pointer text-gray-600 hover:text-gray-900 transition-colors"
+                    onClick={() => {
+                      navigator.clipboard.writeText(userOrgData.orgId);
+                      toast.success('Access code copied to clipboard!');
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      <Tabs defaultValue="projects" className="mt-2 w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="projects">Projects</TabsTrigger>
-          <TabsTrigger value="members">Members</TabsTrigger>
-          <TabsTrigger value="score">Team Score</TabsTrigger>
+
+      {/* Tabs Section */}
+      <Tabs defaultValue="projects" className="mt-6 w-full">
+        <TabsList className="grid w-full grid-cols-2 bg-gray-100 rounded-xl p-1">
+          <TabsTrigger value="projects" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Projects</TabsTrigger>
+          <TabsTrigger value="members" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Members</TabsTrigger>
         </TabsList>
-        <TabsContent value="projects">{user && user.primaryEmailAddress && userOrgData && <ProjTab userRole={userOrgData.role} userId={user.primaryEmailAddress.toString()} orgId={id} projectsData={isMockMode ? mockProjectsData as any : projectsData} loading={isMockMode ? false : projLoading} error={isMockMode ? undefined : projError} isMockMode={isMockMode} />}</TabsContent>
-        <TabsContent value="members">{orgData && userOrgData && <MemberList userRole={userOrgData.role} admins={orgData.admins} members={orgData.members} />}</TabsContent>
-        <TabsContent value="score">{orgData && <OrganizationScoreCard orgId={id} members={orgData.members} mockData={true} />}</TabsContent>
+        <TabsContent value="projects" className="mt-4">
+          {user && user.primaryEmailAddress && userOrgData && (
+            <ProjTab 
+              userRole={userOrgData.role} 
+              userId={user.primaryEmailAddress.toString()} 
+              orgId={id} 
+              projectsData={isMockMode ? mockProjectsData as any : projectsData} 
+              loading={isMockMode ? false : projLoading} 
+              error={isMockMode ? undefined : projError} 
+              isMockMode={isMockMode} 
+            />
+          )}
+        </TabsContent>
+        <TabsContent value="members" className="mt-4">
+          {orgData && userOrgData && (
+            <MemberList 
+              userRole={userOrgData.role} 
+              admins={orgData.admins} 
+              members={orgData.members} 
+              orgId={id} 
+              projectsData={isMockMode ? mockProjectsData : projectsData} 
+              isMockMode={isMockMode} 
+            />
+          )}
+        </TabsContent>
       </Tabs>
     </div>
   )

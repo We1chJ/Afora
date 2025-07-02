@@ -33,21 +33,6 @@ const SimpleTestPage = () => {
                   Visit Mock Organization
                 </Button>
               </Link>
-              <Link href="/org/mock-org-123/proj/proj-1">
-                <Button variant="outline">
-                  View Project 1
-                </Button>
-              </Link>
-              <Link href="/org/mock-org-123/proj/proj-2">
-                <Button variant="outline">
-                  View Project 2
-                </Button>
-              </Link>
-              <Link href="/org/mock-org-123/proj/proj-1/stage/stage-1">
-                <Button variant="outline">
-                  Task Pool Demo
-                </Button>
-              </Link>
             </div>
           </CardContent>
         </Card>
@@ -88,39 +73,6 @@ const SimpleTestPage = () => {
                 <li>• ✅ Deadline tracking</li>
                 <li>• ❌ Task generation (disabled in mock mode)</li>
               </ul>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="mt-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>🚀 Start Testing</CardTitle>
-            <CardDescription>
-              Test functionality using mock organization data
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-4">
-              The mock organization has been configured with complete test data. You can:
-            </p>
-            <ol className="list-decimal list-inside space-y-2 text-sm">
-              <li>Visit the mock organization page to see the overall structure</li>
-              <li>Test team score functionality in the "Team Score" tab</li>
-              <li>View and edit project details</li>
-              <li>Manage project stages and progress</li>
-              <li>Edit team charter</li>
-              <li>Try the task pool system - assign, complete, and track tasks</li>
-              <li>View the leaderboard to see point rankings</li>
-              <li>Test task deadline and reassignment features</li>
-            </ol>
-            <div className="mt-4">
-              <Link href="/org/mock-org-123">
-                <Button size="lg">
-                  🧪 Start Testing Mock Organization
-                </Button>
-              </Link>
             </div>
           </CardContent>
         </Card>

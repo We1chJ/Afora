@@ -6,19 +6,12 @@ import { collection, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+
 import { Project, Stage, teamCharterQuestions } from "@/types/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { CircleCheck, EditIcon, Loader2, LockKeyhole, NotepadText, PencilLine, Save, Trash2, Trophy } from "lucide-react";
+import { CircleCheck, EditIcon, Loader2, LockKeyhole, NotepadText, PencilLine, Save, Trash2, Trophy, Target, BarChart3, UsersIcon } from "lucide-react";
 import { Reorder, useDragControls } from "framer-motion";
 import { toast } from "sonner";
 import GenerateTasksButton from "@/components/GenerateTasksButton";
@@ -39,6 +32,11 @@ import { HoverCardContent } from "@/components/ui/hover-card";
 import { ReorderIcon } from "@/components/ReorderIcon";
 import { useDispatch } from "react-redux";
 import { updateStatus } from "@/lib/store/features/stageStatus/stageStatusSlice";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import OrganizationScoreCard from "@/components/OrganizationScoreCard";
 
 export interface StageProgress {
   stageOrder: number;
@@ -272,6 +270,9 @@ function ProjectPage({ params: { id, projId } }: {
     }
   };
 
+  // Get project members
+  const projectMembers = proj?.members || [];
+
   return (
     <div className="flex flex-col w-full h-full bg-gray-100">
       {/* Header Section - 类似组织页面的背景图片风格 */}
@@ -351,7 +352,7 @@ function ProjectPage({ params: { id, projId } }: {
                 
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-xl md:text-2xl font-semibold text-white">
-                    Project Roadmap
+                    Project Overview
                   </h2>
                   {stages && stages.length > 0 && (
                       <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg px-4 py-3 inline-flex items-center gap-4">
@@ -378,9 +379,23 @@ function ProjectPage({ params: { id, projId } }: {
         </div>
       </div>
 
-      {/* Content Section */}
+      {/* Content Section with Tabs */}
       <div className="flex-1 p-6">
-        {stages.length === 0 ? (
+        <Tabs defaultValue="roadmap" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="roadmap" className="flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Project Roadmap
+            </TabsTrigger>
+            <TabsTrigger value="team-analytics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Team Informations
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="roadmap" className="space-y-4">
+            <div className="space-y-6">
+              {stages.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm border p-8 text-center space-y-6">
             <div className="text-gray-500">
               <h3 className="text-lg font-medium mb-2">No stages yet</h3>
@@ -632,8 +647,70 @@ function ProjectPage({ params: { id, projId } }: {
                 </div>
               </div>
             )}
-          </div>
-        )}
+            </div>
+          )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="team-analytics" className="space-y-6">
+            {/* Team Score Analysis Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-purple-600" />
+                  Team Compatibility Analysis
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <OrganizationScoreCard 
+                  orgId={id} 
+                  members={projectMembers} 
+                  mockData={isMockMode}
+                  projectFilter={projId}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Team Members Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UsersIcon className="h-5 w-5 text-blue-600" />
+                  Team Members
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {projectMembers && projectMembers.length > 0 ? (
+                  <div className="grid gap-3">
+                    {projectMembers.map((member: string, index: number) => (
+                      <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-medium">
+                            {member.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{member}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="secondary" className="text-xs">
+                              Team Member
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <UsersIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p className="text-lg font-medium">No team members assigned</p>
+                    <p className="text-sm">Add team members to start collaboration</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

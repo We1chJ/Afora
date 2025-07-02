@@ -25,7 +25,20 @@ export type Project = {
     title: string;
     members: string[];
     teamCharterResponse: string[];
+    projectType?: string; // 项目类型：Frontend, Backend, Mobile等
+    createdAt?: string;
+    description?: string;
     // Add other fields as necessary
+}
+
+export type ProjectStats = {
+    totalTasks: number;
+    completedTasks: number;
+    totalStages: number;
+    completedStages: number;
+    progress: number; // 0-100
+    memberCount: number;
+    projectType: string;
 }
 
 export type Organization = {

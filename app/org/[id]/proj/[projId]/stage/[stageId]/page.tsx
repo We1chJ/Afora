@@ -1,14 +1,7 @@
 'use client';
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
@@ -19,9 +12,10 @@ import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { db } from "@/firebase";
 import { Stage, Task } from "@/types/types";
 import { collection, doc } from "firebase/firestore";
-import PieChartProgress from "@/components/PieChartProgress";
-import TaskPool from "@/components/TaskPool";
-import { CircleCheckBig, Clock7, Trash, Edit3, Trophy, BarChart3 } from "lucide-react";
+
+import { CircleCheckBig, Clock7, Trash, Edit3, AlertTriangle, DollarSign } from "lucide-react";
+import BountyBoardButton from "@/components/BountyBoardButton";
+import TaskManagement from "@/components/TaskManagement";
 import { createTask, deleteTask } from "@/actions/actions";
 import {
   AlertDialog,
@@ -143,6 +137,8 @@ function StagePage({ params: { id, projId, stageId } }: {
 
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showBountyBoard, setShowBountyBoard] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<string | null>(null);
 
   // Mock stage data
   const mockStage: Stage = {
@@ -181,6 +177,14 @@ function StagePage({ params: { id, projId, stageId } }: {
   }
 
   const tasksCompleted = tasks.filter(task => task.isCompleted).length;
+  
+  // Get overdue tasks for bounty board
+  const overdueTasks = tasks.filter(task => {
+    if (task.isCompleted) return false;
+    const softDeadline = new Date(task.soft_deadline);
+    const now = new Date();
+    return now > softDeadline;
+  });
 
   const handleNewTask = () => {
     if (isMockMode) {
@@ -220,197 +224,137 @@ function StagePage({ params: { id, projId, stageId } }: {
     });
   };
 
-  // Task pool handlers
-  const handleTaskAssign = async (taskId: string, userId: string) => {
-    if (isMockMode) {
-      // Update mock data
-      setMockTasks(prev => prev.map(task => 
-        task.id === taskId 
-          ? { ...task, assignee: userId, status: 'assigned' as const, assignedAt: new Date().toISOString() }
-          : task
-      ));
-      return;
-    }
-    
-    // TODO: Implement real task assignment
-    // Example API call:
-    // await fetch(`/api/tasks/${taskId}/assign`, {
-    //   method: 'POST',
-    //   body: JSON.stringify({ userId }),
-    //   headers: { 'Content-Type': 'application/json' }
-    // });
-  };
 
-  const handleTaskUnassign = async (taskId: string) => {
-    if (isMockMode) {
-      // Update mock data
-      setMockTasks(prev => prev.map(task => 
-        task.id === taskId 
-          ? { ...task, assignee: '', status: 'available' as const, assignedAt: undefined }
-          : task
-      ));
-      return;
-    }
-    
-    // TODO: Implement real task unassignment
-    // await fetch(`/api/tasks/${taskId}/unassign`, { method: 'POST' });
-  };
-
-  const handleTaskComplete = async (taskId: string) => {
-    if (isMockMode) {
-      // Update mock data
-      setMockTasks(prev => prev.map(task => 
-        task.id === taskId 
-          ? { ...task, isCompleted: true, status: 'completed' as const, completedAt: new Date().toISOString() }
-          : task
-      ));
-      return;
-    }
-    
-    // TODO: Implement real task completion
-    // await fetch(`/api/tasks/${taskId}/complete`, { method: 'POST' });
-  };
 
   return (
-    <div className="w-full h-full flex flex-col bg-gray-50">
-      {/* Header Section */}
-      <div className="bg-gradient-to-r from-[#6F61EF] to-purple-600 shadow-lg">
-        <div className="px-4 md:px-6 py-6">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            {/* Title Section */}
-            <div className="flex-1 space-y-4">
-              <div className="flex items-center justify-between mb-2">
-                <h1 className="text-2xl md:text-3xl font-bold text-white">
-                  {'Stage ' + (stage.order + 1) + '. ' + stage.title}
-                </h1>
-                <div className="flex items-center gap-2">
-                  <Link href={`/org/${id}/proj/${projId}/leaderboard`}>
-                      <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
-                        <Trophy className="h-4 w-4 mr-1" />
-                        Leaderboard
-                      </Button>
-                    </Link>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="text-white hover:bg-white/10" 
-                    onClick={() => setIsEditing(!isEditing)}
-                  >
-                    <Edit3 className="h-4 w-4" />
-                  </Button>
+    <div className="w-full h-full flex flex-col bg-gray-100">
+      {/* Header Section - 类似项目页面的设计风格 */}
+      <div className="relative">
+        <div 
+          className="bg-gradient-to-r from-[#6F61EF] to-purple-600 h-64 flex items-center justify-center bg-cover bg-center"
+          style={{ 
+            backgroundImage: `linear-gradient(135deg, #6F61EF 0%, #8B7ED8 50%, #B794F6 100%)`,
+            backgroundSize: 'cover', 
+            backgroundPosition: 'center' 
+          }}
+        >
+          {/* 半透明卡片 - 类似项目页面的设计 */}
+          <div 
+            className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-6 m-6 w-full max-w-8xl"
+            style={{ 
+              background: 'rgba(255,255,255,0.15)', 
+              WebkitBackdropFilter: 'blur(10px)', 
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.2)'
+            }}
+          >
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              {/* Stage信息部分 */}
+              <div className="flex-1 space-y-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h1 className="text-3xl md:text-4xl font-bold text-white">
+                    {'Stage ' + (stage.order + 1) + '. ' + stage.title}
+                  </h1>
+                  <div className="flex items-center gap-3">
+                    <BountyBoardButton
+                      overdueTasks={overdueTasks.length}
+                      showBountyBoard={showBountyBoard}
+                      onClick={() => setShowBountyBoard(!showBountyBoard)}
+                    />
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="text-white hover:bg-white/20 transition-colors" 
+                      onClick={() => setIsEditing(!isEditing)}
+                    >
+                      <Edit3 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
+                
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-xl md:text-2xl font-semibold text-white">
+                    Tasks List
+                  </h2>
+                </div>          
               </div>
-              <h2 className="text-xl md:text-2xl font-semibold text-white">
-                Tasks & Task Pool
-              </h2>
             </div>
-          
           </div>
         </div>
       </div>
 
       {/* Content Section */}
-      <div className="flex-1 p-4 md:p-6">
-        <Tabs defaultValue="tasks" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="tasks">Task Management</TabsTrigger>
-            <TabsTrigger value="pool">Task Pool</TabsTrigger>
-          </TabsList>
-
-          {/* Traditional Task Management View */}
-          <TabsContent value="tasks" className="mt-0">
-            <div className="grid grid-cols-2 gap-4">
-              {tasks.map((task, index) => (
-                <div key={index} className="flex flex-1">
-                  <Link
-                    className="flex flex-1"
-                    href={`/org/${id}/proj/${projId}/stage/${stageId}/task/${task.id}`}
-                    onClick={(e) => isEditing && e.preventDefault()}
-                  >
-                    <Card className="w-full shadow-lg hover:shadow-3xl hover:translate-y-[-4px] transition-transform duration-300 h-auto">
-                      <CardHeader>
-                        <div className="flex justify-between items-center">
-                          <span className="text-lg">{index + 1}. {task.title}</span>
-                          <div className="flex items-center gap-2">
-                            {task.isCompleted ? (
-                              <CircleCheckBig className="text-green-500" />
-                            ) : (
-                              <Clock7 className="text-yellow-500" />
-                            )}
-                            {isEditing && (
-                              <AlertDialog open={isOpen}>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    className="text-red-500"
-                                    onClick={() => setIsOpen(true)}
-                                  >
-                                    <Trash />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete this task? This action cannot be undone!
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <Button variant="secondary" onClick={() => setIsOpen(false)}>
-                                      Cancel
-                                    </Button>
-                                    <Button
-                                      variant="destructive"
-                                      onClick={() => { handleDeleteTask(task.id) }}
-                                      disabled={isPending}
-                                    >
-                                      {isPending ? <Clock7 className="animate-spin" /> : "Delete"}
-                                    </Button>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            )}
+      <div className="flex-1 p-6">
+        {/* Bounty Board */}
+        {showBountyBoard && (
+          <div className="mb-6">
+            <Card className="border-orange-200 bg-gradient-to-r from-orange-50 to-red-50">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-orange-800">
+                  <AlertTriangle className="h-5 w-5 text-red-500" />
+                  Bounty Board - Overdue Tasks
+                  <span className="text-sm font-normal text-gray-600">
+                    ({overdueTasks.length} tasks available)
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {overdueTasks.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {overdueTasks.map((task, index) => (
+                      <div key={task.id} className="bg-white rounded-lg p-4 border border-orange-200 hover:border-orange-300 transition-colors">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-semibold text-gray-900 flex-1">{task.title}</h3>
+                          <div className="flex items-center gap-2 ml-4">
+                            <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
+                              1 Point
+                            </span>
+                            <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
+                              Overdue
+                            </span>
                           </div>
                         </div>
-                      </CardHeader>
-                    </Card>
-                  </Link>
-                </div>
-              ))}
-              
-              {(isEditing || tasks.length == 0) && (
-                <div className="col-span-full">
-                  <div className="w-full flex-1 p-4 bg-gray-200 rounded-lg shadow hover:shadow-lg transition-shadow duration-300 cursor-pointer">
-                    <div className="flex justify-between items-center">
-                      <Button
-                        variant="ghost"
-                        className="w-full flex justify-between items-center"
-                        onClick={handleNewTask}
-                      >
-                        <span className="w-full text-lg font-semibold text-gray-500">
-                          + New Task
-                        </span>
-                      </Button>
-                    </div>
+                        <p className="text-gray-600 text-sm mb-3">{task.description}</p>
+                        <div className="flex justify-between items-center">
+                          <div className="text-xs text-gray-500">
+                            <span className="font-medium">Due:</span> {new Date(task.soft_deadline).toLocaleDateString()}
+                          </div>
+                          <Link href={`/org/${id}/proj/${projId}/stage/${stageId}/task/${task.id}`}>
+                            <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
+                              Claim Task
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              )}
-            </div>
-          </TabsContent>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p className="text-lg font-medium">No overdue tasks available</p>
+                    <p className="text-sm">All tasks are on track! 🎉</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-          {/* Task Pool View */}
-          <TabsContent value="pool" className="mt-4">
-            <TaskPool
-              stageId={stageId}
-              projId={projId}
-              tasks={tasks}
-              isMockMode={isMockMode}
-              onTaskAssign={handleTaskAssign}
-              onTaskUnassign={handleTaskUnassign}
-              onTaskComplete={handleTaskComplete}
-            />
-          </TabsContent>
-        </Tabs>
+        {/* Task Management Component */}
+        <TaskManagement
+          tasks={tasks}
+          selectedTask={selectedTask}
+          setSelectedTask={setSelectedTask}
+          isEditing={isEditing}
+          handleNewTask={handleNewTask}
+          handleDeleteTask={handleDeleteTask}
+          isPending={isPending}
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
+          orgId={id}
+          projId={projId}
+          stageId={stageId}
+        />
       </div>
     </div>
   );

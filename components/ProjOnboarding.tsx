@@ -48,8 +48,16 @@ const ProjOnboarding = ({ orgId }: { orgId: string }) => {
 
     const { user } = useUser();
 
-    // const [userData, loading, error] = useDocument(user && user.primaryEmailAddress && doc(db, 'users', user.primaryEmailAddress.toString(), 'orgs', orgId));
-    const [userData] = useDocument(user && user.primaryEmailAddress && doc(db, 'users', user.primaryEmailAddress.toString(), 'orgs', orgId));
+    // 安全地构建文档路径
+    const userEmail = user?.primaryEmailAddress?.emailAddress;
+    const shouldFetchUserData = Boolean(userEmail && orgId);
+    
+    // Debug information - remove in production
+    // console.log('ProjOnboarding debug:', { userEmail, orgId, shouldFetchUserData });
+
+    const [userData] = useDocument(
+        (userEmail && orgId) ? doc(db, 'users', userEmail, 'orgs', orgId) : null
+    );
 
     if (!userData || userData.data()?.projOnboardingSurveyResponse) {
         return null;

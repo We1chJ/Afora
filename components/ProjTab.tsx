@@ -6,7 +6,7 @@ import React, { useEffect, useState, useTransition } from 'react'
 import { useCollection } from 'react-firebase-hooks/firestore';
 import GenerateTeamsButton from './GenerateTeamsButton';
 import { Button } from './ui/button';
-import { updateProjects } from '@/actions/actions';
+import { updateProjects, createProject } from '@/actions/actions';
 import { mockUpdateProjects } from '@/actions/mockActions';
 import { toast } from 'sonner';
 import ProjectCard from './ProjectCard';
@@ -135,15 +135,23 @@ const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId, isMock
                     // For mock mode, just show success message
                     toast.success(`Mock project "${newProjectTitle}" created successfully!`);
                 } else {
-                    // TODO: Implement actual project creation API call
-                    // await createProject(orgId, newProjectTitle);
-                    toast.success(`Project "${newProjectTitle}" created successfully!`);
+                    // 调用真实的项目创建API
+                    const result = await createProject(orgId, newProjectTitle, []);
+                    
+                    if (result.success) {
+                        toast.success(result.message || `Project "${newProjectTitle}" created successfully!`);
+                        // 刷新页面以显示新项目
+                        window.location.reload();
+                    } else {
+                        toast.error(result.message || 'Failed to create project');
+                        return;
+                    }
                 }
                 setNewProjectTitle('');
                 setIsNewProjectDialogOpen(false);
             } catch (error) {
                 console.error('Failed to create project:', error);
-                toast.error('Failed to create project');
+                toast.error('Failed to create project: ' + (error as Error).message);
             }
         });
     };
@@ -292,9 +300,14 @@ const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId, isMock
                             ) : (
                                 <div className="text-center py-8">
                                     <Folder className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                                    <p className="text-gray-500 text-sm">
+                                    <p className="text-gray-500 text-sm mb-3">
                                         {userRole === 'admin' ? 'No projects created yet' : 'No projects assigned to you'}
                                     </p>
+                                    {userRole === 'admin' && (
+                                        <p className="text-xs text-gray-400">
+                                            Click "New Project" below to create your first project
+                                        </p>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -308,9 +321,12 @@ const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId, isMock
                             <>
                                 <Dialog open={isNewProjectDialogOpen} onOpenChange={setIsNewProjectDialogOpen}>
                                     <DialogTrigger asChild>
-                                        <Button className="w-full" size="sm">
+                                        <Button 
+                                            className={`w-full ${totalProjects === 0 ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg text-white' : ''}`} 
+                                            size={totalProjects === 0 ? "default" : "sm"}
+                                        >
                                             <Plus className="h-4 w-4 mr-2" />
-                                            New Project
+                                            {totalProjects === 0 ? '创建第一个项目' : 'New Project'}
                                         </Button>
                                     </DialogTrigger>
                                     <DialogContent>
@@ -445,16 +461,28 @@ const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId, isMock
                                 </div>
                             ) : (
                                 <div className="text-center py-12">
-                                    <Folder className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                        {userRole === 'admin' ? 'No projects created yet' : 'No projects assigned'}
-                                    </h3>
-                                    <p className="text-gray-500">
-                                        {userRole === 'admin' 
-                                            ? 'Create your first project to get started' 
-                                            : 'Wait for admins to create projects and assign you'
-                                        }
-                                    </p>
+                                    <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-8 max-w-md mx-auto">
+                                        <Folder className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                            {userRole === 'admin' ? '欢迎来到项目管理！' : 'No projects assigned'}
+                                        </h3>
+                                        <p className="text-gray-500 mb-4">
+                                            {userRole === 'admin' 
+                                                ? '开始创建您的第一个项目，体验全新的任务池管理系统' 
+                                                : 'Wait for admins to create projects and assign you'
+                                            }
+                                        </p>
+                                        {userRole === 'admin' && (
+                                            <div className="bg-white p-4 rounded-lg border border-purple-200 text-sm text-gray-600">
+                                                <h4 className="font-medium text-purple-800 mb-2">💡 快速开始：</h4>
+                                                <ul className="text-left space-y-1">
+                                                    <li>• 点击左侧 "New Project" 按钮</li>
+                                                    <li>• 输入项目名称</li>
+                                                    <li>• 开始享受新的项目管理功能！</li>
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>

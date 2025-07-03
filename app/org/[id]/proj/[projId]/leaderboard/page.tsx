@@ -9,6 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Leaderboard from "@/components/Leaderboard";
 import { UserScore } from "@/types/types";
+import { getProjectLeaderboard, getUserScore } from "@/actions/actions";
 
 function LeaderboardPage({ params: { id, projId } }: {
   params: {
@@ -103,22 +104,31 @@ function LeaderboardPage({ params: { id, projId } }: {
 
   const loadRealData = async () => {
     try {
-      // TODO: Implement real data fetching from backend
-      // Example API calls:
-      // const projectResponse = await fetch(`/api/projects/${projId}`);
-      // const project = await projectResponse.json();
-      // setProjectTitle(project.title);
+             // 获取项目排行榜数据
+       const leaderboardResponse = await getProjectLeaderboard(projId);
+       if (leaderboardResponse.success && leaderboardResponse.leaderboard) {
+         // 将后端数据转换为前端需要的格式
+         const formattedScores: UserScore[] = leaderboardResponse.leaderboard.map((score: any) => ({
+           userId: score.id,
+           email: score.user_email,
+           totalPoints: score.total_points,
+           tasksCompleted: score.tasks_completed,
+           tasksAssigned: score.tasks_assigned,
+           averageCompletionTime: score.average_completion_time || 0,
+           streak: score.streak || 0
+         }));
+         setUserScores(formattedScores);
+       } else {
+         console.error('Failed to load leaderboard:', leaderboardResponse.message);
+         setUserScores([]);
+       }
       
-      // const scoresResponse = await fetch(`/api/projects/${projId}/leaderboard`);
-      // const scores = await scoresResponse.json();
-      // setUserScores(scores);
-      
-      // For now, show empty state
-      setUserScores([]);
+      // TODO: 获取项目标题（需要项目详情API）
       setProjectTitle("Project Leaderboard");
       setLoading(false);
     } catch (error) {
       console.error('Error loading leaderboard data:', error);
+      setUserScores([]);
       setLoading(false);
     }
   };

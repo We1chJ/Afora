@@ -8,7 +8,10 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useDocument } from "react-firebase-hooks/firestore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit3, Clock, User, Calendar } from "lucide-react";
+import { Edit3, Clock, User, Calendar, UserPlus, CheckCircle, Upload, Target } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { Task } from "@/types/types";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -25,7 +28,14 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useTransition } from "react";
-import { getStageLockStatus, updateTask } from "@/actions/actions";
+import { 
+  getStageLockStatus, 
+  updateTask, 
+  assignTask, 
+  completeTaskWithProgress, 
+  submitTask, 
+  getTaskSubmissions 
+} from "@/actions/actions";
 import { toast } from "sonner";
 import { RootState } from "@/lib/store/store";
 import { useDispatch, useSelector } from "react-redux";
@@ -51,6 +61,14 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
   const [userRole, setUserRole] = useState<'admin' | 'user'>('admin');
   const [stageData, stageLoading, stageError] = useDocument(doc(db, 'projects', projId, 'stages', stageId));
   const dispatch = useDispatch();
+  
+  // 新增任务池相关状态
+  const [assigneeEmail, setAssigneeEmail] = useState('');
+  const [submissionContent, setSubmissionContent] = useState('');
+  const [completionPercentage, setCompletionPercentage] = useState(0);
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [showSubmissionDialog, setShowSubmissionDialog] = useState(false);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
   
   useEffect(() => {
     // check to make sure update lock status at least once
@@ -83,6 +101,8 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
     const description = (document.getElementById('description') as HTMLTextAreaElement).value;
     const softDeadline = (document.getElementById('soft_deadline') as HTMLInputElement).value;
     const hardDeadline = (document.getElementById('hard_deadline') as HTMLInputElement).value;
+    const points = parseInt((document.getElementById('points') as HTMLInputElement)?.value || '1');
+    
     const validateDate = (date: string) => {
       const regex = /^\d{4}-\d{2}-\d{2}$/;
       return regex.test(date);
@@ -93,7 +113,7 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
       return;
     }
     startTransition(async () => {
-      await updateTask(projId, stageId, taskId, title, description, softDeadline, hardDeadline)
+      await updateTask(projId, stageId, taskId, title, description, softDeadline, hardDeadline, points)
         .then(() => {
           toast.success('Task updated successfully!');
           setIsEditing(false);
@@ -103,6 +123,89 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
         });
     });
   };
+
+  // 处理任务分配
+  const handleAssignTask = async () => {
+    if (!assigneeEmail.trim()) {
+      toast.error('Please enter an email address');
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const result = await assignTask(projId, stageId, taskId, assigneeEmail);
+        if (result.success) {
+          toast.success('Task assigned successfully!');
+          setShowAssignDialog(false);
+          setAssigneeEmail('');
+        } else {
+          toast.error(result.message || 'Failed to assign task');
+        }
+      } catch (error) {
+        toast.error('Failed to assign task');
+        console.error(error);
+      }
+    });
+  };
+
+  // 处理任务完成
+  const handleCompleteTask = async () => {
+    startTransition(async () => {
+      try {
+        const result = await completeTaskWithProgress(projId, stageId, taskId, completionPercentage);
+        if (result.success) {
+          toast.success(`Task progress updated! ${result.points_earned ? `Earned ${result.points_earned} points` : ''}`);
+        } else {
+          toast.error(result.message || 'Failed to update task progress');
+        }
+      } catch (error) {
+        toast.error('Failed to update task progress');
+        console.error(error);
+      }
+    });
+  };
+
+  // 处理任务提交
+  const handleSubmitTask = async () => {
+    if (!submissionContent.trim()) {
+      toast.error('Please enter submission content');
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const result = await submitTask(projId, stageId, taskId, submissionContent);
+        if (result.success) {
+          toast.success('Task submitted successfully!');
+          setShowSubmissionDialog(false);
+          setSubmissionContent('');
+          loadSubmissions(); // 重新加载提交记录
+        } else {
+          toast.error(result.message || 'Failed to submit task');
+        }
+      } catch (error) {
+        toast.error('Failed to submit task');
+        console.error(error);
+      }
+    });
+  };
+
+  // 加载任务提交记录
+  const loadSubmissions = async () => {
+    try {
+      const result = await getTaskSubmissions(projId, stageId, taskId);
+      if (result.success) {
+        setSubmissions(result.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to load submissions:', error);
+    }
+  };
+
+  // 加载提交记录
+  useEffect(() => {
+    loadSubmissions();
+  }, [projId, stageId, taskId]);
 
   const [taskData, taskLoading, taskError] = useDocument(doc(db, 'projects', projId, 'stages', stageId, 'tasks', taskId));
   const task = taskData?.data() as Task;
@@ -208,7 +311,7 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
                               className="w-full"
                             />
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                               <Label htmlFor="soft_deadline" className="text-sm font-semibold text-gray-700 mb-2 block">
                                 Soft Deadline
@@ -233,6 +336,20 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
                                 className="w-full"
                               />
                             </div>
+                            <div>
+                              <Label htmlFor="points" className="text-sm font-semibold text-gray-700 mb-2 block">
+                                Points
+                              </Label>
+                              <Input
+                                type="number"
+                                id="points"
+                                name="points"
+                                min="1"
+                                max="10"
+                                defaultValue={task?.points || 1}
+                                className="w-full"
+                              />
+                            </div>
                           </div>
                         </div>
                         <DrawerFooter className="flex flex-row justify-end space-x-4 pt-6">
@@ -250,6 +367,166 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
                   )}
                 </div>
               </CardHeader>
+            </Card>
+          </div>
+
+          {/* Task Pool Management Section */}
+          <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Task Status & Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-blue-600" />
+                  Task Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Task Status */}
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Status:</span>
+                  <Badge variant={task?.status === 'completed' ? 'default' : 'outline'}>
+                    {task?.status || 'available'}
+                  </Badge>
+                </div>
+                
+                                 {/* Task Progress */}
+                 {task?.completionPercentage !== undefined && (
+                   <div className="space-y-2">
+                     <div className="flex items-center justify-between">
+                       <span className="font-medium">Progress:</span>
+                       <span className="text-sm text-gray-600">{task.completionPercentage}%</span>
+                     </div>
+                     <Progress value={task.completionPercentage} className="w-full" />
+                   </div>
+                 )}
+
+                {/* Points */}
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Points:</span>
+                  <Badge variant="secondary">{task?.points || 1} pts</Badge>
+                </div>
+
+                <Separator />
+
+                {/* Action Buttons */}
+                <div className="space-y-3">
+                  {/* Assign Task */}
+                  {userRole === 'admin' && (
+                    <Drawer open={showAssignDialog} onOpenChange={setShowAssignDialog}>
+                      <DrawerTrigger asChild>
+                        <Button className="w-full" variant="outline">
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Assign Task
+                        </Button>
+                      </DrawerTrigger>
+                      <DrawerContent className="p-6">
+                        <DrawerTitle>Assign Task</DrawerTitle>
+                        <DrawerDescription>Enter the email address of the user to assign this task to.</DrawerDescription>
+                        <div className="space-y-4 mt-4">
+                          <Input
+                            placeholder="user@example.com"
+                            value={assigneeEmail}
+                            onChange={(e) => setAssigneeEmail(e.target.value)}
+                          />
+                        </div>
+                        <DrawerFooter className="flex flex-row justify-end space-x-4">
+                          <DrawerClose asChild>
+                            <Button variant="outline">Cancel</Button>
+                          </DrawerClose>
+                          <Button onClick={handleAssignTask} disabled={isPending}>
+                            {isPending ? 'Assigning...' : 'Assign'}
+                          </Button>
+                        </DrawerFooter>
+                      </DrawerContent>
+                    </Drawer>
+                  )}
+
+                  {/* Complete Task */}
+                  {task?.assignee === user?.primaryEmailAddress?.emailAddress && !task?.isCompleted && (
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={completionPercentage}
+                          onChange={(e) => setCompletionPercentage(parseInt(e.target.value) || 0)}
+                          placeholder="Progress %"
+                          className="flex-1"
+                        />
+                        <Button onClick={handleCompleteTask} disabled={isPending}>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Update
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Submit Task */}
+                  {task?.assignee === user?.primaryEmailAddress?.emailAddress && (
+                    <Drawer open={showSubmissionDialog} onOpenChange={setShowSubmissionDialog}>
+                      <DrawerTrigger asChild>
+                        <Button className="w-full" variant="default">
+                          <Upload className="h-4 w-4 mr-2" />
+                          Submit Work
+                        </Button>
+                      </DrawerTrigger>
+                      <DrawerContent className="p-6">
+                        <DrawerTitle>Submit Task</DrawerTitle>
+                        <DrawerDescription>Describe what you've accomplished or provide your submission details.</DrawerDescription>
+                        <div className="space-y-4 mt-4">
+                          <Textarea
+                            placeholder="Describe your work, provide links, or share relevant details..."
+                            value={submissionContent}
+                            onChange={(e) => setSubmissionContent(e.target.value)}
+                            rows={4}
+                          />
+                        </div>
+                        <DrawerFooter className="flex flex-row justify-end space-x-4">
+                          <DrawerClose asChild>
+                            <Button variant="outline">Cancel</Button>
+                          </DrawerClose>
+                          <Button onClick={handleSubmitTask} disabled={isPending}>
+                            {isPending ? 'Submitting...' : 'Submit'}
+                          </Button>
+                        </DrawerFooter>
+                      </DrawerContent>
+                    </Drawer>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Submissions History */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="h-5 w-5 text-green-600" />
+                  Submission History
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {submissions.length > 0 ? (
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {submissions.map((submission, index) => (
+                      <div key={submission.id || index} className="p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-sm">{submission.user_email}</span>
+                          <span className="text-xs text-gray-500">
+                            {submission.submitted_at ? new Date(submission.submitted_at.toDate()).toLocaleDateString() : 'N/A'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700">{submission.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-500 py-8">
+                    <Upload className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                    <p>No submissions yet</p>
+                  </div>
+                )}
+              </CardContent>
             </Card>
           </div>
 

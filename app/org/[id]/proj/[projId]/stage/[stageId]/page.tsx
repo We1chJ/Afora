@@ -7,6 +7,7 @@ import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { getOverdueTasks, getAvailableTasks } from "@/actions/actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { db } from "@/firebase";
@@ -135,6 +136,34 @@ function StagePage({ params: { id, projId, stageId } }: {
     }
   }, [id, projId, stageId]);
 
+  // 加载过期任务和可用任务
+  const loadTaskPoolData = async () => {
+    if (isMockMode) return;
+
+    try {
+      // 获取过期任务
+      const overdueResult = await getOverdueTasks(projId);
+      if (overdueResult.success) {
+        setBackendOverdueTasks(overdueResult.tasks || []);
+      }
+
+      // 获取可用任务
+      const availableResult = await getAvailableTasks(projId);
+      if (availableResult.success) {
+        setBackendAvailableTasks(availableResult.tasks || []);
+      }
+    } catch (error) {
+      console.error('Failed to load task pool data:', error);
+    }
+  };
+
+  // 加载任务池数据
+  useEffect(() => {
+    if (!isMockMode) {
+      loadTaskPoolData();
+    }
+  }, [projId, isMockMode]);
+
   const [isPending, startTransition] = useTransition();
   const [stageData, stageLoading, stageError] = useDocument(isMockMode ? null : doc(db, 'projects', projId, 'stages', stageId));
   const [tasksData, tasksLoading, tasksError] = useCollection(isMockMode ? null : collection(db, 'projects', projId, 'stages', stageId, 'tasks'));
@@ -154,6 +183,10 @@ function StagePage({ params: { id, projId, stageId } }: {
 
   const [userRole, setUserRole] = useState<'admin' | 'user'>('admin');
   const [currentUserEmail, setCurrentUserEmail] = useState('admin@test.com');
+  
+  // 新增：存储从后端获取的过期任务和可用任务
+  const [backendOverdueTasks, setBackendOverdueTasks] = useState<any[]>([]);
+  const [backendAvailableTasks, setBackendAvailableTasks] = useState<any[]>([]);
 
   // Mock stage data
   const mockStage: Stage = {
@@ -194,12 +227,14 @@ function StagePage({ params: { id, projId, stageId } }: {
   const tasksCompleted = tasks.filter(task => task.isCompleted).length;
   
   // Get overdue tasks for bounty board
-  const overdueTasks = tasks.filter(task => {
-    if (task.isCompleted) return false;
-    const softDeadline = new Date(task.soft_deadline);
-    const now = new Date();
-    return now > softDeadline;
-  });
+  const overdueTasks = isMockMode 
+    ? tasks.filter(task => {
+        if (task.isCompleted) return false;
+        const softDeadline = new Date(task.soft_deadline);
+        const now = new Date();
+        return now > softDeadline;
+      })
+    : backendOverdueTasks.filter(task => task.stage_id === stageId);
 
   const handleNewTask = () => {
     if (isMockMode) {

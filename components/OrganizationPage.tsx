@@ -45,7 +45,8 @@ const OrganizationPage = ({ id }: { id: string }) => {
 
   const [org, loading, error] = useDocument(isMockMode ? null : doc(db, 'organizations', id));
   const [projectsData, projLoading, projError] = useCollection(isMockMode ? null : collection(db, 'organizations', id, 'projs'));
-  const [data] = useDocument(user && user.primaryEmailAddress && !isMockMode ? doc(db, 'users', user.primaryEmailAddress.toString(), 'orgs', id) : null);
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
+  const [data] = useDocument(userEmail && !isMockMode ? doc(db, 'users', userEmail, 'orgs', id) : null);
 
   const [userOrgData, setUserOrgData] = useState<UserOrgData>();
   

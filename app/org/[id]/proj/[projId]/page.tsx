@@ -26,7 +26,15 @@ import {
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@radix-ui/react-label";
-import { setTeamCharter, updateProjectTitle, updateStages } from "@/actions/actions";
+import { 
+  setTeamCharter, 
+  updateProjectTitle, 
+  updateStages, 
+  getProjectStats,
+  getProjectLeaderboard,
+  migrateTasksToTaskPool,
+  initializeUserScores
+} from "@/actions/actions";
 import { HoverCard, HoverCardTrigger } from "@radix-ui/react-hover-card";
 import { HoverCardContent } from "@/components/ui/hover-card";
 import { ReorderIcon } from "@/components/ReorderIcon";
@@ -60,6 +68,11 @@ function ProjectPage({ params: { id, projId } }: {
   const [reorderedStages, setReorderedStages] = useState<Stage[]>([]);
   const dragControl = useDragControls();
   const [isMockMode, setIsMockMode] = useState(false);
+  
+  // 新增状态用于项目统计和排行榜
+  const [projectStats, setProjectStats] = useState<any>(null);
+  const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   // Mock data
   const [mockProject, setMockProject] = useState<Project | null>(null);
@@ -135,6 +148,95 @@ function ProjectPage({ params: { id, projId } }: {
       }
     }
   }, [id, projId]);
+
+  // 加载项目统计数据
+  const loadProjectStats = async () => {
+    if (isMockMode) {
+      // Mock 数据
+      setProjectStats({
+        totalTasks: 9,
+        completedTasks: 3,
+        assignedTasks: 4,
+        availableTasks: 2,
+        overdueTasks: 0,
+        completionRate: 33.33,
+        stageCount: 3
+      });
+      setLeaderboardData([
+        {
+          id: '1',
+          user_email: 'alice@test.com',
+          total_points: 15,
+          tasks_completed: 5,
+          tasks_assigned: 6,
+          streak: 3
+        },
+        {
+          id: '2',
+          user_email: 'bob@test.com',
+          total_points: 12,
+          tasks_completed: 4,
+          tasks_assigned: 5,
+          streak: 2
+        }
+      ]);
+      return;
+    }
+
+    setStatsLoading(true);
+    try {
+      // 加载项目统计
+      const statsResult = await getProjectStats(projId);
+      if (statsResult.success) {
+        setProjectStats(statsResult.data);
+      }
+
+      // 加载排行榜数据
+      const leaderboardResult = await getProjectLeaderboard(projId);
+      if (leaderboardResult.success) {
+        setLeaderboardData(leaderboardResult.leaderboard || []);
+      }
+    } catch (error) {
+      console.error('Error loading project stats:', error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  // 处理数据库迁移
+  const handleMigration = async () => {
+    if (isMockMode) {
+      alert('Migration simulation completed (Mock mode)');
+      return;
+    }
+
+    const confirmMigration = confirm(
+      'This will migrate your tasks to the new task pool system. This action cannot be undone. Continue?'
+    );
+    
+    if (!confirmMigration) return;
+
+    try {
+      const migrationResult = await migrateTasksToTaskPool();
+      if (migrationResult.success) {
+        await initializeUserScores(projId);
+        alert('Migration completed successfully!');
+        loadProjectStats(); // 重新加载统计数据
+      } else {
+        alert('Migration failed: ' + migrationResult.message);
+      }
+    } catch (error) {
+      console.error('Migration error:', error);
+      alert('Migration failed. Please try again.');
+    }
+  };
+
+  // 加载数据
+  useEffect(() => {
+    if (projId) {
+      loadProjectStats();
+    }
+  }, [projId, isMockMode]);
 
   const [projData, projLoading, projError] = useDocument(isMockMode ? null : doc(db, 'projects', projId));
   const proj = isMockMode ? mockProject : (projData?.data() as Project);
@@ -319,6 +421,15 @@ function ProjectPage({ params: { id, projId } }: {
                         Leaderboard
                       </Button>
                     </Link>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-white hover:bg-white/20 transition-colors"
+                      onClick={handleMigration}
+                    >
+                      <BarChart3 className="h-4 w-4 mr-1" />
+                      Migrate Tasks
+                    </Button>
                     <Button
                       variant={isEditing ? "secondary" : "ghost"}
                       size="sm"
@@ -394,6 +505,46 @@ function ProjectPage({ params: { id, projId } }: {
           </TabsList>
 
           <TabsContent value="roadmap" className="space-y-4">
+            {/* 项目统计卡片 */}
+            {projectStats && (
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-blue-600" />
+                    Project Statistics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">{projectStats.totalTasks}</div>
+                      <div className="text-sm text-gray-500">Total Tasks</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">{projectStats.completedTasks}</div>
+                      <div className="text-sm text-gray-500">Completed</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-yellow-600">{projectStats.assignedTasks}</div>
+                      <div className="text-sm text-gray-500">Assigned</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-600">{projectStats.availableTasks}</div>
+                      <div className="text-sm text-gray-500">Available</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-red-600">{projectStats.overdueTasks}</div>
+                      <div className="text-sm text-gray-500">Overdue</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">{projectStats.completionRate.toFixed(1)}%</div>
+                      <div className="text-sm text-gray-500">Progress</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
             <div className="space-y-6">
               {stages.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm border p-8 text-center space-y-6">

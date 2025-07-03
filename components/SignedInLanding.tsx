@@ -18,7 +18,7 @@ function SignedInLanding() {
     
     // Only attempt to create a collection reference if `email` is not empty
     const [orgsData, orgsLoading, orgsError] = useCollection(
-        user && user.primaryEmailAddress && collection(db, "users", user.primaryEmailAddress.toString(), "orgs"));
+        email ? collection(db, "users", email, "orgs") : null);
 
     useEffect(() => {
         if (!orgsData) return;

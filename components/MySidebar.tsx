@@ -31,8 +31,9 @@ interface OrgDocument extends DocumentData {
 
 function MySidebar() {
   const { user } = useUser()
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
   const [userOrgs] = useCollection(
-    user && user.primaryEmailAddress && collection(db, "users", user.primaryEmailAddress.toString(), "orgs")
+    userEmail ? collection(db, "users", userEmail, "orgs") : null
   );
   const [orgIds, setOrgIds] = useState<string[]>([]);
   const [orgMap, setOrgMap] = useState<Map<string, string>>(new Map());

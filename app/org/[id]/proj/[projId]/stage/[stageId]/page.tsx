@@ -26,6 +26,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { toast } from "sonner";
 
 function StagePage({ params: { id, projId, stageId } }: {
@@ -142,8 +150,8 @@ function StagePage({ params: { id, projId, stageId } }: {
 
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [showBountyBoard, setShowBountyBoard] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<string | null>(null);
+  const [bountyBoardOpen, setBountyBoardOpen] = useState(false);
+
   const [userRole, setUserRole] = useState<'admin' | 'user'>('admin');
   const [currentUserEmail, setCurrentUserEmail] = useState('admin@test.com');
 
@@ -280,7 +288,7 @@ function StagePage({ params: { id, projId, stageId } }: {
                           } else {
                             setCurrentUserEmail('admin@test.com');
                           }
-                          setSelectedTask(null); // 重置选择的任务
+
                         }}
                       >
                         <div className={`w-10 h-5 rounded-full transition-colors ${
@@ -295,8 +303,8 @@ function StagePage({ params: { id, projId, stageId } }: {
 
                     <BountyBoardButton
                       overdueTasks={overdueTasks.length}
-                      showBountyBoard={showBountyBoard}
-                      onClick={() => setShowBountyBoard(!showBountyBoard)}
+                      showBountyBoard={false}
+                      onClick={() => setBountyBoardOpen(true)}
                     />
                     {userRole === 'admin' && (
                       <Button 
@@ -324,66 +332,66 @@ function StagePage({ params: { id, projId, stageId } }: {
 
       {/* Content Section */}
       <div className="flex-1 p-6">
-        {/* Bounty Board */}
-        {showBountyBoard && (
-          <div className="mb-6">
-            <Card className="border-orange-200 bg-gradient-to-r from-orange-50 to-red-50">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-orange-800">
-                  <AlertTriangle className="h-5 w-5 text-red-500" />
-                  Bounty Board - Overdue Tasks
-                  <span className="text-sm font-normal text-gray-600">
-                    ({overdueTasks.length} tasks available)
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {overdueTasks.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {overdueTasks.map((task, index) => (
-                      <div key={task.id} className="bg-white rounded-lg p-4 border border-orange-200 hover:border-orange-300 transition-colors">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-semibold text-gray-900 flex-1">{task.title}</h3>
-                          <div className="flex items-center gap-2 ml-4">
-                            <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
-                              1 Point
-                            </span>
-                            <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
-                              Overdue
-                            </span>
-                          </div>
-                        </div>
-                        <p className="text-gray-600 text-sm mb-3">{task.description}</p>
-                        <div className="flex justify-between items-center">
-                          <div className="text-xs text-gray-500">
-                            <span className="font-medium">Due:</span> {new Date(task.soft_deadline).toLocaleDateString()}
-                          </div>
-                          <Link href={`/org/${id}/proj/${projId}/stage/${stageId}/task/${task.id}`}>
-                            <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
-                              Claim Task
-                            </Button>
-                          </Link>
+        {/* Bounty Board Dialog */}
+        <Dialog open={bountyBoardOpen} onOpenChange={setBountyBoardOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-orange-800">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+                Bounty Board - Overdue Tasks
+                <span className="text-sm font-normal text-gray-600">
+                  ({overdueTasks.length} tasks available)
+                </span>
+              </DialogTitle>
+              <DialogDescription>
+                These tasks are overdue and available for anyone to claim. Complete them to earn points!
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4">
+              {overdueTasks.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {overdueTasks.map((task, index) => (
+                    <div key={task.id} className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200 hover:border-orange-300 transition-colors">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-semibold text-gray-900 flex-1">{task.title}</h3>
+                        <div className="flex items-center gap-2 ml-4">
+                          <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
+                            1 Point
+                          </span>
+                          <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
+                            Overdue
+                          </span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p className="text-lg font-medium">No overdue tasks available</p>
-                    <p className="text-sm">All tasks are on track! 🎉</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                      <p className="text-gray-600 text-sm mb-3">{task.description}</p>
+                      <div className="flex justify-between items-center">
+                        <div className="text-xs text-gray-500">
+                          <span className="font-medium">Due:</span> {new Date(task.soft_deadline).toLocaleDateString()}
+                        </div>
+                        <Link href={`/org/${id}/proj/${projId}/stage/${stageId}/task/${task.id}`}>
+                          <Button size="sm" className="bg-orange-600 hover:bg-orange-700" onClick={() => setBountyBoardOpen(false)}>
+                            Claim Task
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <DollarSign className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                  <p className="text-lg font-medium">No overdue tasks available</p>
+                  <p className="text-sm">All tasks are on track! 🎉</p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Task Management Component */}
         <TaskManagement
           tasks={tasks}
-          selectedTask={selectedTask}
-          setSelectedTask={setSelectedTask}
           isEditing={isEditing}
           handleNewTask={handleNewTask}
           handleDeleteTask={handleDeleteTask}

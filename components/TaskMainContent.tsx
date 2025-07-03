@@ -91,10 +91,12 @@ function TaskMainContent({ projId, stageId, taskId, task, taskLocked }: TaskMain
       setCompletionPercentage(tempCompletionPercentage);
       if (tempCompletionPercentage[0] === 100 && !isCompleted) {
         setIsCompleted(true);
-        toast.success('Congratulations! Task completed 100%!');
+        toast.success('🎉 Task marked as complete!');
       } else if (tempCompletionPercentage[0] < 100 && isCompleted) {
         setIsCompleted(false);
         toast.success('Progress updated!');
+      } else if (tempCompletionPercentage[0] === 100) {
+        toast.success('Task confirmed as complete!');
       } else {
         toast.success('Progress updated!');
       }
@@ -158,6 +160,28 @@ function TaskMainContent({ projId, stageId, taskId, task, taskLocked }: TaskMain
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-6 bg-gradient-to-b from-[#6F61EF] to-purple-600 rounded-full"></div>
+                <h3 className="text-xl font-semibold text-gray-800">Proof of Completion</h3>
+              </div>
+              {(userRole === 'admin' || task?.assignee === user?.emailAddresses?.[0]?.emailAddress) ? (
+                <SubmissionCard 
+                  projId={projId} 
+                  stageId={stageId} 
+                  taskId={taskId} 
+                  task={task} 
+                  taskLocked={taskLocked}
+                />
+              ) : (
+                <div className="text-center py-8 bg-gray-50 rounded-lg">
+                  <p className="text-gray-500 text-sm">
+                    You don't have permission to submit files for this task.
+                    {task?.assignee ? ` This task is assigned to ${task.assignee}.` : ' This task is unassigned.'}
+                  </p>
+                </div>
+              )}
+              <Separator className="my-6" />
+            </div>
               <div className="flex justify-between items-center">
                 <Label className="text-sm font-medium text-gray-700">Completion</Label>
                 <span className="text-lg font-bold text-[#6F61EF]">{completionPercentage[0]}%</span>
@@ -174,26 +198,15 @@ function TaskMainContent({ projId, stageId, taskId, task, taskLocked }: TaskMain
                   {!isModifying ? (
                     /* View Mode */
                     <div className="space-y-4">
-                      <div className="flex space-x-3">
-                        <Button 
-                          onClick={() => setIsModifying(true)}
-                          disabled={taskLocked}
-                          variant="outline"
-                          className="flex-1"
-                        >
-                          <Edit3 className="mr-2 h-4 w-4" />
-                          Modify Progress
-                        </Button>
-                        
-                        <Button 
-                          onClick={handleMarkComplete}
-                          disabled={taskLocked || isCompleted}
-                          className="bg-green-600 hover:bg-green-700 text-white flex-1"
-                        >
-                          <CheckCircle2 className="mr-2 h-4 w-4" />
-                          Mark as Complete
-                        </Button>
-                      </div>
+                      <Button 
+                        onClick={() => setIsModifying(true)}
+                        disabled={taskLocked}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        <Edit3 className="mr-2 h-4 w-4" />
+                        Modify Progress
+                      </Button>
                       
                       {isCompleted && (
                         <Button 
@@ -214,11 +227,23 @@ function TaskMainContent({ projId, stageId, taskId, task, taskLocked }: TaskMain
                     </div>
                   ) : (
                     /* Edit Mode */
-                    <div className="space-y-3 bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
+                    <div className={`space-y-3 p-4 rounded-lg border-2 ${
+                      tempCompletionPercentage[0] === 100 
+                        ? 'bg-green-50 border-green-200' 
+                        : 'bg-blue-50 border-blue-200'
+                    }`}>
                       <div className="flex justify-between items-center">
-                        <Label className="text-sm font-medium text-blue-700">Modify completion (0-100%)</Label>
+                                                  <Label className={`text-sm font-medium ${
+                            tempCompletionPercentage[0] === 100 ? 'text-green-700' : 'text-blue-700'
+                          }`}>
+                            {tempCompletionPercentage[0] === 100 ? 'Mark as complete' : 'Modify completion (0-100%)'}
+                          </Label>
                         {hasUnsavedChanges && (
-                          <span className="text-sm font-bold text-blue-600">{tempCompletionPercentage[0]}%</span>
+                          <span className={`text-sm font-bold ${
+                            tempCompletionPercentage[0] === 100 ? 'text-green-600' : 'text-blue-600'
+                          }`}>
+                            {tempCompletionPercentage[0]}%
+                          </span>
                         )}
                       </div>
                       
@@ -245,9 +270,20 @@ function TaskMainContent({ projId, stageId, taskId, task, taskLocked }: TaskMain
                           onClick={handleUpdateProgress}
                           disabled={taskLocked || !hasUnsavedChanges}
                           size="sm"
-                          className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+                          className={`flex-1 text-white ${
+                            tempCompletionPercentage[0] === 100 
+                              ? 'bg-green-600 hover:bg-green-700' 
+                              : 'bg-blue-600 hover:bg-blue-700'
+                          }`}
                         >
-                          Update Progress
+                          {tempCompletionPercentage[0] === 100 ? (
+                            <>
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                              Mark as Complete
+                            </>
+                          ) : (
+                            'Update Progress'
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -261,34 +297,8 @@ function TaskMainContent({ projId, stageId, taskId, task, taskLocked }: TaskMain
                   </p>
                 </div>
               )}
-            </div>
             
-            {/* Separator */}
-            <Separator className="my-6" />
             
-            {/* Proof of Completion Section */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-6 bg-gradient-to-b from-[#6F61EF] to-purple-600 rounded-full"></div>
-                <h3 className="text-xl font-semibold text-gray-800">Proof of Completion</h3>
-              </div>
-              {(userRole === 'admin' || task?.assignee === user?.emailAddresses?.[0]?.emailAddress) ? (
-                <SubmissionCard 
-                  projId={projId} 
-                  stageId={stageId} 
-                  taskId={taskId} 
-                  task={task} 
-                  taskLocked={taskLocked}
-                />
-              ) : (
-                <div className="text-center py-8 bg-gray-50 rounded-lg">
-                  <p className="text-gray-500 text-sm">
-                    You don't have permission to submit files for this task.
-                    {task?.assignee ? ` This task is assigned to ${task.assignee}.` : ' This task is unassigned.'}
-                  </p>
-                </div>
-              )}
-            </div>
           </CardContent>
         </Card>
       </div>

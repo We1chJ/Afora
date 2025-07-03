@@ -1,12 +1,10 @@
 'use client'
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect, useTransition } from 'react';
+// Card components removed - now using direct div layout
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { File, X, Upload, Check, Loader, Undo } from 'lucide-react';
+import { File, X, Upload, Loader, Clock7, Check } from 'lucide-react';
 import { Task } from '@/types/types';
-import { setTaskComplete } from '@/actions/actions';
-import { useTransition } from 'react';
 import { toast } from 'sonner';
 import { getDownloadURL, listAll, ref, uploadBytes } from 'firebase/storage';
 import { storage } from '@/firebase';
@@ -24,8 +22,6 @@ interface DownloadableFile {
 const SubmissionCard = ({ task, projId, stageId, taskId, taskLocked }: { task: Task, projId: string, stageId: string, taskId: string, taskLocked: boolean }) => {
     const [files, setFiles] = useState<FileItem[]>([]);
     const [isDragging, setIsDragging] = useState(false);
-    const [isCompleted, setIsCompleted] = useState(false);
-    const [isPending, startTransition] = useTransition();
     const [isSubmittingPending, startSubmittingTransition] = useTransition();
     const [submittedFiles, setSubmittedFiles] = useState<DownloadableFile[]>([]);
     const fetchSubmittedFiles = async () => {
@@ -55,11 +51,7 @@ const SubmissionCard = ({ task, projId, stageId, taskId, taskLocked }: { task: T
         fetchSubmittedFiles();
     }, [taskId]);
 
-    useEffect(() => {
-        if (task && task.isCompleted !== undefined) {
-            setIsCompleted(task.isCompleted);
-        }
-    }, [task]);
+
 
     useEffect(() => {
         const handleDragEnter = (e: DragEvent) => {
@@ -132,130 +124,133 @@ const SubmissionCard = ({ task, projId, stageId, taskId, taskLocked }: { task: T
         });
     }
 
-    const handleToggleCompleteTask = () => {
-        startTransition(() => {
-            if (taskLocked) {
-                toast("This task is locked, try to help others first.");
-                return;
-            }
-            setTaskComplete(projId, stageId, taskId, !isCompleted).then(() => {
-            }).catch(() => {
-                console.log("set task complete failed");
-            });
-        });
-    };
+
 
     return (
         <>
-            <Card className="w-full h-fit bg-white p-2 md:p-4 space-y-2 shadow-lg hover:shadow-xl transition-shadow">
-                <CardTitle className="flex justify-between items-center">
-                    <span className="hidden md:inline">Your submission</span>
-                    <span className="md:hidden">
-                        <File className="h-5 w-5" />
-                    </span>
-                    <span className={`text-sm md:text-lg font-semibold ${isCompleted ? 'text-green-500' : 'text-blue-500'}`}>
-                        {isCompleted ? (
-                            <div className="flex items-center space-x-1">
-                                <Check className="h-4 w-4 md:h-5 md:w-5" />
-                                <span className="hidden md:inline">Completed</span>
-                            </div>
-                        ) : (
-                            <div className="flex items-center space-x-1">
-                                <div className="h-2 w-2 md:h-3 md:w-3 rounded-full bg-blue-500"></div>
-                                <span className="hidden md:inline">Assigned</span>
-                            </div>
-                        )}
-                    </span>
-                </CardTitle>
-                <CardContent className="h-full space-y-2 p-0 md:p-2">
-                    <div className="space-y-2 overflow-y-auto max-h-28">
-                        {submittedFiles.map(({ id, name, url }) => (
-                            <div key={id} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
-                                <div className="flex items-center space-x-2 md:space-x-3">
-                                    <File className="h-4 w-4 md:h-6 md:w-6 text-gray-400" />
-                                    <div className="text-left">
-                                        <a href={url} download={name} className="text-xs md:text-sm font-medium text-blue-500 hover:underline">
-                                            {name.length > 12 ? `${name.slice(0, 12)}...` : name}
-                                        </a>
+            <div className="w-full space-y-6">
+                {/* Submitted Files Section */}
+                {submittedFiles.length > 0 && (
+                    <div className="space-y-3">
+                        <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <Check className="h-4 w-4 text-green-500" />
+                            Submitted Files
+                        </h4>
+                        <div className="grid grid-cols-1 gap-3">
+                            {submittedFiles.map(({ id, name, url }) => (
+                                <div key={id} className="bg-green-50 border border-green-200 p-3 rounded-lg hover:bg-green-100 transition-colors">
+                                    <div className="flex items-center space-x-3">
+                                        <File className="h-5 w-5 text-green-600" />
+                                        <div className="flex-1 min-w-0">
+                                            <a 
+                                                href={url} 
+                                                download={name} 
+                                                className="text-sm font-medium text-green-700 hover:text-green-800 hover:underline block truncate"
+                                                title={name}
+                                            >
+                                                {name}
+                                            </a>
+                                            <p className="text-xs text-green-600">Submitted</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
-                    <div className="space-y-2 overflow-y-auto max-h-28">
-                        {files.map(({ id, file }) => (
-                            <div key={id} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
-                                <div className="flex items-center space-x-2 md:space-x-3">
-                                    <File className="h-4 w-4 md:h-6 md:w-6 text-gray-400" />
-                                    <div className="text-left">
-                                        <p className="text-xs md:text-sm font-medium">
-                                            {file.name.length > 12 ? `${file.name.slice(0, 12)}...` : file.name}
-                                        </p>
-                                        <p className="hidden md:block text-xs text-gray-500">
-                                            {(file.size / 1024 / 1024).toFixed(2)} MB
-                                        </p>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => removeFile(id)}
-                                    className="p-1 hover:bg-gray-200 rounded"
-                                >
-                                    <X className="h-4 w-4 md:h-5 md:w-5 text-gray-500" />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
+                )}
 
-                    {!isCompleted && (
-                        <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 items-center">
-                            <div className="w-full max-w-sm">
-                                <Input
-                                    id="fileUpload"
-                                    type="file"
-                                    onChange={(e) => e.target.files && handleFiles(e.target.files)}
-                                    multiple
-                                    className="text-xs md:text-sm"
-                                />
-                            </div>
-                            <Button className="w-full md:w-auto" onClick={handleSubmit} disabled={isSubmittingPending || taskLocked}>
+                {/* Pending Files Section */}
+                {files.length > 0 && (
+                    <div className="space-y-3">
+                        <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <Clock7 className="h-4 w-4 text-orange-500" />
+                            Files to Submit
+                        </h4>
+                        <div className="grid grid-cols-1 gap-3">
+                            {files.map(({ id, file }) => (
+                                <div key={id} className="bg-orange-50 border border-orange-200 p-3 rounded-lg">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                            <File className="h-5 w-5 text-orange-600" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-orange-700 truncate" title={file.name}>
+                                                    {file.name}
+                                                </p>
+                                                <p className="text-xs text-orange-600">
+                                                    {(file.size / 1024 / 1024).toFixed(2)} MB
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => removeFile(id)}
+                                            className="p-1 hover:bg-orange-200 rounded-md transition-colors"
+                                            title="Remove file"
+                                        >
+                                            <X className="h-4 w-4 text-orange-600" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* File Upload Section */}
+                {!task?.isCompleted && (
+                    <div className="space-y-4">
+                        <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <Upload className="h-4 w-4 text-blue-500" />
+                            Upload Files
+                        </h4>
+                        
+                        <div 
+                            className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors bg-gray-50 hover:bg-blue-50"
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={handleDrop}
+                        >
+                            <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                            <p className="text-sm text-gray-600 mb-2">
+                                Drag & drop files here, or{' '}
+                                <label className="text-blue-600 hover:text-blue-700 cursor-pointer font-medium">
+                                    browse
+                                    <Input
+                                        id="fileUpload"
+                                        type="file"
+                                        onChange={(e) => e.target.files && handleFiles(e.target.files)}
+                                        multiple
+                                        className="hidden"
+                                        disabled={taskLocked}
+                                    />
+                                </label>
+                            </p>
+                            <p className="text-xs text-gray-500">Maximum file size: 10MB total</p>
+                        </div>
+
+                        {/* Submit Button */}
+                        {files.length > 0 && (
+                            <Button 
+                                onClick={handleSubmit} 
+                                disabled={isSubmittingPending || taskLocked}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                            >
                                 {isSubmittingPending ? (
-                                    <Loader className="h-4 w-4 md:h-5 md:w-5 animate-spin" />
+                                    <>
+                                        <Loader className="h-4 w-4 mr-2 animate-spin" />
+                                        Uploading...
+                                    </>
                                 ) : (
                                     <>
-                                        <span className="hidden md:inline">Submit</span>
-                                        <Upload className="h-4 w-4 md:hidden" />
+                                        <Upload className="h-4 w-4 mr-2" />
+                                        Submit {files.length} File{files.length > 1 ? 's' : ''}
                                     </>
                                 )}
                             </Button>
-                        </div>
-                    )}
-
-                    <Button
-                        className={`w-full ${isCompleted ? 'bg-white text-black border border-black hover:bg-black hover:text-white' : 'bg-black text-white hover:bg-white hover:text-black border border-black'} ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        onClick={handleToggleCompleteTask}
-                        disabled={isPending}
-                    >
-                        {isPending ? (
-                            <>
-                                <span className="hidden md:inline">
-                                    {isCompleted ? 'Unsubmitting...' : 'Submitting...'}
-                                </span>
-                                <Loader className="h-4 w-4 md:h-5 md:w-5 md:ml-2 animate-spin" />
-                            </>
-                        ) : isCompleted ? (
-                            <>
-                                <span className="hidden md:inline">Unsubmit</span>
-                                <Undo className="h-4 w-4 md:h-5 md:w-5 md:ml-2" />
-                            </>
-                        ) : (
-                            <>
-                                <span className="hidden md:inline">Mark as Complete</span>
-                                <Check className="h-4 w-4 md:h-5 md:w-5 md:ml-2" />
-                            </>
                         )}
-                    </Button>
-                </CardContent>
-            </Card>
+                    </div>
+                )}
+
+
+            </div>
 
             {isDragging && (
                 <div

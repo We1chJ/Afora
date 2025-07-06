@@ -230,8 +230,11 @@ const TaskManagement = ({
                               {task.assignee.charAt(0).toUpperCase()}
                             </div>
                           )}
-                          <span className="text-xs text-gray-500">
-                            {task.assignee || 'Unassigned'}
+                          <span className="text-xs text-gray-500 font-semibold">
+                            {userRole === 'user' 
+                              ? (task.assignee ? 'Assigned' : 'Unassigned')
+                              : (task.assignee || 'Unassigned')
+                            }
                           </span>
                         </div>
                         

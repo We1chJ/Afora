@@ -369,7 +369,7 @@ function StagePage({ params: { id, projId, stageId } }: {
       <div className="flex-1 p-6">
         {/* Bounty Board Dialog */}
         <Dialog open={bountyBoardOpen} onOpenChange={setBountyBoardOpen}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-7xl h-3/4">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-orange-800">
                 <AlertTriangle className="h-5 w-5 text-red-500" />
@@ -385,39 +385,69 @@ function StagePage({ params: { id, projId, stageId } }: {
             
             <div className="py-4">
               {overdueTasks.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {overdueTasks.map((task, index) => (
-                    <div key={task.id} className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200 hover:border-orange-300 transition-colors">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-semibold text-gray-900 flex-1">{task.title}</h3>
-                        <div className="flex items-center gap-2 ml-4">
-                          <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
-                            1 Point
-                          </span>
-                          <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded-full">
-                            Overdue
-                          </span>
+                    <div key={task.id} className="group bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-orange-300 transition-all duration-300 overflow-hidden">
+                      {/* 卡片头部 */}
+                      <div className="bg-gradient-to-r from-orange-500 to-red-500 px-4 py-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                            <span className="text-white text-sm font-medium">OVERDUE</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="bg-white/20 px-3 py-1 rounded-full">
+                              <span className="text-white text-sm font-bold">1 Point</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <p className="text-gray-600 text-sm mb-3">{task.description}</p>
-                      <div className="flex justify-between items-center">
-                        <div className="text-xs text-gray-500">
-                          <span className="font-medium">Due:</span> {new Date(task.soft_deadline).toLocaleDateString()}
+
+                      {/* 卡片内容 */}
+                      <div className="p-6">
+                        <div className="mb-4">
+                          <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
+                            {task.title}
+                          </h3>
+                          <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
+                            {task.description}
+                          </p>
                         </div>
-                        <Link href={`/org/${id}/proj/${projId}/stage/${stageId}/task/${task.id}`}>
-                          <Button size="sm" className="bg-orange-600 hover:bg-orange-700" onClick={() => setBountyBoardOpen(false)}>
-                            Claim Task
-                          </Button>
-                        </Link>
+
+                        {/* 底部信息 */}
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                          <div className="flex items-center gap-2 text-gray-500">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span className="text-xs font-medium">
+                              {new Date(task.soft_deadline).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <Link href={`/org/${id}/proj/${projId}/stage/${stageId}/task/${task.id}`}>
+                            <Button 
+                              size="sm" 
+                              className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-medium px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200" 
+                              onClick={() => setBountyBoardOpen(false)}
+                            >
+                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                              </svg>
+                              Claim Task
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500">
-                  <DollarSign className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                  <p className="text-lg font-medium">No overdue tasks available</p>
-                  <p className="text-sm">All tasks are on track! 🎉</p>
+                <div className="text-center py-16 text-gray-500">
+                  <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+                    <DollarSign className="h-12 w-12 text-gray-400" />
+                  </div>
+                  <p className="text-xl font-semibold text-gray-700 mb-2">No overdue tasks available</p>
+                  <p className="text-sm text-gray-500">All tasks are on track! 🎉</p>
                 </div>
               )}
             </div>

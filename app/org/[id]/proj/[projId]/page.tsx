@@ -421,15 +421,6 @@ function ProjectPage({ params: { id, projId } }: {
                         Leaderboard
                       </Button>
                     </Link>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-white hover:bg-white/20 transition-colors"
-                      onClick={handleMigration}
-                    >
-                      <BarChart3 className="h-4 w-4 mr-1" />
-                      Migrate Tasks
-                    </Button>
                     <Button
                       variant={isEditing ? "secondary" : "ghost"}
                       size="sm"
@@ -457,7 +448,7 @@ function ProjectPage({ params: { id, projId } }: {
                         Cancel
                       </Button>
                     )}
-      </div>
+                  </div>
                   
                 </div>
                 

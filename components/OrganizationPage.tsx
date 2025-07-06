@@ -21,6 +21,7 @@ const OrganizationPage = ({ id }: { id: string }) => {
   const [mockOrgData, setMockOrgData] = useState<Organization | null>(null);
   const [mockUserOrgData, setMockUserOrgData] = useState<UserOrgData | null>(null);
 
+  const userId = user?.id || "nonemptyString";
   // Check if this is the mock organization
   useEffect(() => {
     if (id === 'mock-org-123') {
@@ -38,14 +39,14 @@ const OrganizationPage = ({ id }: { id: string }) => {
         createdAt: new Date().toISOString(),
         role: 'admin',
         orgId: 'mock-org-123',
-        userId: user?.primaryEmailAddress?.toString() || 'admin@test.com'
+        userId: user?.id || 'user_DUMMY_ID'
       });
     }
   }, [id, user]);
 
   const [org, loading, error] = useDocument(isMockMode ? null : doc(db, 'organizations', id));
   const [projectsData, projLoading, projError] = useCollection(isMockMode ? null : collection(db, 'organizations', id, 'projs'));
-  const [data] = useDocument(user && user.primaryEmailAddress && !isMockMode ? doc(db, 'users', user.primaryEmailAddress.toString(), 'orgs', id) : null);
+  const [data] = useDocument(!isMockMode ? doc(db, 'users', userId, 'orgs', id) : null);
 
   const [userOrgData, setUserOrgData] = useState<UserOrgData>();
   
@@ -121,8 +122,8 @@ const OrganizationPage = ({ id }: { id: string }) => {
           {/* Top Section */}
           <div className="flex justify-between items-start">
             {/* Project Onboarding */}
-            {user && user.primaryEmailAddress && orgData && orgData.admins &&
-              !orgData.admins.includes(user.primaryEmailAddress.toString()) && !isMockMode && (
+            {user && orgData && orgData.admins &&
+              !orgData.admins.includes(userId) && !isMockMode && (
               <div className="backdrop-blur-md bg-white/90 rounded-xl p-3 shadow-lg">
                 <ProjOnboarding orgId={id} />
               </div>

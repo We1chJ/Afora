@@ -14,11 +14,9 @@ import { UserOrgData } from '@/types/types';
 function SignedInLanding() {
     const [orgs, setOrgs] = useState<UserOrgData[]>([]);
     const { user } = useUser();
-    const email = user?.primaryEmailAddress?.emailAddress || ''; // Ensure `email` is always a string
-    
-    // Only attempt to create a collection reference if `email` is not empty
-    const [orgsData, orgsLoading, orgsError] = useCollection(
-        user && user.primaryEmailAddress && collection(db, "users", user.primaryEmailAddress.toString(), "orgs"));
+
+    const userId = user?.id || "nonemptyString";
+    const [orgsData, orgsLoading, orgsError] = useCollection(collection(db, "users", userId, "orgs"));
 
     useEffect(() => {
         if (!orgsData) return;
@@ -26,15 +24,13 @@ function SignedInLanding() {
         setOrgs(orgsList);
     }, [orgsData]);
 
-    if (!user || !email || orgsLoading) {
+    if (!user || orgsLoading) {
         return <div className='flex justify-center items-center'><LoadingSpinner /></div>;
     }
 
     if (orgsError) {
         return <div>Error loading organizations</div>;
     }
-
-    console.log(`email: ${email}`)
 
     console.log("Organizations:", orgs);
     return (

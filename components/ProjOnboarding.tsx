@@ -47,8 +47,8 @@ const ProjOnboarding = ({ orgId }: { orgId: string }) => {
     }
 
     const { user } = useUser();
+    const userId = user?.id || "nonemptyString";
 
-    // 安全地构建文档路径
     const userEmail = user?.primaryEmailAddress?.emailAddress;
     const shouldFetchUserData = Boolean(userEmail && orgId);
     

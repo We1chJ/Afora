@@ -31,9 +31,8 @@ interface OrgDocument extends DocumentData {
 
 function MySidebar() {
   const { user } = useUser()
-  const userEmail = user?.primaryEmailAddress?.emailAddress;
   const [userOrgs] = useCollection(
-    userEmail ? collection(db, "users", userEmail, "orgs") : null
+    user && user.primaryEmailAddress && collection(db, "users", user.primaryEmailAddress.toString(), "orgs")
   );
   const [orgIds, setOrgIds] = useState<string[]>([]);
   const [orgMap, setOrgMap] = useState<Map<string, string>>(new Map());
@@ -53,6 +52,7 @@ function MySidebar() {
   // Get orgIds from userOrgs
   useEffect(() => {
     if (!userOrgs) return;
+    console.log(userOrgs);
     const orgDocs = userOrgs.docs.map((doc) => doc.data() as OrgDocument);
     const ids = orgDocs.map((org) => org.orgId).filter(Boolean); // 过滤空值
     console.log('MySidebar - Updated orgIds:', ids);

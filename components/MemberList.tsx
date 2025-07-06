@@ -1,5 +1,5 @@
 'use client'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -63,7 +63,7 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
     const [results, loading, error] = useCollection(myQuery);
 
     // Get projects data
-    const projects = projectsData?.docs || [];
+    const projects = useMemo(() => projectsData?.docs || [], [projectsData]);
 
     useEffect(() => {
         if (isMockMode || (!loading && results)) {
@@ -320,7 +320,7 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
                 {showActions && userRole === 'admin' && (
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         {projectId && (
-                                                         <Button
+                            <Button
                                  variant="ghost"
                                  size="sm"
                                  className="h-8 px-2 text-red-500 hover:text-red-700 hover:bg-red-50"

@@ -39,15 +39,13 @@ function SignedInLanding() {
         setOrgs(orgsList);
     }, [orgsData]);
 
-    if (!user || !email || orgsLoading) {
+    if (!user || orgsLoading) {
         return <div className='flex justify-center items-center'><LoadingSpinner /></div>;
     }
 
     if (orgsError) {
         return <div>Error loading organizations</div>;
     }
-
-    console.log(`email: ${email}`)
 
     console.log("Organizations:", orgs);
     return (

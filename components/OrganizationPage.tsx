@@ -21,6 +21,7 @@ const OrganizationPage = ({ id }: { id: string }) => {
   const [mockOrgData, setMockOrgData] = useState<Organization | null>(null);
   const [mockUserOrgData, setMockUserOrgData] = useState<UserOrgData | null>(null);
 
+  const userId = user?.id || "nonemptyString";
   // Check if this is the mock organization
   useEffect(() => {
     if (id === 'mock-org-123') {
@@ -38,7 +39,7 @@ const OrganizationPage = ({ id }: { id: string }) => {
         createdAt: new Date().toISOString(),
         role: 'admin',
         orgId: 'mock-org-123',
-        userId: user?.primaryEmailAddress?.toString() || 'admin@test.com'
+        userId: user?.id || 'user_DUMMY_ID'
       });
     }
   }, [id, user]);
@@ -142,8 +143,8 @@ const OrganizationPage = ({ id }: { id: string }) => {
           {/* Top Section */}
           <div className="flex justify-between items-start">
             {/* Project Onboarding */}
-            {user && user.primaryEmailAddress && orgData && orgData.admins &&
-              !orgData.admins.includes(user.primaryEmailAddress.toString()) && !isMockMode && (
+            {user && orgData && orgData.admins &&
+              !orgData.admins.includes(userId) && !isMockMode && (
               <div className="backdrop-blur-md bg-white/90 rounded-xl p-3 shadow-lg">
                 <ProjOnboarding orgId={id} />
               </div>

@@ -49,15 +49,6 @@ const OrganizationPage = ({ id }: { id: string }) => {
   const [data] = useDocument(userEmail && !isMockMode ? doc(db, 'users', userEmail, 'orgs', id) : null);
 
   const [userOrgData, setUserOrgData] = useState<UserOrgData>();
-  
-  useEffect(() => {
-    if (isMockMode) {
-      setUserOrgData(mockUserOrgData || undefined);
-    } else if (data) {
-      const userOrg = data.data() as UserOrgData;
-      setUserOrgData(userOrg);
-    }
-  }, [data, isMockMode, mockUserOrgData])
 
   // Mock projects data
   const mockProjectsData = {
@@ -83,13 +74,44 @@ const OrganizationPage = ({ id }: { id: string }) => {
     ]
   };
 
+  // Handle userOrgData - moved before early returns
+  useEffect(() => {
+    if (isMockMode) {
+      setUserOrgData(mockUserOrgData || undefined);
+    } else if (data) {
+      const userOrg = data.data() as UserOrgData;
+      console.log('OrganizationPage - User org data loaded:', userOrg);
+      setUserOrgData(userOrg);
+    } else if (!loading && userEmail && org) {
+      // 如果没有用户组织数据但用户是admin，创建默认数据
+      const orgData = org.data() as Organization;
+      const isAdmin = orgData?.admins?.includes(userEmail);
+      const isMember = orgData?.members?.includes(userEmail);
+      
+      if (isAdmin || isMember) {
+        console.log('OrganizationPage - Creating default user org data. IsAdmin:', isAdmin);
+        const defaultUserOrgData: UserOrgData = {
+          createdAt: new Date().toISOString(),
+          role: isAdmin ? 'admin' : 'member',
+          orgId: id,
+          userId: userEmail
+        };
+        setUserOrgData(defaultUserOrgData);
+      }
+    }
+  }, [data, isMockMode, mockUserOrgData, loading, userEmail, org, id]);
+
+  // Get orgData before any early returns
+  const orgData = isMockMode ? mockOrgData : (org?.data() as Organization);
+
+  // Early returns after all hooks
   if (isMockMode) {
     if (!mockOrgData) {
       return <div>Loading mock data...</div>;
     }
   } else {
     if (loading) {
-      return;
+      return <div>Loading...</div>;
     }
 
     if (error) {
@@ -100,8 +122,6 @@ const OrganizationPage = ({ id }: { id: string }) => {
       return <div>No organization found</div>;
     }
   }
-
-  const orgData = isMockMode ? mockOrgData! : org!.data()! as Organization;
 
   if (!orgData) {
     return <div>No organization found</div>;

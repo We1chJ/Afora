@@ -26,14 +26,14 @@ function NewOrgButton({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (isOp
     startTransition(() => {
       (async () => {
         const { orgId, success, message } = await createNewOrganization(orgName, orgDescription);
-        if (success) {
+        if (success && orgId) {
           toast.success("Organization created successfully!");
           setIsOpen(false);
           router.push(`/org/${orgId}`);
           setOrgName('');
           setOrgDescription('');
         } else {
-          toast.error(message);
+          toast.error(message || "Failed to create organization");
         }
       })();
     })

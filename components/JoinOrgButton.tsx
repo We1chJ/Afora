@@ -29,7 +29,7 @@ function JoinOrgButton({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (isO
       const { success, message } = (user && user.id && user.primaryEmailAddress)
         ? await inviteUserToOrg(orgCode, user.primaryEmailAddress.emailAddress, 'editor')
         : { success: false, message: 'user does not exist' };
-      if (success) {
+      if (success && orgCode && orgCode.trim()) {
         console.log('Successfully joined');
         setIsOpen(false);
         router.push(`/org/${orgCode}`); // Updated route
@@ -37,7 +37,7 @@ function JoinOrgButton({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (isO
         setOrgCode('');
       } else {
         console.log('Failed to join', message);
-        toast.error(message);
+        toast.error(message || 'Failed to join organization');
       }
     })
   }

@@ -22,12 +22,13 @@ import {
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import InviteUserToOrganization from './InviteUserToOrganization';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { collection, query, where } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { Users, Settings, UserPlus, Shuffle, FolderOpen, UserCheck, ArrowRight, Crown, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { updateProjectMembers, removeProjectMember, autoAssignMembersToProjects, updateProjectTeamSize } from '@/actions/actions';
 
 interface MemberListProps {
   admins: string[];
@@ -55,9 +56,9 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
     const [isTeamSettingsOpen, setIsTeamSettingsOpen] = useState(false);
     const [defaultTeamSize, setDefaultTeamSize] = useState(3);
     
-    const myQuery = !isMockMode ? query(
+    const myQuery = !isMockMode && [...admins, ...members].length > 0 ? query(
         collection(db, "users"),
-        where("__name__", "in", [...admins, ...members])
+        where("__name__", "in", [...admins, ...members].filter(Boolean))
     ) : null;
     const [results, loading, error] = useCollection(myQuery);
 
@@ -85,93 +86,212 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
         }
     }, [results, loading, error, isMockMode]);
 
-    // Initialize project teams
-    useEffect(() => {
-        const teams: ProjectTeam[] = projects.map((proj: any) => {
+    // 使用 useMemo 来计算 teams，避免不必要的重新计算
+    const teams = useMemo(() => {
+        if (!projects || projects.length === 0) {
+            return [];
+        }
+
+        return projects.map((proj: any): ProjectTeam => {
             const projectData = proj.data();
             return {
                 projectId: projectData.projId || proj.id,
-                projectTitle: projectData.title,
-                members: projectData.members || [],
-                teamSize: projectData.teamSize || defaultTeamSize
+                projectTitle: projectData.title || 'Untitled Project',
+                members: Array.isArray(projectData.members) ? projectData.members : [],
+                teamSize: typeof projectData.teamSize === 'number' ? projectData.teamSize : defaultTeamSize
             };
         });
+    }, [projects, defaultTeamSize]);
+
+    // 使用 useMemo 来计算未分配成员
+    const calculatedUnassignedMembers = useMemo(() => {
+        if (teams.length === 0) {
+            return [...members, ...admins];
+        }
         
+        const assignedMembers = new Set(teams.flatMap((team: ProjectTeam) => team.members));
+        return [...members, ...admins].filter(member => !assignedMembers.has(member));
+    }, [teams, members, admins]);
+
+    // 使用 useEffect 来同步状态，但减少依赖项
+    useEffect(() => {
         setProjectTeams(teams);
-        
-        // Calculate unassigned members
-        const assignedMembers = new Set(teams.flatMap(team => team.members));
-        const unassigned = [...members, ...admins].filter(member => !assignedMembers.has(member));
-        setUnassignedMembers(unassigned);
-    }, [projects, members, admins, defaultTeamSize]);
+        setUnassignedMembers(calculatedUnassignedMembers);
+    }, [teams, calculatedUnassignedMembers]);
 
-    const handleAutoAssign = () => {
-        const updatedTeams = [...projectTeams];
-        let availableMembers = [...unassignedMembers];
-        
-        updatedTeams.forEach(team => {
-            const spotsAvailable = team.teamSize - team.members.length;
-            if (spotsAvailable > 0 && availableMembers.length > 0) {
-                const membersToAdd = availableMembers.splice(0, spotsAvailable);
-                team.members.push(...membersToAdd);
-            }
-        });
-        
-        setProjectTeams(updatedTeams);
-        setUnassignedMembers(availableMembers);
-        
+    const handleAutoAssign = useCallback(async () => {
         if (isMockMode) {
+            // Mock mode - just update local state
+            const updatedTeams = [...projectTeams];
+            let availableMembers = [...unassignedMembers];
+            
+            updatedTeams.forEach((team: ProjectTeam) => {
+                const spotsAvailable = team.teamSize - team.members.length;
+                if (spotsAvailable > 0 && availableMembers.length > 0) {
+                    const membersToAdd = availableMembers.splice(0, spotsAvailable);
+                    team.members.push(...membersToAdd);
+                }
+            });
+            
+            setProjectTeams(updatedTeams);
+            setUnassignedMembers(availableMembers);
             toast.success('Members auto-assigned successfully! (Mock mode)');
-        } else {
-            toast.success('Members auto-assigned successfully!');
+            return;
         }
-    };
 
-    const handleMemberMove = (memberEmail: string, fromProjectId: string | null, toProjectId: string | null) => {
-        const updatedTeams = [...projectTeams];
-        let updatedUnassigned = [...unassignedMembers];
-        
-        // Remove from source
-        if (fromProjectId) {
-            const sourceTeam = updatedTeams.find(team => team.projectId === fromProjectId);
-            if (sourceTeam) {
-                sourceTeam.members = sourceTeam.members.filter(member => member !== memberEmail);
-            }
-        } else {
-            updatedUnassigned = updatedUnassigned.filter(member => member !== memberEmail);
-        }
-        
-        // Add to destination
-        if (toProjectId) {
-            const destTeam = updatedTeams.find(team => team.projectId === toProjectId);
-            if (destTeam && destTeam.members.length < destTeam.teamSize) {
-                destTeam.members.push(memberEmail);
+        try {
+            const result = await autoAssignMembersToProjects(orgId);
+            
+            if (result.success) {
+                toast.success(result.message);
+                // 刷新页面数据或重新获取项目数据
+                window.location.reload();
             } else {
-                toast.error('Team is full!');
-                return;
+                toast.error(result.message || 'Failed to auto-assign members');
             }
-        } else {
-            updatedUnassigned.push(memberEmail);
+        } catch (error) {
+            console.error('Error auto-assigning members:', error);
+            toast.error('Failed to auto-assign members');
         }
-        
-        setProjectTeams(updatedTeams);
-        setUnassignedMembers(updatedUnassigned);
-        
+    }, [isMockMode, projectTeams, unassignedMembers, orgId]);
+
+    const handleMemberMove = useCallback(async (memberEmail: string, fromProjectId: string | null, toProjectId: string | null) => {
         if (isMockMode) {
+            // Mock mode - just update local state
+            const updatedTeams = [...projectTeams];
+            let updatedUnassigned = [...unassignedMembers];
+            
+            // Remove from source
+            if (fromProjectId) {
+                const sourceTeam = updatedTeams.find(team => team.projectId === fromProjectId);
+                if (sourceTeam) {
+                    sourceTeam.members = sourceTeam.members.filter(member => member !== memberEmail);
+                }
+            } else {
+                updatedUnassigned = updatedUnassigned.filter(member => member !== memberEmail);
+            }
+            
+            // Add to destination
+            if (toProjectId) {
+                const destTeam = updatedTeams.find(team => team.projectId === toProjectId);
+                if (destTeam && destTeam.members.length < destTeam.teamSize) {
+                    destTeam.members.push(memberEmail);
+                } else {
+                    toast.error('Team is full!');
+                    return;
+                }
+            } else {
+                updatedUnassigned.push(memberEmail);
+            }
+            
+            setProjectTeams(updatedTeams);
+            setUnassignedMembers(updatedUnassigned);
             toast.success('Member moved successfully! (Mock mode)');
-        } else {
-            toast.success('Member moved successfully!');
+            return;
         }
-    };
 
-    const updateTeamSize = (projectId: string, newSize: number) => {
-        const updatedTeams = projectTeams.map(team => 
-            team.projectId === projectId ? { ...team, teamSize: newSize } : team
-        );
-        setProjectTeams(updatedTeams);
-    };
+        try {
+            // Check destination availability first if moving to a project
+            if (toProjectId) {
+                const destTeam = projectTeams.find(team => team.projectId === toProjectId);
+                if (!destTeam) {
+                    toast.error('Destination project not found!');
+                    return;
+                }
+                
+                // Check if destination team is full
+                if (destTeam.members.length >= destTeam.teamSize) {
+                    toast.error(`Team is full! Maximum size is ${destTeam.teamSize}.`);
+                    return;
+                }
 
-    const renderMemberCard = (memberEmail: string, isAdmin: boolean, showActions: boolean = false, projectId?: string) => {
+                // Check if member is already in destination team
+                if (destTeam.members.includes(memberEmail)) {
+                    toast.error('Member is already in this project!');
+                    return;
+                }
+            }
+
+            // Handle removing from source project
+            if (fromProjectId) {
+                console.log(`Removing ${memberEmail} from project ${fromProjectId}`);
+                const result = await removeProjectMember(fromProjectId, memberEmail);
+                if (!result.success) {
+                    toast.error(result.message || 'Failed to remove member from project');
+                    return;
+                }
+            }
+
+            // Handle adding to destination project
+            if (toProjectId) {
+                const destTeam = projectTeams.find(team => team.projectId === toProjectId);
+                if (destTeam) {
+                    console.log(`Adding ${memberEmail} to project ${toProjectId}`);
+                    const updatedMembers = [...destTeam.members, memberEmail];
+                    const result = await updateProjectMembers(toProjectId, updatedMembers);
+                    if (!result.success) {
+                        toast.error(result.message || 'Failed to add member to project');
+                        // If adding failed but removing succeeded, we should try to add back to original project
+                        if (fromProjectId) {
+                            console.log('Attempting to restore member to original project...');
+                            // This is a best-effort restore, don't handle errors
+                            try {
+                                const sourceTeam = projectTeams.find(team => team.projectId === fromProjectId);
+                                if (sourceTeam) {
+                                    const restoreMembers = [...sourceTeam.members, memberEmail];
+                                    await updateProjectMembers(fromProjectId, restoreMembers);
+                                }
+                            } catch (restoreError) {
+                                console.error('Failed to restore member to original project:', restoreError);
+                            }
+                        }
+                        return;
+                    }
+                }
+            }
+
+            const action = fromProjectId && toProjectId ? 'moved' : 
+                          fromProjectId ? 'removed from project' : 'added to project';
+            toast.success(`Member ${action} successfully!`);
+            
+            // 刷新页面数据
+            window.location.reload();
+            
+        } catch (error) {
+            console.error('Error moving member:', error);
+            toast.error('Failed to move member. Please try again.');
+        }
+    }, [isMockMode, projectTeams]);
+
+    const updateTeamSize = useCallback(async (projectId: string, newSize: number) => {
+        if (isMockMode) {
+            // Mock mode - just update local state
+            setProjectTeams(prev => prev.map(team => 
+                team.projectId === projectId ? { ...team, teamSize: newSize } : team
+            ));
+            toast.success('Team size updated! (Mock mode)');
+            return;
+        }
+
+        try {
+            const result = await updateProjectTeamSize(projectId, newSize);
+            
+            if (result.success) {
+                // Update local state only after successful database update
+                setProjectTeams(prev => prev.map(team => 
+                    team.projectId === projectId ? { ...team, teamSize: newSize } : team
+                ));
+                toast.success('Team size updated successfully!');
+            } else {
+                toast.error(result.message || 'Failed to update team size');
+            }
+        } catch (error) {
+            console.error('Error updating team size:', error);
+            toast.error('Failed to update team size');
+        }
+    }, [isMockMode]);
+
+    const renderMemberCard = useCallback((memberEmail: string, isAdmin: boolean, showActions: boolean = false, projectId?: string) => {
         const pfpData = isAdmin ? adminsPfp : membersPfp;
         
         return (
@@ -230,7 +350,7 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
                 )}
             </div>
         );
-    };
+    }, [adminsPfp, membersPfp, userRole, projectTeams, handleMemberMove]);
 
     const selectedProjectData = projectTeams.find(team => team.projectId === selectedProject);
     const totalMembers = [...admins, ...members].length;
@@ -465,7 +585,12 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
                                      <span className="text-sm text-gray-500">Team Size:</span>
                                     <Select
                                         value={selectedProjectData.teamSize.toString()}
-                                        onValueChange={(value) => updateTeamSize(selectedProject, parseInt(value))}
+                                        onValueChange={(value) => {
+                                            const newSize = parseInt(value);
+                                            if (!isNaN(newSize)) {
+                                                updateTeamSize(selectedProject, newSize);
+                                            }
+                                        }}
                                     >
                                         <SelectTrigger className="w-20">
                                             <SelectValue />

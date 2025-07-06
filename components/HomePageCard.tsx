@@ -11,6 +11,17 @@ interface HomePageCardProps {
 }
 
 function HomePageCard({ org }: HomePageCardProps) {
+    // 防护检查，确保 org 和 org.orgId 存在
+    if (!org || !org.orgId) {
+        return (
+            <div className="flex flex-col shadow-md mb-4 rounded-xl overflow-hidden bg-white dark:bg-gray-800 w-96 h-96">
+                <div className="w-full h-full flex items-center justify-center">
+                    <p className="text-gray-500">组织数据加载中...</p>
+                </div>
+            </div>
+        );
+    }
+
     const [data] = useDocumentData(doc(db, "organizations", org.orgId));
     const basePath = `/org/${org.orgId}`;
     return (

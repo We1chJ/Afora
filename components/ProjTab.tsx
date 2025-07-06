@@ -37,6 +37,7 @@ const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId, isMock
     const [newProjectTitle, setNewProjectTitle] = useState('');
     const [selectedProject, setSelectedProject] = useState<string | null>(null);
     const [selectedView, setSelectedView] = useState<'overview' | 'projects'>('overview');
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const [output, setOutput] = useState('');
     const [parsedOutput, setParsedOutput] = useState<MatchingOutput | null>(null);
@@ -78,15 +79,20 @@ const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId, isMock
         } else {
             const fetchProjects = async () => {
                 if (!userLoading && !userError && userProjects && userProjects.docs.length > 0) {
-                    const projectIds = userProjects.docs.map(doc => doc.id);
-                    const projectDocs = await getDocs(query(collection(db, 'projects'), where('__name__', 'in', projectIds)));
-                    const projects = projectDocs.docs.map(doc => doc.data() as Project);
-                    setUserProjList(projects);
+                    const projectIds = userProjects.docs.map(doc => doc.id).filter(Boolean);
+                    if (projectIds.length > 0) {
+                        const projectDocs = await getDocs(query(collection(db, 'projects'), where('__name__', 'in', projectIds)));
+                        const projects = projectDocs.docs.map(doc => doc.data() as Project);
+                        setUserProjList(projects);
+                    }
+                } else if (!userLoading && !userError && (!userProjects || userProjects.docs.length === 0)) {
+                    // 如果没有用户项目，清空列表
+                    setUserProjList([]);
                 }
             };
             fetchProjects();
         }
-    }, [userProjects, userLoading, userError, isMockMode, userId, userRole]);
+    }, [userProjects, userLoading, userError, isMockMode, userId, userRole, refreshTrigger]);
 
     useEffect(() => {
         if (output) {
@@ -140,8 +146,11 @@ const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId, isMock
                     
                     if (result.success) {
                         toast.success(result.message || `Project "${newProjectTitle}" created successfully!`);
-                        // 刷新页面以显示新项目
-                        window.location.reload();
+                        // 触发数据刷新
+                        setRefreshTrigger(prev => prev + 1);
+                        // 关闭对话框
+                        setIsNewProjectDialogOpen(false);
+                        setNewProjectTitle('');
                     } else {
                         toast.error(result.message || 'Failed to create project');
                         return;
@@ -174,9 +183,9 @@ const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId, isMock
     const activeProjects = allProjectsList.filter(proj => proj.members && proj.members.length > 0).length;
 
     return (
-        <div className="flex h-auto bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg overflow-hidden">
+        <div className="flex h-auto bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg overflow-hidden py-12">
             {/* Left Sidebar */}
-            <div className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-lg">
+            <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
                 {/* Header */}
                 <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
                     <div className="flex items-center gap-3 mb-6">
@@ -200,29 +209,7 @@ const ProjTab = ({ orgId, projectsData, loading, error, userRole, userId, isMock
                 </div>
 
                 {/* Navigation */}
-                <div className="p-4 border-b border-gray-200">
-                    <div className="grid grid-cols-2 gap-2">
-                        <Button
-                            variant={selectedView === 'overview' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => {setSelectedView('overview'); setSelectedProject(null);}}
-                            className="flex items-center gap-2"
-                        >
-                            <BarChart3 className="h-4 w-4" />
-                            Overview
-                        </Button>
-                        <Button
-                            variant={selectedView === 'projects' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setSelectedView('projects')}
-                            className="flex items-center gap-2"
-                        >
-                            <FolderOpen className="h-4 w-4" />
-                            Projects
-                        </Button>
-                    </div>
-                </div>
-
+                
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-4">
                     {selectedView === 'overview' ? (

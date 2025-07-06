@@ -2,7 +2,7 @@
 import { adminDb } from "@/firebase-admin";
 import { GeneratedTasks, Stage } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
-import { Timestamp } from "firebase/firestore";
+import { Timestamp } from "firebase-admin/firestore";
 import axios from 'axios';
 
 // IMPLEMENT THIS WITH FIREBASE FIRESTORE NOW THAT WE AREN'T USING LIVE BLOCKS
@@ -40,9 +40,28 @@ export async function createNewOrganization(orgName: string, orgDescription: str
     try {
         console.log("blah");
         console.log(x);
-        const userId = sessionClaims!.sub!;
-        if (!userId) {
-            throw new Error('Current user not authenticated or invalid email');
+        
+        // 获取用户邮箱而不是用户ID
+        let userEmail: string | undefined;
+        if (sessionClaims?.email && typeof sessionClaims.email === 'string') {
+            userEmail = sessionClaims.email;
+        } else if (sessionClaims?.primaryEmailAddress && typeof sessionClaims.primaryEmailAddress === 'string') {
+            userEmail = sessionClaims.primaryEmailAddress;
+        }
+        
+        // 如果仍然没有邮箱，尝试从 Clerk API 获取
+        if (!userEmail) {
+            try {
+                const { currentUser } = await import('@clerk/nextjs/server');
+                const user = await currentUser();
+                userEmail = user?.emailAddresses?.[0]?.emailAddress || user?.primaryEmailAddress?.emailAddress;
+            } catch (clerkError) {
+                console.error('Failed to get user email from Clerk:', clerkError);
+            }
+        }
+        
+        if (!userEmail) {
+            throw new Error('Current user email not found');
         }
 
         // Validate orgDescription for valid characters
@@ -56,22 +75,22 @@ export async function createNewOrganization(orgName: string, orgDescription: str
 
         const docCollectionRef = adminDb.collection("organizations");
         const docRef = await docCollectionRef.add({
-            createdAt: new Date(),
+            createdAt: Timestamp.now(),
             title: orgName,
             description: orgDescription,
-            admins: [userId],
+            admins: [userEmail], // 使用邮箱而不是用户ID
             members: []
         })
 
-        await adminDb.collection('users').doc(userId).collection
+        await adminDb.collection('users').doc(userEmail).collection
             ('orgs').doc(docRef.id).set({
-                userId: userId,
+                userId: userEmail, // 使用邮箱而不是用户ID
                 role: "admin",
                 orgId: docRef.id
             })
         return { orgId: docRef.id, success: true };
     } catch (e) {
-        return { success: false, message: (e as Error).message }
+        return { success: false, message: (e as Error).message, orgId: undefined }
     }
 }
 
@@ -154,7 +173,7 @@ export async function inviteUserToOrg(orgId: string, email: string, access: stri
             .set({
                 userId: email,
                 role: access,
-                createdAt: new Date(),
+                createdAt: Timestamp.now(),
                 orgId,
             });
 
@@ -167,10 +186,43 @@ export async function inviteUserToOrg(orgId: string, email: string, access: stri
 
 export async function setUserOnboardingSurvey(selectedTags: string[][]) {
     const { userId, sessionClaims } = await auth();
-    const userEmail = sessionClaims?.email;
+    
+    if (!userId) {
+        throw new Error('Unauthorized - no user ID');
+    }
 
-    if (!userId || !userEmail) {
-        throw new Error('Unauthorized');
+    // 尝试多种方式获取用户邮箱
+    let userEmail: string | undefined;
+    
+    // 检查 sessionClaims 中的各种可能的邮箱字段
+    if (sessionClaims?.email && typeof sessionClaims.email === 'string') {
+        userEmail = sessionClaims.email;
+    } else if (sessionClaims?.primaryEmailAddress && typeof sessionClaims.primaryEmailAddress === 'string') {
+        userEmail = sessionClaims.primaryEmailAddress;
+    } else if (sessionClaims?.emailAddresses && Array.isArray(sessionClaims.emailAddresses) && sessionClaims.emailAddresses.length > 0) {
+        userEmail = sessionClaims.emailAddresses[0] as string;
+    }
+    
+    // 如果仍然没有邮箱，尝试从 Clerk API 获取
+    if (!userEmail) {
+        try {
+            const { currentUser } = await import('@clerk/nextjs/server');
+            const user = await currentUser();
+            console.log('Debug setUserOnboardingSurvey - currentUser:', JSON.stringify({
+                id: user?.id,
+                emailAddresses: user?.emailAddresses?.map(ea => ea.emailAddress),
+                primaryEmailAddress: user?.primaryEmailAddress?.emailAddress
+            }, null, 2));
+            
+            userEmail = user?.emailAddresses?.[0]?.emailAddress || user?.primaryEmailAddress?.emailAddress;
+        } catch (clerkError) {
+            console.error('Failed to get user from Clerk:', clerkError);
+        }
+    }
+    
+    if (!userEmail || typeof userEmail !== 'string' || userEmail.trim().length === 0) {
+        console.error('setUserOnboardingSurvey failed: no valid email found');
+        throw new Error(`Unauthorized - no valid email found. Got: ${userEmail}`);
     }
     try {
         const formatted = selectedTags.map((tags) => tags.join(','));
@@ -265,9 +317,30 @@ export async function setProjOnboardingSurvey(orgId: string, responses: string[]
 
 export async function updateProjects(orgId: string, groups: string[][]) {
     const { sessionClaims } = await auth();
-    const userId = sessionClaims?.email;
+    
+    // 尝试多种方式获取用户邮箱
+    let userId: string | undefined;
+    
+    if (sessionClaims?.email && typeof sessionClaims.email === 'string') {
+        userId = sessionClaims.email;
+    } else if (sessionClaims?.primaryEmailAddress && typeof sessionClaims.primaryEmailAddress === 'string') {
+        userId = sessionClaims.primaryEmailAddress;
+    } else if (sessionClaims?.emailAddresses && Array.isArray(sessionClaims.emailAddresses) && sessionClaims.emailAddresses.length > 0) {
+        userId = sessionClaims.emailAddresses[0] as string;
+    }
+    
     if (!userId) {
-        throw new Error('Unauthorized');
+        try {
+            const { currentUser } = await import('@clerk/nextjs/server');
+            const user = await currentUser();
+            userId = user?.emailAddresses?.[0]?.emailAddress || user?.primaryEmailAddress?.emailAddress;
+        } catch (clerkError) {
+            console.error('Failed to get user from Clerk:', clerkError);
+        }
+    }
+    
+    if (!userId || typeof userId !== 'string' || userId.trim().length === 0) {
+        throw new Error(`Unauthorized - no valid email found. Got: ${userId}`);
     }
     try {
         groups.map(async (group, index) => {
@@ -300,9 +373,30 @@ export async function updateProjects(orgId: string, groups: string[][]) {
 // 创建单个项目的函数
 export async function createProject(orgId: string, projectTitle: string, members: string[] = []) {
     const { sessionClaims } = await auth();
-    const userId = sessionClaims?.email;
+    
+    // 尝试多种方式获取用户邮箱
+    let userId: string | undefined;
+    
+    if (sessionClaims?.email && typeof sessionClaims.email === 'string') {
+        userId = sessionClaims.email;
+    } else if (sessionClaims?.primaryEmailAddress && typeof sessionClaims.primaryEmailAddress === 'string') {
+        userId = sessionClaims.primaryEmailAddress;
+    } else if (sessionClaims?.emailAddresses && Array.isArray(sessionClaims.emailAddresses) && sessionClaims.emailAddresses.length > 0) {
+        userId = sessionClaims.emailAddresses[0] as string;
+    }
+    
     if (!userId) {
-        throw new Error('Unauthorized');
+        try {
+            const { currentUser } = await import('@clerk/nextjs/server');
+            const user = await currentUser();
+            userId = user?.emailAddresses?.[0]?.emailAddress || user?.primaryEmailAddress?.emailAddress;
+        } catch (clerkError) {
+            console.error('Failed to get user from Clerk:', clerkError);
+        }
+    }
+    
+    if (!userId || typeof userId !== 'string' || userId.trim().length === 0) {
+        throw new Error(`Unauthorized - no valid email found. Got: ${userId}`);
     }
 
     try {
@@ -365,9 +459,30 @@ export async function createProject(orgId: string, projectTitle: string, members
 
 export async function setTeamCharter(projId: string, teamCharterResponse: string[]) {
     const { sessionClaims } = await auth();
-    const userId = sessionClaims?.email;
+    
+    // 尝试多种方式获取用户邮箱
+    let userId: string | undefined;
+    
+    if (sessionClaims?.email && typeof sessionClaims.email === 'string') {
+        userId = sessionClaims.email;
+    } else if (sessionClaims?.primaryEmailAddress && typeof sessionClaims.primaryEmailAddress === 'string') {
+        userId = sessionClaims.primaryEmailAddress;
+    } else if (sessionClaims?.emailAddresses && Array.isArray(sessionClaims.emailAddresses) && sessionClaims.emailAddresses.length > 0) {
+        userId = sessionClaims.emailAddresses[0] as string;
+    }
+    
     if (!userId) {
-        throw new Error('Unauthorized');
+        try {
+            const { currentUser } = await import('@clerk/nextjs/server');
+            const user = await currentUser();
+            userId = user?.emailAddresses?.[0]?.emailAddress || user?.primaryEmailAddress?.emailAddress;
+        } catch (clerkError) {
+            console.error('Failed to get user from Clerk:', clerkError);
+        }
+    }
+    
+    if (!userId || typeof userId !== 'string' || userId.trim().length === 0) {
+        throw new Error(`Unauthorized - no valid email found. Got: ${userId}`);
     }
     try {
         if (!teamCharterResponse) {
@@ -812,10 +927,34 @@ export async function completeTaskWithProgress(
     completionPercentage: number = 100
 ) {
     const { userId, sessionClaims } = await auth();
-    const userEmail = sessionClaims?.email;
     
-    if (!userId || !userEmail) {
-        throw new Error('Unauthorized');
+    if (!userId) {
+        throw new Error('Unauthorized - no user ID');
+    }
+
+    // 尝试多种方式获取用户邮箱
+    let userEmail: string | undefined;
+    
+    if (sessionClaims?.email && typeof sessionClaims.email === 'string') {
+        userEmail = sessionClaims.email;
+    } else if (sessionClaims?.primaryEmailAddress && typeof sessionClaims.primaryEmailAddress === 'string') {
+        userEmail = sessionClaims.primaryEmailAddress;
+    } else if (sessionClaims?.emailAddresses && Array.isArray(sessionClaims.emailAddresses) && sessionClaims.emailAddresses.length > 0) {
+        userEmail = sessionClaims.emailAddresses[0] as string;
+    }
+    
+    if (!userEmail) {
+        try {
+            const { currentUser } = await import('@clerk/nextjs/server');
+            const user = await currentUser();
+            userEmail = user?.emailAddresses?.[0]?.emailAddress || user?.primaryEmailAddress?.emailAddress;
+        } catch (clerkError) {
+            console.error('Failed to get user from Clerk:', clerkError);
+        }
+    }
+    
+    if (!userEmail || typeof userEmail !== 'string' || userEmail.trim().length === 0) {
+        throw new Error(`Unauthorized - no valid email found. Got: ${userEmail}`);
     }
 
     try {
@@ -893,10 +1032,34 @@ export async function submitTask(
     content: string
 ) {
     const { userId, sessionClaims } = await auth();
-    const userEmail = sessionClaims?.email;
     
-    if (!userId || !userEmail) {
-        throw new Error('Unauthorized');
+    if (!userId) {
+        throw new Error('Unauthorized - no user ID');
+    }
+
+    // 尝试多种方式获取用户邮箱
+    let userEmail: string | undefined;
+    
+    if (sessionClaims?.email && typeof sessionClaims.email === 'string') {
+        userEmail = sessionClaims.email;
+    } else if (sessionClaims?.primaryEmailAddress && typeof sessionClaims.primaryEmailAddress === 'string') {
+        userEmail = sessionClaims.primaryEmailAddress;
+    } else if (sessionClaims?.emailAddresses && Array.isArray(sessionClaims.emailAddresses) && sessionClaims.emailAddresses.length > 0) {
+        userEmail = sessionClaims.emailAddresses[0] as string;
+    }
+    
+    if (!userEmail) {
+        try {
+            const { currentUser } = await import('@clerk/nextjs/server');
+            const user = await currentUser();
+            userEmail = user?.emailAddresses?.[0]?.emailAddress || user?.primaryEmailAddress?.emailAddress;
+        } catch (clerkError) {
+            console.error('Failed to get user from Clerk:', clerkError);
+        }
+    }
+    
+    if (!userEmail || typeof userEmail !== 'string' || userEmail.trim().length === 0) {
+        throw new Error(`Unauthorized - no valid email found. Got: ${userEmail}`);
     }
 
     try {
@@ -1146,7 +1309,23 @@ export async function getProjectLeaderboard(projId: string) {
         };
     } catch (error) {
         console.error('Error getting project leaderboard:', error);
-        return { success: false, message: (error as Error).message };
+        
+        // 如果是索引错误，返回空的排行榜而不是错误
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorDetails = (error as any)?.details || '';
+        
+        if (errorMessage.includes('The query requires an index') || 
+            errorMessage.includes('FAILED_PRECONDITION') ||
+            errorDetails.includes('The query requires an index')) {
+            console.log('Returning empty leaderboard due to missing index');
+            return { 
+                success: true, 
+                leaderboard: [],
+                message: 'Leaderboard is currently unavailable due to missing database index. Please contact your administrator.'
+            };
+        }
+        
+        return { success: false, message: errorMessage };
     }
 }
 
@@ -1260,12 +1439,236 @@ export async function addProjectMember(
             });
         }
 
+        // 为用户添加项目引用
+        await adminDb.collection('users').doc(userEmail).collection('projs').doc(projId).set({
+            orgId: projectData?.orgId
+        }, { merge: true });
+
         return { 
             success: true, 
             message: `User added as ${role} successfully`
         };
     } catch (error) {
         console.error('Error adding project member:', error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+// 批量更新项目成员
+export async function updateProjectMembers(projId: string, memberEmails: string[]) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
+
+    try {
+        const projectRef = adminDb.collection('projects').doc(projId);
+        const projectDoc = await projectRef.get();
+        
+        if (!projectDoc.exists) {
+            throw new Error('Project not found');
+        }
+
+        const projectData = projectDoc.data();
+        const orgId = projectData?.orgId;
+
+        // 更新项目成员列表
+        await projectRef.update({
+            members: memberEmails
+        });
+
+        // 为所有新成员添加项目引用
+        for (const memberEmail of memberEmails) {
+            try {
+                await adminDb.collection('users').doc(memberEmail).collection('projs').doc(projId).set({
+                    orgId: orgId
+                }, { merge: true });
+            } catch (error) {
+                console.error(`Failed to add project reference for user ${memberEmail}:`, error);
+            }
+        }
+
+        return { 
+            success: true, 
+            message: 'Project members updated successfully'
+        };
+    } catch (error) {
+        console.error('Error updating project members:', error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+// 移除项目成员
+export async function removeProjectMember(projId: string, userEmail: string) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
+
+    try {
+        const projectRef = adminDb.collection('projects').doc(projId);
+        const projectDoc = await projectRef.get();
+        
+        if (!projectDoc.exists) {
+            throw new Error('Project not found');
+        }
+
+        const projectData = projectDoc.data();
+        const currentMembers = projectData?.members || [];
+        const currentAdmins = projectData?.admins || [];
+
+        // 从成员或管理员列表中移除
+        const updatedMembers = currentMembers.filter((email: string) => email !== userEmail);
+        const updatedAdmins = currentAdmins.filter((email: string) => email !== userEmail);
+
+        await projectRef.update({
+            members: updatedMembers,
+            admins: updatedAdmins
+        });
+
+        // 移除用户的项目引用
+        try {
+            await adminDb.collection('users').doc(userEmail).collection('projs').doc(projId).delete();
+        } catch (error) {
+            console.error(`Failed to remove project reference for user ${userEmail}:`, error);
+        }
+
+        return { 
+            success: true, 
+            message: 'User removed from project successfully'
+        };
+    } catch (error) {
+        console.error('Error removing project member:', error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+// 更新项目团队大小
+export async function updateProjectTeamSize(projId: string, teamSize: number) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
+
+    try {
+        if (teamSize < 1 || teamSize > 20) {
+            throw new Error('Team size must be between 1 and 20');
+        }
+
+        const projectRef = adminDb.collection('projects').doc(projId);
+        const projectDoc = await projectRef.get();
+        
+        if (!projectDoc.exists) {
+            throw new Error('Project not found');
+        }
+
+        await projectRef.update({
+            teamSize: teamSize
+        });
+
+        return { 
+            success: true, 
+            message: 'Team size updated successfully'
+        };
+    } catch (error) {
+        console.error('Error updating project team size:', error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+// 自动分配组织成员到项目
+export async function autoAssignMembersToProjects(orgId: string) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error('Unauthorized');
+    }
+
+    try {
+        // 获取组织信息
+        const orgDoc = await adminDb.collection('organizations').doc(orgId).get();
+        if (!orgDoc.exists) {
+            throw new Error('Organization not found');
+        }
+
+        const orgData = orgDoc.data();
+        const allMembers = [...(orgData?.members || []), ...(orgData?.admins || [])];
+
+        // 获取组织的所有项目
+        const projectsSnapshot = await adminDb.collection('projects').where('orgId', '==', orgId).get();
+        
+        if (projectsSnapshot.empty) {
+            throw new Error('No projects found in this organization');
+        }
+
+        const projects = projectsSnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                members: data.members || [],
+                ...data
+            };
+        });
+
+        // 计算当前已分配的成员
+        const assignedMembers = new Set();
+        projects.forEach(project => {
+            const projectMembers = project.members as string[] || [];
+            projectMembers.forEach((member: string) => assignedMembers.add(member));
+        });
+
+        // 获取未分配的成员
+        const unassignedMembers = allMembers.filter(member => !assignedMembers.has(member));
+
+        if (unassignedMembers.length === 0) {
+            return { 
+                success: true, 
+                message: 'All members are already assigned to projects',
+                assigned: 0
+            };
+        }
+
+        // 默认团队大小为3
+        const defaultTeamSize = 3;
+        let assignedCount = 0;
+
+        // 为每个项目分配成员
+        for (let i = 0; i < projects.length && unassignedMembers.length > 0; i++) {
+            const project = projects[i];
+            const currentMembers = project.members as string[] || [];
+            const spotsAvailable = defaultTeamSize - currentMembers.length;
+
+            if (spotsAvailable > 0) {
+                const membersToAdd = unassignedMembers.splice(0, spotsAvailable);
+                const updatedMembers = [...currentMembers, ...membersToAdd];
+
+                // 更新项目成员
+                await adminDb.collection('projects').doc(project.id).update({
+                    members: updatedMembers
+                });
+
+                // 为新成员添加项目引用
+                for (const memberEmail of membersToAdd) {
+                    try {
+                        await adminDb.collection('users').doc(memberEmail).collection('projs').doc(project.id).set({
+                            orgId: orgId
+                        }, { merge: true });
+                    } catch (error) {
+                        console.error(`Failed to add project reference for user ${memberEmail}:`, error);
+                    }
+                }
+
+                assignedCount += membersToAdd.length;
+            }
+        }
+
+        return { 
+            success: true, 
+            message: `Successfully assigned ${assignedCount} members to projects`,
+            assigned: assignedCount,
+            remaining: unassignedMembers.length
+        };
+    } catch (error) {
+        console.error('Error auto-assigning members:', error);
         return { success: false, message: (error as Error).message };
     }
 }

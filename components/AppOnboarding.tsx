@@ -26,7 +26,7 @@ const AppOnboarding = () => {
     const [page, setPage] = useState(0);
     useEffect(() => {
         // Open the dialog automatically when the component mounts
-        // setIsOpen(true);
+        setIsOpen(true);
         setPage(0);
         setSelectedTags(Array(appQuestions.length).fill([]));
     }, []);

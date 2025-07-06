@@ -40,10 +40,10 @@ function MySidebar() {
 
   // Memoize the query to maintain stability
   const orgQuery = useMemo(() =>
-    orgIds.length ?
+    orgIds.length > 0 && orgIds.filter(Boolean).length > 0 ?
       query(
         collection(db, 'organizations'),
-        where('__name__', 'in', orgIds)
+        where('__name__', 'in', orgIds.filter(Boolean))
       )
       : null
     , [orgIds]);
@@ -54,7 +54,8 @@ function MySidebar() {
   useEffect(() => {
     if (!userOrgs) return;
     const orgDocs = userOrgs.docs.map((doc) => doc.data() as OrgDocument);
-    const ids = orgDocs.map((org) => org.orgId);
+    const ids = orgDocs.map((org) => org.orgId).filter(Boolean); // 过滤空值
+    console.log('MySidebar - Updated orgIds:', ids);
     setOrgIds(ids);
   }, [userOrgs]);
 
@@ -87,6 +88,30 @@ function MySidebar() {
             <SidebarGroupLabel>Organizations</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
+                {/* Test Organization */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link className="group-data-[collapsible=icon]:hidden" href={`/org/mock-org-123`}>
+                      <span className="truncate border-e-indigo-50 font-bold">Mock Organization</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                
+                {/* Loading state */}
+                {loading && (
+                  <SidebarMenuItem>
+                    <div className="px-2 py-1 text-sm text-gray-500">Loading organizations...</div>
+                  </SidebarMenuItem>
+                )}
+                
+                {/* Error state */}
+                {error && (
+                  <SidebarMenuItem>
+                    <div className="px-2 py-1 text-sm text-red-500">Error loading organizations</div>
+                  </SidebarMenuItem>
+                )}
+                
+                {/* Organizations list */}
                 {!loading && !error && orgMap && Array.from(orgMap.entries()).map(([id, title]) => (
                   <SidebarMenuItem key={id}>
                     <SidebarMenuButton asChild>
@@ -96,6 +121,13 @@ function MySidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
+                
+                {/* Empty state */}
+                {!loading && !error && orgMap && orgMap.size === 0 && orgIds.length === 0 && (
+                  <SidebarMenuItem>
+                    <div className="px-2 py-1 text-sm text-gray-500">No organizations found</div>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

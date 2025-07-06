@@ -22,7 +22,20 @@ function SignedInLanding() {
 
     useEffect(() => {
         if (!orgsData) return;
-        const orgsList = orgsData.docs.map((doc) => (doc.data())) as UserOrgData[];
+        const orgsList = orgsData.docs.map((doc) => {
+            const data = doc.data();
+            console.log('Organization document data:', data);
+            
+            // 确保 orgId 字段存在，如果不存在则使用文档 ID
+            if (!data.orgId) {
+                console.warn('Missing orgId in document, using document ID:', doc.id);
+                data.orgId = doc.id;
+            }
+            
+            return data;
+        }) as UserOrgData[];
+        
+        console.log('Processed organizations list:', orgsList);
         setOrgs(orgsList);
     }, [orgsData]);
 
@@ -41,7 +54,7 @@ function SignedInLanding() {
         <div className='flex p-4 w-full h-full'>
             {orgs.length > 0 ? (
                 <div className="flex flex-wrap gap-8 m-4 h-full">
-                    {orgs.map((org) => (
+                    {orgs.filter(org => org && org.orgId).map((org) => (
                         <HomePageCard org={org} key={org.orgId} />
                     ))}
                 </div>

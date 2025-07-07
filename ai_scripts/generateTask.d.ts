@@ -1,1 +1,6 @@
-export declare function generateTask(questions, userResponses, charterQuestions, teamCharterResponses);
+export declare function generateTask(
+    questions,
+    userResponses,
+    charterQuestions,
+    teamCharterResponses,
+);

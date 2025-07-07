@@ -1,39 +1,36 @@
-'use server'
+"use server";
 // HAS TO HAVE USE SERVER!!! OTHERWISE NOT WORKING
 // because openai blocks openai api key if used on client side to prevent leaking
 const apiRequest = require("./apiRequest");
 
 const responseFormat = {
-    "type": "json_schema",
-    "json_schema": {
-        "name": "user_groups",
-        "strict": true,
-        "schema": {
-            "type": "object",
-            "properties": {
-                "group_size": {
-                    "type": "number",
-                    "description": "The size that each group should contain."
+    type: "json_schema",
+    json_schema: {
+        name: "user_groups",
+        strict: true,
+        schema: {
+            type: "object",
+            properties: {
+                group_size: {
+                    type: "number",
+                    description: "The size that each group should contain.",
                 },
-                "groups": {
-                    "type": "array",
-                    "description": "List of groups created from users.",
-                    "items": {
-                        "type": "array",
-                        "description": "List of user IDs in each group.",
-                        "items": {
-                            "type": "string"
-                        }
-                    }
-                }
+                groups: {
+                    type: "array",
+                    description: "List of groups created from users.",
+                    items: {
+                        type: "array",
+                        description: "List of user IDs in each group.",
+                        items: {
+                            type: "string",
+                        },
+                    },
+                },
             },
-            "required": [
-                "group_size",
-                "groups"
-            ],
-            "additionalProperties": false
-        }
-    }
+            required: ["group_size", "groups"],
+            additionalProperties: false,
+        },
+    },
 };
 
 export const matching = async (teamSize, questions, input) => {
@@ -44,11 +41,11 @@ export const matching = async (teamSize, questions, input) => {
 
     teamSize = Number(teamSize);
     if (isNaN(teamSize) || teamSize <= 0) {
-        throw new Error('Team size must be a valid positive number');
+        throw new Error("Team size must be a valid positive number");
     }
     if (!input || input.length === 0) {
-        throw new Error('There are no members to be matched.');
+        throw new Error("There are no members to be matched.");
     }
-    input = input.join(' ');
+    input = input.join(" ");
     return await apiRequest({ context, responseFormat, input });
-}
+};

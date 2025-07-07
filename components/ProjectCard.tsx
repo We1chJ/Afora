@@ -1,67 +1,97 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { FolderOpen, Users, ArrowRight, Target } from "lucide-react"
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { FolderOpen, Users, ArrowRight, Target } from "lucide-react";
 
 interface Task {
-    id: string
-    title: string
+    id: string;
+    title: string;
 }
 
 interface ProjectCardProps {
-    projectName: string
-    backgroundImage: string
-    tasks: Task[]
-    projId: string
-    orgId: string
+    projectName: string;
+    backgroundImage: string;
+    tasks: Task[];
+    projId: string;
+    orgId: string;
 }
 
 const ProjectCard = ({
     projId,
-    orgId, 
+    orgId,
     projectName = "Sample Project",
     backgroundImage = "/placeholder.svg?height=200&width=600",
     tasks = [
         { id: "1", title: "Design user interface" },
         { id: "2", title: "Implement backend API" },
         { id: "3", title: "Write unit tests" },
-    ]
+    ],
 }: ProjectCardProps) => {
     // Generate random team member count for demo
     const memberCount = Math.floor(Math.random() * 8) + 2;
     const taskCount = Math.floor(Math.random() * 12) + 3;
     const completedTasks = Math.floor(taskCount * (Math.random() * 0.7 + 0.1));
     const progress = Math.round((completedTasks / taskCount) * 100);
-    
+
     // Generate random project type
-    const projectTypes = ['Frontend', 'Backend', 'Mobile', 'AI/ML', 'DevOps', 'Design'];
-    const projectType = projectTypes[Math.floor(Math.random() * projectTypes.length)];
-    
+    const projectTypes = [
+        "Frontend",
+        "Backend",
+        "Mobile",
+        "AI/ML",
+        "DevOps",
+        "Design",
+    ];
+    const projectType =
+        projectTypes[Math.floor(Math.random() * projectTypes.length)];
+
     // Color schemes based on project name - softer colors
     const getProjectTheme = (name: string) => {
         const themes = [
-            { bg: 'from-slate-400 to-slate-500', accent: 'text-slate-600', badge: 'bg-slate-100 text-slate-700' },
-            { bg: 'from-gray-400 to-gray-500', accent: 'text-gray-600', badge: 'bg-gray-100 text-gray-700' },
-            { bg: 'from-blue-300 to-blue-400', accent: 'text-blue-600', badge: 'bg-blue-100 text-blue-700' },
-            { bg: 'from-indigo-300 to-indigo-400', accent: 'text-indigo-600', badge: 'bg-indigo-100 text-indigo-700' },
-            { bg: 'from-violet-300 to-violet-400', accent: 'text-violet-600', badge: 'bg-violet-100 text-violet-700' },
+            {
+                bg: "from-slate-400 to-slate-500",
+                accent: "text-slate-600",
+                badge: "bg-slate-100 text-slate-700",
+            },
+            {
+                bg: "from-gray-400 to-gray-500",
+                accent: "text-gray-600",
+                badge: "bg-gray-100 text-gray-700",
+            },
+            {
+                bg: "from-blue-300 to-blue-400",
+                accent: "text-blue-600",
+                badge: "bg-blue-100 text-blue-700",
+            },
+            {
+                bg: "from-indigo-300 to-indigo-400",
+                accent: "text-indigo-600",
+                badge: "bg-indigo-100 text-indigo-700",
+            },
+            {
+                bg: "from-violet-300 to-violet-400",
+                accent: "text-violet-600",
+                badge: "bg-violet-100 text-violet-700",
+            },
         ];
         return themes[name.length % themes.length];
     };
-    
+
     const theme = getProjectTheme(projectName);
-    
+
     return (
         <a href={`/org/${orgId}/proj/${projId}`} className="block group">
             <Card className="w-full h-full overflow-hidden border-0 bg-white">
                 {/* Header with gradient background */}
                 <CardHeader className="p-0 relative">
-                    <div className={`h-32 bg-gradient-to-r ${theme.bg} relative overflow-hidden`}>
+                    <div
+                        className={`h-32 bg-gradient-to-r ${theme.bg} relative overflow-hidden`}
+                    >
                         {/* Decorative elements */}
                         <div className="absolute inset-0 bg-black/10"></div>
                         <div className="absolute top-2 right-2 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
                         <div className="absolute bottom-2 left-2 w-16 h-16 bg-white/5 rounded-full blur-lg"></div>
-                        
+
                         {/* Content */}
                         <div className="relative p-4 h-full flex flex-col justify-between">
                             <div className="flex justify-between items-start">
@@ -82,11 +112,15 @@ const ProjectCard = ({
                     {/* Progress section */}
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                            <h3 className="text-sm font-medium text-gray-700">Progress</h3>
-                            <span className="text-sm font-semibold text-gray-900">{progress}%</span>
+                            <h3 className="text-sm font-medium text-gray-700">
+                                Progress
+                            </h3>
+                            <span className="text-sm font-semibold text-gray-900">
+                                {progress}%
+                            </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                            <div 
+                            <div
                                 className={`h-full bg-gradient-to-r ${theme.bg} transition-all duration-500 ease-out`}
                                 style={{ width: `${progress}%` }}
                             ></div>
@@ -98,8 +132,8 @@ const ProjectCard = ({
                     </div>
 
                     {/* Action button */}
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         className="w-full group-hover:bg-slate-100 group-hover:border-slate-300 transition-all duration-300"
                     >
                         <FolderOpen className="h-4 w-4 mr-2" />
@@ -109,7 +143,7 @@ const ProjectCard = ({
                 </CardContent>
             </Card>
         </a>
-    )
-}
+    );
+};
 
-export default ProjectCard
+export default ProjectCard;

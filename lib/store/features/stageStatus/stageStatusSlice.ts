@@ -2,10 +2,10 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface StageStatusState {
     status: boolean[];
-};
+}
 
 const initialState: StageStatusState = {
-    status: []
+    status: [],
 };
 
 const stageStatusSlice = createSlice({
@@ -15,8 +15,8 @@ const stageStatusSlice = createSlice({
         // update the status
         updateStatus: (state, action: PayloadAction<boolean[]>) => {
             state.status = action.payload;
-        }
-    }
+        },
+    },
 });
 
 export const { updateStatus } = stageStatusSlice.actions;

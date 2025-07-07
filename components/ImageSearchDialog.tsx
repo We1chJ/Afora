@@ -1,74 +1,97 @@
-"use client"
+"use client";
 
-import { useState, useCallback, useEffect, useRef } from "react"
-import { Search, Upload, Check } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { useDropzone } from "react-dropzone"
-import { Image } from "lucide-react"
-import { searchPexelsImages, setBgImage } from "@/actions/actions"
-import { toast } from "sonner"
-import { Skeleton } from "./ui/skeleton"
-import { Loader } from "lucide-react"
-import { storage } from "@/firebase"
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage"
+import { useState, useCallback, useEffect, useRef } from "react";
+import { Search, Upload, Check } from "lucide-react";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useDropzone } from "react-dropzone";
+import { Image } from "lucide-react";
+import { searchPexelsImages, setBgImage } from "@/actions/actions";
+import { toast } from "sonner";
+import { Skeleton } from "./ui/skeleton";
+import { Loader } from "lucide-react";
+import { storage } from "@/firebase";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 export default function ImageSearchDialog({ orgId }: { orgId: string }) {
-    const [isOpen, setIsOpen] = useState(false)
-    const [isLoading, setIsLoading] = useState(false)
-    const [searchQuery, setSearchQuery] = useState<string | null>("")
-    const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-    const [imagePreview, setImagePreview] = useState<string | null>("")
-    const [, setIsDragging] = useState(false)
+    const [isOpen, setIsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState<string | null>("");
+    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>("");
+    const [, setIsDragging] = useState(false);
     const [searchRes, setSearchRes] = useState<string[]>([]);
     const [isSelecting, setIsSelecting] = useState(false);
-    const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
-    const [thumbnailCache, setThumbnailCache] = useState<Record<string, string>>({});
+    const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>(
+        {},
+    );
+    const [thumbnailCache, setThumbnailCache] = useState<
+        Record<string, string>
+    >({});
     const observerRef = useRef<IntersectionObserver | null>(null);
 
     // Create a thumbnail version of the image URL for faster loading
-    const generateThumbnailUrl = useCallback((originalUrl: string) => {
-        // Check if we already have a cached thumbnail
-        if (thumbnailCache[originalUrl]) {
-            return thumbnailCache[originalUrl];
-        }
-
-        // For Pexels URLs, we can modify the URL to request a medium size (better quality than tiny thumbnails)
-        if (originalUrl.includes('pexels.com')) {
-            let thumbnailUrl = originalUrl;
-
-            // If URL already has query parameters
-            if (thumbnailUrl.includes('?')) {
-                // Remove existing width/height/dpr params if they exist
-                thumbnailUrl = thumbnailUrl.replace(/[&?](w|h|dpr)=[^&]+/g, '');
-                // Add our medium resolution parameters 300x300
-                thumbnailUrl += '&w=300&h=300&dpr=2&q=80';
-            } else {
-                // Add query parameters for the first time
-                thumbnailUrl += '?auto=compress&cs=tinysrgb&w=300&h=300&dpr=2&q=80';
+    const generateThumbnailUrl = useCallback(
+        (originalUrl: string) => {
+            // Check if we already have a cached thumbnail
+            if (thumbnailCache[originalUrl]) {
+                return thumbnailCache[originalUrl];
             }
 
-            // Cache the thumbnail URL
-            setThumbnailCache(prev => ({ ...prev, [originalUrl]: thumbnailUrl }));
-            return thumbnailUrl;
-        }
+            // For Pexels URLs, we can modify the URL to request a medium size (better quality than tiny thumbnails)
+            if (originalUrl.includes("pexels.com")) {
+                let thumbnailUrl = originalUrl;
 
-        // For other URLs where we can't modify, return the original
-        return originalUrl;
-    }, [thumbnailCache]);
+                // If URL already has query parameters
+                if (thumbnailUrl.includes("?")) {
+                    // Remove existing width/height/dpr params if they exist
+                    thumbnailUrl = thumbnailUrl.replace(
+                        /[&?](w|h|dpr)=[^&]+/g,
+                        "",
+                    );
+                    // Add our medium resolution parameters 300x300
+                    thumbnailUrl += "&w=300&h=300&dpr=2&q=80";
+                } else {
+                    // Add query parameters for the first time
+                    thumbnailUrl +=
+                        "?auto=compress&cs=tinysrgb&w=300&h=300&dpr=2&q=80";
+                }
+
+                // Cache the thumbnail URL
+                setThumbnailCache((prev) => ({
+                    ...prev,
+                    [originalUrl]: thumbnailUrl,
+                }));
+                return thumbnailUrl;
+            }
+
+            // For other URLs where we can't modify, return the original
+            return originalUrl;
+        },
+        [thumbnailCache],
+    );
 
     // Generate higher quality preview for the selected image
     const generateHighQualityUrl = useCallback((originalUrl: string) => {
-        if (originalUrl.includes('pexels.com')) {
+        if (originalUrl.includes("pexels.com")) {
             let highQualityUrl = originalUrl;
 
-            if (highQualityUrl.includes('?')) {
-                highQualityUrl = highQualityUrl.replace(/[&?](w|h|dpr|q)=[^&]+/g, '');
+            if (highQualityUrl.includes("?")) {
+                highQualityUrl = highQualityUrl.replace(
+                    /[&?](w|h|dpr|q)=[^&]+/g,
+                    "",
+                );
                 // Higher quality but still optimized
-                highQualityUrl += '&w=800&h=800&dpr=2&q=90';
+                highQualityUrl += "&w=800&h=800&dpr=2&q=90";
             } else {
-                highQualityUrl += '?auto=compress&cs=tinysrgb&w=800&h=800&dpr=2&q=90';
+                highQualityUrl +=
+                    "?auto=compress&cs=tinysrgb&w=800&h=800&dpr=2&q=90";
             }
 
             return highQualityUrl;
@@ -78,18 +101,18 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
     }, []);
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
-        const file = acceptedFiles[0]
+        const file = acceptedFiles[0];
         if (!file) return;
 
-        setUploadedFile(file)
+        setUploadedFile(file);
 
         // Create preview URL for the image
-        const previewUrl = URL.createObjectURL(file)
-        setImagePreview(previewUrl)
+        const previewUrl = URL.createObjectURL(file);
+        setImagePreview(previewUrl);
 
         // Reset the loaded state for this new image
         setLoadedImages({});
-    }, [])
+    }, []);
 
     const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
         onDrop,
@@ -101,10 +124,10 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
         maxFiles: 1,
         onDragEnter: () => setIsDragging(true),
         onDragLeave: () => setIsDragging(false),
-    })
+    });
 
     const searchImages = async () => {
-        if (!searchQuery) return
+        if (!searchQuery) return;
         setIsLoading(true);
         setSearchRes([]);
         setLoadedImages({});
@@ -126,11 +149,11 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
             toast.error("Failed to search images. Please try again.");
         }
 
-        setIsLoading(false)
-    }
+        setIsLoading(false);
+    };
 
     const handleImageLoad = useCallback((url: string) => {
-        setLoadedImages(prev => ({ ...prev, [url]: true }));
+        setLoadedImages((prev) => ({ ...prev, [url]: true }));
     }, []);
 
     const handleImageSelect = async (imageUrl: string) => {
@@ -142,38 +165,38 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
             // Fetch the image and convert it to a file
             const response = await fetch(highQualityUrl);
             const blob = await response.blob();
-            const filename = imageUrl.split('/').pop() || 'image.jpg';
+            const filename = imageUrl.split("/").pop() || "image.jpg";
             const file = new File([blob], filename, { type: blob.type });
 
             setUploadedFile(file);
             setImagePreview(highQualityUrl);
-            setLoadedImages(prev => ({ ...prev, [highQualityUrl]: true }));
+            setLoadedImages((prev) => ({ ...prev, [highQualityUrl]: true }));
         } catch (error) {
             console.error("Error selecting image:", error);
             toast.error("Failed to select the image. Please try again.");
         } finally {
             setIsSelecting(false);
         }
-    }
+    };
 
     // Setup intersection observer for lazy loading images
     useEffect(() => {
         // Initialize the intersection observer
         observerRef.current = new IntersectionObserver(
             (entries) => {
-                entries.forEach(entry => {
+                entries.forEach((entry) => {
                     if (entry.isIntersecting) {
                         const imgElement = entry.target as HTMLImageElement;
                         const urlToLoad = imgElement.dataset.fullUrl;
                         if (urlToLoad) {
                             imgElement.src = generateThumbnailUrl(urlToLoad);
-                            imgElement.removeAttribute('data-full-url');
+                            imgElement.removeAttribute("data-full-url");
                             observerRef.current?.unobserve(imgElement);
                         }
                     }
                 });
             },
-            { rootMargin: '100px' } // Start loading when within 100px of viewport
+            { rootMargin: "100px" }, // Start loading when within 100px of viewport
         );
 
         return () => {
@@ -188,8 +211,8 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
         if (!searchRes.length || !observerRef.current) return;
 
         setTimeout(() => {
-            const imgElements = document.querySelectorAll('img[data-full-url]');
-            imgElements.forEach(img => {
+            const imgElements = document.querySelectorAll("img[data-full-url]");
+            imgElements.forEach((img) => {
                 if (observerRef.current) {
                     observerRef.current.observe(img);
                 }
@@ -207,13 +230,13 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
     useEffect(() => {
         return () => {
             // Clean up any blob URLs when component unmounts
-            if (imagePreview && imagePreview.startsWith('blob:')) {
+            if (imagePreview && imagePreview.startsWith("blob:")) {
                 URL.revokeObjectURL(imagePreview);
             }
 
             // Clean up any cached thumbnails
-            Object.values(thumbnailCache).forEach(url => {
-                if (url.startsWith('blob:')) {
+            Object.values(thumbnailCache).forEach((url) => {
+                if (url.startsWith("blob:")) {
                     URL.revokeObjectURL(url);
                 }
             });
@@ -222,25 +245,35 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
 
     // Memoize these handlers to prevent unnecessary re-renders
     const handleConfirm = useCallback(async () => {
-        if (uploadedFile && imagePreview && imagePreview.startsWith('blob:')) {
-            if (uploadedFile.size > 10 * 1024 * 1024) { // 10MB limit
-                toast.error("Image size exceeds the 10MB limit. Please choose a smaller image.");
+        if (uploadedFile && imagePreview && imagePreview.startsWith("blob:")) {
+            if (uploadedFile.size > 10 * 1024 * 1024) {
+                // 10MB limit
+                toast.error(
+                    "Image size exceeds the 10MB limit. Please choose a smaller image.",
+                );
                 return;
             }
             try {
-                const storageRef = ref(storage, `backgroundImages/${uploadedFile.name}`);
+                const storageRef = ref(
+                    storage,
+                    `backgroundImages/${uploadedFile.name}`,
+                );
                 await uploadBytes(storageRef, uploadedFile, {
-                    contentDisposition: `attachment; filename="${uploadedFile.name}"`
+                    contentDisposition: `attachment; filename="${uploadedFile.name}"`,
                 });
                 const downloadURL = await getDownloadURL(storageRef);
                 console.log(downloadURL);
                 await setBgImage(orgId, downloadURL);
-                toast.success("Image uploaded and background image changed successfully!");
+                toast.success(
+                    "Image uploaded and background image changed successfully!",
+                );
             } catch (error) {
                 if (error instanceof Error) {
                     toast.error(`Failed to upload image: ${error.message}`);
                 } else {
-                    toast.error("Failed to upload image due to an unknown error.");
+                    toast.error(
+                        "Failed to upload image due to an unknown error.",
+                    );
                 }
                 console.error("Upload error:", error);
             }
@@ -254,34 +287,34 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
             }
         }
         // console.log("Uploading file:", uploadedFile)
-        setUploadedFile(null)
-        setImagePreview(null)
-        setIsOpen(false)
-    }, [uploadedFile])
+        setUploadedFile(null);
+        setImagePreview(null);
+        setIsOpen(false);
+    }, [uploadedFile]);
 
     const handleCancel = useCallback(() => {
-        setUploadedFile(null)
-        setImagePreview(null)
+        setUploadedFile(null);
+        setImagePreview(null);
 
         // Revoke the object URL to avoid memory leaks
-        if (imagePreview && imagePreview.startsWith('blob:')) {
-            URL.revokeObjectURL(imagePreview)
+        if (imagePreview && imagePreview.startsWith("blob:")) {
+            URL.revokeObjectURL(imagePreview);
         }
-    }, [imagePreview])
+    }, [imagePreview]);
 
     const handleClose = useCallback(() => {
-        if (imagePreview && imagePreview.startsWith('blob:')) {
-            URL.revokeObjectURL(imagePreview)
+        if (imagePreview && imagePreview.startsWith("blob:")) {
+            URL.revokeObjectURL(imagePreview);
         }
         // Reset all state variables
-        setUploadedFile(null)
-        setImagePreview("")
-        setSearchQuery("")
-        setIsLoading(false)
-        setIsDragging(false)
-        setIsOpen(false)
-        setLoadedImages({})
-    }, [imagePreview])
+        setUploadedFile(null);
+        setImagePreview("");
+        setSearchQuery("");
+        setIsLoading(false);
+        setIsDragging(false);
+        setIsOpen(false);
+        setLoadedImages({});
+    }, [imagePreview]);
 
     return (
         <>
@@ -301,9 +334,9 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
                 open={isOpen}
                 onOpenChange={(open) => {
                     if (!open) {
-                        handleClose()
+                        handleClose();
                     } else {
-                        setIsOpen(true)
+                        setIsOpen(true);
                     }
                 }}
             >
@@ -326,8 +359,12 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
                                                 <img
                                                     src={imagePreview}
                                                     alt="Preview"
-                                                    className={`mx-auto object-contain max-h-48 w-full transition-opacity duration-300 ${loadedImages[imagePreview] ? 'opacity-100' : 'opacity-0'}`}
-                                                    onLoad={() => handleImageLoad(imagePreview)}
+                                                    className={`mx-auto object-contain max-h-48 w-full transition-opacity duration-300 ${loadedImages[imagePreview] ? "opacity-100" : "opacity-0"}`}
+                                                    onLoad={() =>
+                                                        handleImageLoad(
+                                                            imagePreview,
+                                                        )
+                                                    }
                                                     loading="eager"
                                                     fetchPriority="high"
                                                 />
@@ -337,23 +374,35 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
                                 )}
                                 <Check className="w-10 h-10 text-green-500 mx-auto mb-2" />
                             </div>
-                            <h3 className="text-lg font-semibold mb-2">Image Selected</h3>
+                            <h3 className="text-lg font-semibold mb-2">
+                                Image Selected
+                            </h3>
                             <p className="mb-4 text-sm text-muted-foreground">
-                                {uploadedFile.name.startsWith('blob:') ? 'Selected from search results' : uploadedFile.name}
+                                {uploadedFile.name.startsWith("blob:")
+                                    ? "Selected from search results"
+                                    : uploadedFile.name}
                             </p>
                             <div className="flex justify-center space-x-4">
                                 <Button onClick={handleConfirm}>Confirm</Button>
-                                <Button variant="outline" onClick={handleCancel}>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleCancel}
+                                >
                                     Cancel
                                 </Button>
                             </div>
                         </div>
                     ) : (
-                        <div className={`transition-all duration-300 ${isDragActive ? "bg-primary/10 border-primary" : ""}`}>
+                        <div
+                            className={`transition-all duration-300 ${isDragActive ? "bg-primary/10 border-primary" : ""}`}
+                        >
                             <DialogHeader>
                                 <DialogTitle className="flex justify-between items-center">
                                     <span>Search Images</span>
-                                    <a href="https://www.pexels.com" className="mr-4">
+                                    <a
+                                        href="https://www.pexels.com"
+                                        className="mr-4"
+                                    >
                                         <img
                                             src="https://images.pexels.com/lib/api/pexels.png"
                                             alt="Pexels"
@@ -377,9 +426,11 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
                                     placeholder="Search images..."
                                     className="flex-grow"
                                     value={searchQuery || ""}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onChange={(e) =>
+                                        setSearchQuery(e.target.value)
+                                    }
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter') searchImages();
+                                        if (e.key === "Enter") searchImages();
                                     }}
                                     disabled={isLoading || isSelecting}
                                 />
@@ -393,53 +444,70 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
 
                             {/* Progressive loading grid layout */}
                             <div className="grid grid-cols-3 gap-3 mb-4 relative mx-auto justify-items-center">
-                                {isLoading ? (
-                                    [...Array(9)].map((_, i) => (
-                                        <div key={i} className="h-24 w-24 flex items-center justify-center">
-                                            <Skeleton className="rounded-md h-full w-full" />
-                                        </div>
-                                    ))
-                                ) : searchRes.length === 0 ? (
-                                    [...Array(9)].map((_, i) => (
-                                        <div key={i} className="h-24 w-24 flex items-center justify-center">
-                                            <div className="rounded-md h-full w-full bg-gray-100"></div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    // Limited to 9 search results with improved progressive loading
-                                    searchRes.slice(0, 9).map((url, i) => {
-                                        return (
+                                {isLoading
+                                    ? [...Array(9)].map((_, i) => (
+                                          <div
+                                              key={i}
+                                              className="h-24 w-24 flex items-center justify-center"
+                                          >
+                                              <Skeleton className="rounded-md h-full w-full" />
+                                          </div>
+                                      ))
+                                    : searchRes.length === 0
+                                      ? [...Array(9)].map((_, i) => (
                                             <div
                                                 key={i}
-                                                className="bg-muted rounded-md overflow-hidden cursor-pointer hover:opacity-80 hover:shadow-md transition-all duration-200 transform hover:scale-105 h-24 w-24 flex items-center justify-center relative"
-                                                onClick={() => handleImageSelect(url)}
+                                                className="h-24 w-24 flex items-center justify-center"
                                             >
-                                                {/* Placeholder/skeleton while loading */}
-                                                {!loadedImages[url] && (
-                                                    <div className="absolute inset-0 animate-pulse bg-gray-200 rounded-md"></div>
-                                                )}
-                                                {/* Higher quality thumbnails */}
-                                                <img
-                                                    src={generateThumbnailUrl(url)}
-                                                    alt={`Search result ${i + 1}`}
-                                                    className="object-cover w-full h-full transition-opacity duration-300"
-                                                    style={{ opacity: loadedImages[url] ? 1 : 0 }}
-                                                    onLoad={() => handleImageLoad(url)}
-                                                    loading="eager"
-                                                    fetchPriority="high"
-                                                    decoding="sync"
-                                                />
+                                                <div className="rounded-md h-full w-full bg-gray-100"></div>
                                             </div>
-                                        );
-                                    })
-                                )}
+                                        ))
+                                      : // Limited to 9 search results with improved progressive loading
+                                        searchRes.slice(0, 9).map((url, i) => {
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className="bg-muted rounded-md overflow-hidden cursor-pointer hover:opacity-80 hover:shadow-md transition-all duration-200 transform hover:scale-105 h-24 w-24 flex items-center justify-center relative"
+                                                    onClick={() =>
+                                                        handleImageSelect(url)
+                                                    }
+                                                >
+                                                    {/* Placeholder/skeleton while loading */}
+                                                    {!loadedImages[url] && (
+                                                        <div className="absolute inset-0 animate-pulse bg-gray-200 rounded-md"></div>
+                                                    )}
+                                                    {/* Higher quality thumbnails */}
+                                                    <img
+                                                        src={generateThumbnailUrl(
+                                                            url,
+                                                        )}
+                                                        alt={`Search result ${i + 1}`}
+                                                        className="object-cover w-full h-full transition-opacity duration-300"
+                                                        style={{
+                                                            opacity:
+                                                                loadedImages[
+                                                                    url
+                                                                ]
+                                                                    ? 1
+                                                                    : 0,
+                                                        }}
+                                                        onLoad={() =>
+                                                            handleImageLoad(url)
+                                                        }
+                                                        loading="eager"
+                                                        fetchPriority="high"
+                                                        decoding="sync"
+                                                    />
+                                                </div>
+                                            );
+                                        })}
                             </div>
                             <Button
                                 className="w-full"
                                 variant="outline"
                                 onClick={(e) => {
-                                    e.stopPropagation()
-                                    open()
+                                    e.stopPropagation();
+                                    open();
                                 }}
                                 disabled={isLoading || isSelecting}
                             >
@@ -448,7 +516,9 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
                             </Button>
                             {isDragActive && (
                                 <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm flex items-center justify-center">
-                                    <p className="text-lg font-semibold">Drop your image here</p>
+                                    <p className="text-lg font-semibold">
+                                        Drop your image here
+                                    </p>
                                 </div>
                             )}
                         </div>
@@ -456,5 +526,5 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
                 </DialogContent>
             </Dialog>
         </>
-    )
+    );
 }

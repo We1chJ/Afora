@@ -1,10 +1,9 @@
-import { db } from '@/firebase';
-import { UserOrgData } from '@/types/types';
-import { doc } from 'firebase/firestore';
-import Link from 'next/link';
-import React from 'react';
-import { useDocumentData } from 'react-firebase-hooks/firestore';
-
+import { db } from "@/firebase";
+import { UserOrgData } from "@/types/types";
+import { doc } from "firebase/firestore";
+import Link from "next/link";
+import React from "react";
+import { useDocumentData } from "react-firebase-hooks/firestore";
 
 interface HomePageCardProps {
     org: UserOrgData;
@@ -32,7 +31,7 @@ function HomePageCard({ org }: HomePageCardProps) {
                         <h1 className="text-2xl font-semibold">
                             {data?.title}
                         </h1>
-                        <div className='gap-1'>
+                        <div className="gap-1">
                             {/* <p className="text-sm">{org.orgId}</p> */}
                             <h3 className="dark:text-gray-100 text-sm">
                                 Admin: {data?.admins[0]}

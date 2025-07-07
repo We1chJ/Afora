@@ -1,5 +1,5 @@
-import { User } from "./types"
+import { User } from "./types";
 
-declare global{
+declare global {
     interface CustomJwtSessionClaims extends User {}
 }

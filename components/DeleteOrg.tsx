@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
     Dialog,
@@ -9,7 +9,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import { useState, useTransition } from "react";
 import { Button } from "./ui/button";
 import { usePathname, useRouter } from "next/navigation";
@@ -28,7 +28,7 @@ function DeleteOrg() {
 
         startTransition(async () => {
             const { success } = await deleteOrg(orgId);
-        
+
             if (success) {
                 router.replace("/");
                 toast.success("Organization deleted successfully");
@@ -47,9 +47,12 @@ function DeleteOrg() {
                 </Button>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Are you absolutely sure you want to delete?</DialogTitle>
+                        <DialogTitle>
+                            Are you absolutely sure you want to delete?
+                        </DialogTitle>
                         <DialogDescription>
-                            This will delete the organization and all its contents, removing all users from the organization.
+                            This will delete the organization and all its
+                            contents, removing all users from the organization.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="sm:justify-end gap-2">

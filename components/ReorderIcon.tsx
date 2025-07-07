@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import { DragControls } from "framer-motion";
 
 interface Props {

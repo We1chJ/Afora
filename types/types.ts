@@ -2,9 +2,9 @@ import { DocumentData, Timestamp } from "firebase/firestore";
 
 /**
  * - editor: members who can edit the documents
- * - admin: administrators who have higher access 
+ * - admin: administrators who have higher access
  */
-export const access_roles: string[] = ['editor', 'admin'];
+export const access_roles: string[] = ["editor", "admin"];
 
 export type User = {
     fullName: string;
@@ -14,10 +14,10 @@ export type User = {
     emailAddresses: string;
     imageUrl: string;
     unsafeMetadata: {
-        demographic?: string;  // Use optional chaining here
+        demographic?: string; // Use optional chaining here
         gender?: string;
     };
-}
+};
 
 export type Project = {
     projId: string;
@@ -29,7 +29,7 @@ export type Project = {
     createdAt?: string;
     description?: string;
     // Add other fields as necessary
-}
+};
 
 export type ProjectStats = {
     totalTasks: number;
@@ -39,7 +39,7 @@ export type ProjectStats = {
     progress: number; // 0-100
     memberCount: number;
     projectType: string;
-}
+};
 
 export type Organization = {
     title: string;
@@ -47,7 +47,7 @@ export type Organization = {
     admins: string[];
     members: string[];
     backgroundImage: string;
-}
+};
 
 // this structure describes the subcollection 'org' document under each user
 // orgId and userId are not repetitive and are needed for quick query when deleting organizations
@@ -58,8 +58,16 @@ export interface UserOrgData extends DocumentData {
     userId: string;
 }
 
-export const appHeader = ['Core Skills and Expertise', 'Current Interests', 'Fields Seeking to Pursue'];
-export const appQuestions = ['What is your primary area of expertise and main professional skills?', 'What industries or fields are you currently most interested in some levels of skills and experiences?', 'What future roles or job titles are you aiming for?'];
+export const appHeader = [
+    "Core Skills and Expertise",
+    "Current Interests",
+    "Fields Seeking to Pursue",
+];
+export const appQuestions = [
+    "What is your primary area of expertise and main professional skills?",
+    "What industries or fields are you currently most interested in some levels of skills and experiences?",
+    "What future roles or job titles are you aiming for?",
+];
 export const appTags = [
     "Web Development",
     "Data Science",
@@ -137,11 +145,27 @@ export const appTags = [
 ];
 
 // TODO: moved to somewhere else beause questions can be customized by org admin
-export const projHeader = ['Hard Skills', 'Communication Style', 'Project Preferences', 'Extreme Preferences', 'Time Availability']
-export const projQuestions = ['What are your top three technical or professional skills? Which tools, frameworks, or technologies are you proficient in?', 'What is your preferred method of communication for this project? (e.g., Slack, Email, Video calls) How often do you prefer to receive updates or engage with teammates? (e.g., daily, weekly)', 'What kind of project structure do you prefer? (e.g., rigid with clear processes, or flexible with more autonomy) What industry or type of project excites you most for this specific collaboration?', 'Anyone you definitely want to work with for this project? Someone you definitely do not want to work with for this project?', 'What days and times are you available to work on this project? (Please share a preferred weekly schedule or select available times like in When2Meet)'];
+export const projHeader = [
+    "Hard Skills",
+    "Communication Style",
+    "Project Preferences",
+    "Extreme Preferences",
+    "Time Availability",
+];
+export const projQuestions = [
+    "What are your top three technical or professional skills? Which tools, frameworks, or technologies are you proficient in?",
+    "What is your preferred method of communication for this project? (e.g., Slack, Email, Video calls) How often do you prefer to receive updates or engage with teammates? (e.g., daily, weekly)",
+    "What kind of project structure do you prefer? (e.g., rigid with clear processes, or flexible with more autonomy) What industry or type of project excites you most for this specific collaboration?",
+    "Anyone you definitely want to work with for this project? Someone you definitely do not want to work with for this project?",
+    "What days and times are you available to work on this project? (Please share a preferred weekly schedule or select available times like in When2Meet)",
+];
 
 //TODO: make this customizable
-export const teamCharterQuestions = ['Project Purpose', 'Key Project Stakeholders', 'Product Objectives']
+export const teamCharterQuestions = [
+    "Project Purpose",
+    "Key Project Stakeholders",
+    "Product Objectives",
+];
 
 // export interface Task {
 //     id: string
@@ -157,7 +181,7 @@ export type Stage = {
     order: number;
     tasksCompleted: number;
     totalTasks: number;
-}
+};
 
 export type Task = {
     id: string;
@@ -171,11 +195,11 @@ export type Task = {
     completionPercentage?: number; // Task completion percentage (0-100)
     // Task pool related fields
     points: number; // Points earned for completing the task (default: 1)
-    status: 'available' | 'assigned' | 'completed' | 'overdue'; // Task status
+    status: "available" | "assigned" | "completed" | "overdue"; // Task status
     assignedAt?: string; // When the task was assigned
     completedAt?: string; // When the task was completed
     canBeReassigned?: boolean; // Whether the task can be reassigned after soft deadline
-}
+};
 
 export type GeneratedTasks = {
     stages: {
@@ -194,7 +218,7 @@ export type Comment = {
     msgId: string;
     time: Timestamp;
     uid: string;
-}
+};
 
 export type TeamCompatibilityAnalysis = {
     overall_score: number;
@@ -212,7 +236,7 @@ export type TeamCompatibilityAnalysis = {
         collaboration_potential: string;
         recommendations: string[];
     };
-}
+};
 
 // Task pool and leaderboard types
 export type UserScore = {
@@ -223,14 +247,14 @@ export type UserScore = {
     tasksAssigned: number;
     averageCompletionTime: number; // in hours
     streak: number; // consecutive days with completed tasks
-}
+};
 
 export type ProjectLeaderboard = {
     projectId: string;
     projectTitle: string;
     scores: UserScore[];
     lastUpdated: string;
-}
+};
 
 export type TaskPoolStats = {
     stageId: string;
@@ -239,4 +263,4 @@ export type TaskPoolStats = {
     assignedTasks: number;
     completedTasks: number;
     overdueTasks: number;
-}
+};

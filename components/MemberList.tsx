@@ -1,5 +1,5 @@
 'use client'
-import React, { useMemo } from 'react'
+import React from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -49,8 +49,6 @@ interface ProjectTeam {
 const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode = false }: MemberListProps) => {
     const [adminsPfp, setAdminsPfp] = useState<{ [email: string]: string }>({});
     const [membersPfp, setMembersPfp] = useState<{ [email: string]: string }>({});
-    const [projectTeams, setProjectTeams] = useState<ProjectTeam[]>([]);
-    const [unassignedMembers, setUnassignedMembers] = useState<string[]>([]);
     const [selectedProject, setSelectedProject] = useState<string | null>(null);
     const [selectedView, setSelectedView] = useState<'overview' | 'projects'>('overview');
     const [isTeamSettingsOpen, setIsTeamSettingsOpen] = useState(false);
@@ -113,28 +111,12 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
         return [...members, ...admins].filter(member => !assignedMembers.has(member));
     }, [teams, members, admins]);
 
-    // 使用 useEffect 来同步状态，但减少依赖项
-    useEffect(() => {
-        setProjectTeams(teams);
-        setUnassignedMembers(calculatedUnassignedMembers);
-    }, [teams, calculatedUnassignedMembers]);
+    // 直接使用计算值，不需要额外的状态
+    const projectTeams = teams;
+    const unassignedMembers = calculatedUnassignedMembers;
 
     const handleAutoAssign = useCallback(async () => {
         if (isMockMode) {
-            // Mock mode - just update local state
-            const updatedTeams = [...projectTeams];
-            let availableMembers = [...unassignedMembers];
-            
-            updatedTeams.forEach((team: ProjectTeam) => {
-                const spotsAvailable = team.teamSize - team.members.length;
-                if (spotsAvailable > 0 && availableMembers.length > 0) {
-                    const membersToAdd = availableMembers.splice(0, spotsAvailable);
-                    team.members.push(...membersToAdd);
-                }
-            });
-            
-            setProjectTeams(updatedTeams);
-            setUnassignedMembers(availableMembers);
             toast.success('Members auto-assigned successfully! (Mock mode)');
             return;
         }
@@ -144,8 +126,7 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
             
             if (result.success) {
                 toast.success(result.message);
-                // 刷新页面数据或重新获取项目数据
-                window.location.reload();
+                // 不需要刷新页面，数据会自动更新
             } else {
                 toast.error(result.message || 'Failed to auto-assign members');
             }
@@ -153,39 +134,10 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
             console.error('Error auto-assigning members:', error);
             toast.error('Failed to auto-assign members');
         }
-    }, [isMockMode, projectTeams, unassignedMembers, orgId]);
+    }, [isMockMode, orgId]);
 
     const handleMemberMove = useCallback(async (memberEmail: string, fromProjectId: string | null, toProjectId: string | null) => {
         if (isMockMode) {
-            // Mock mode - just update local state
-            const updatedTeams = [...projectTeams];
-            let updatedUnassigned = [...unassignedMembers];
-            
-            // Remove from source
-            if (fromProjectId) {
-                const sourceTeam = updatedTeams.find(team => team.projectId === fromProjectId);
-                if (sourceTeam) {
-                    sourceTeam.members = sourceTeam.members.filter(member => member !== memberEmail);
-                }
-            } else {
-                updatedUnassigned = updatedUnassigned.filter(member => member !== memberEmail);
-            }
-            
-            // Add to destination
-            if (toProjectId) {
-                const destTeam = updatedTeams.find(team => team.projectId === toProjectId);
-                if (destTeam && destTeam.members.length < destTeam.teamSize) {
-                    destTeam.members.push(memberEmail);
-                } else {
-                    toast.error('Team is full!');
-                    return;
-                }
-            } else {
-                updatedUnassigned.push(memberEmail);
-            }
-            
-            setProjectTeams(updatedTeams);
-            setUnassignedMembers(updatedUnassigned);
             toast.success('Member moved successfully! (Mock mode)');
             return;
         }
@@ -193,7 +145,7 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
         try {
             // Check destination availability first if moving to a project
             if (toProjectId) {
-                const destTeam = projectTeams.find(team => team.projectId === toProjectId);
+                const destTeam = projectTeams.find((team: ProjectTeam) => team.projectId === toProjectId);
                 if (!destTeam) {
                     toast.error('Destination project not found!');
                     return;
@@ -224,7 +176,7 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
 
             // Handle adding to destination project
             if (toProjectId) {
-                const destTeam = projectTeams.find(team => team.projectId === toProjectId);
+                const destTeam = projectTeams.find((team: ProjectTeam) => team.projectId === toProjectId);
                 if (destTeam) {
                     console.log(`Adding ${memberEmail} to project ${toProjectId}`);
                     const updatedMembers = [...destTeam.members, memberEmail];
@@ -236,7 +188,7 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
                             console.log('Attempting to restore member to original project...');
                             // This is a best-effort restore, don't handle errors
                             try {
-                                const sourceTeam = projectTeams.find(team => team.projectId === fromProjectId);
+                                const sourceTeam = projectTeams.find((team: ProjectTeam) => team.projectId === fromProjectId);
                                 if (sourceTeam) {
                                     const restoreMembers = [...sourceTeam.members, memberEmail];
                                     await updateProjectMembers(fromProjectId, restoreMembers);
@@ -254,9 +206,6 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
                           fromProjectId ? 'removed from project' : 'added to project';
             toast.success(`Member ${action} successfully!`);
             
-            // 刷新页面数据
-            window.location.reload();
-            
         } catch (error) {
             console.error('Error moving member:', error);
             toast.error('Failed to move member. Please try again.');
@@ -265,10 +214,6 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
 
     const updateTeamSize = useCallback(async (projectId: string, newSize: number) => {
         if (isMockMode) {
-            // Mock mode - just update local state
-            setProjectTeams(prev => prev.map(team => 
-                team.projectId === projectId ? { ...team, teamSize: newSize } : team
-            ));
             toast.success('Team size updated! (Mock mode)');
             return;
         }
@@ -277,10 +222,6 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
             const result = await updateProjectTeamSize(projectId, newSize);
             
             if (result.success) {
-                // Update local state only after successful database update
-                setProjectTeams(prev => prev.map(team => 
-                    team.projectId === projectId ? { ...team, teamSize: newSize } : team
-                ));
                 toast.success('Team size updated successfully!');
             } else {
                 toast.error(result.message || 'Failed to update team size');
@@ -336,8 +277,8 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
                                 </SelectTrigger>
                                 <SelectContent>
                                     {projectTeams
-                                        .filter(team => team.members.length < team.teamSize)
-                                        .map(team => (
+                                        .filter((team: ProjectTeam) => team.members.length < team.teamSize)
+                                        .map((team: ProjectTeam) => (
                                             <SelectItem key={team.projectId} value={team.projectId}>
                                                 {team.projectTitle}
                                             </SelectItem>
@@ -352,9 +293,9 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
         );
     }, [adminsPfp, membersPfp, userRole, projectTeams, handleMemberMove]);
 
-    const selectedProjectData = projectTeams.find(team => team.projectId === selectedProject);
+    const selectedProjectData = projectTeams.find((team: ProjectTeam) => team.projectId === selectedProject);
     const totalMembers = [...admins, ...members].length;
-    const assignedMembers = projectTeams.reduce((total, team) => total + team.members.length, 0);
+    const assignedMembers = projectTeams.reduce((total: number, team: ProjectTeam) => total + team.members.length, 0);
 
     return (
         <div className="flex h-auto bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg overflow-hidden">
@@ -440,41 +381,57 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
                         ) : (
                         <div className="space-y-3">
                             <div className="text-sm font-medium text-gray-500">Project List</div>
-                            {projectTeams.map((team) => (
-                                <div
-                                    key={team.projectId}
-                                    className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
-                                        selectedProject === team.projectId
-                                            ? 'bg-blue-50 border-2 border-blue-200 shadow-md'
-                                            : 'bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:shadow-sm'
-                                    }`}
-                                    onClick={() => setSelectedProject(team.projectId)}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <FolderOpen className={`h-5 w-5 ${
-                                            selectedProject === team.projectId ? 'text-blue-600' : 'text-gray-400'
-                                        }`} />
-                                        <div className="flex-1 min-w-0">
-                                            <div className={`font-medium truncate ${
-                                                selectedProject === team.projectId ? 'text-blue-900' : 'text-gray-900'
-                                            }`}>
-                                                {team.projectTitle}
-                                            </div>
-                                                <div className="text-sm text-gray-500">
-                                                    {team.members.length}/{team.teamSize} members
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col items-end gap-1">
-                                                <Badge variant={team.members.length === team.teamSize ? "default" : "secondary"}>
-                                                    {team.members.length === team.teamSize ? 'Full' : 'Available'}
-                                                </Badge>
-                                            {selectedProject === team.projectId && (
-                                                <ArrowRight className="h-4 w-4 text-blue-600" />
-                                            )}
-                                        </div>
+                            {projectTeams.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <FolderOpen className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                                    <h3 className="text-sm font-medium text-gray-900 mb-2">没有项目</h3>
+                                    <p className="text-xs text-gray-500 mb-4">此组织中还没有项目。</p>
+                                    <div className="text-xs text-gray-400">
+                                        <p>可能的原因：</p>
+                                        <ul className="text-left mt-2 space-y-1">
+                                            <li>• 数据库中没有项目数据</li>
+                                            <li>• 项目数据结构不正确</li>
+                                            <li>• 数据库连接问题</li>
+                                        </ul>
                                     </div>
                                 </div>
-                            ))}
+                            ) : (
+                                projectTeams.map((team: ProjectTeam) => (
+                                    <div
+                                        key={team.projectId}
+                                        className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
+                                            selectedProject === team.projectId
+                                                ? 'bg-blue-50 border-2 border-blue-200 shadow-md'
+                                                : 'bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:shadow-sm'
+                                        }`}
+                                        onClick={() => setSelectedProject(team.projectId)}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <FolderOpen className={`h-5 w-5 ${
+                                                selectedProject === team.projectId ? 'text-blue-600' : 'text-gray-400'
+                                            }`} />
+                                            <div className="flex-1 min-w-0">
+                                                <div className={`font-medium truncate ${
+                                                    selectedProject === team.projectId ? 'text-blue-900' : 'text-gray-900'
+                                                }`}>
+                                                    {team.projectTitle}
+                                                </div>
+                                                    <div className="text-sm text-gray-500">
+                                                        {team.members.length}/{team.teamSize} members
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col items-end gap-1">
+                                                    <Badge variant={team.members.length === team.teamSize ? "default" : "secondary"}>
+                                                        {team.members.length === team.teamSize ? 'Full' : 'Available'}
+                                                    </Badge>
+                                                {selectedProject === team.projectId && (
+                                                    <ArrowRight className="h-4 w-4 text-blue-600" />
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                             
                             {/* Unassigned Section */}
                             <div
@@ -630,7 +587,7 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
                                      Admins ({admins.length})
                                  </h4>
                                  <div className="grid gap-3">
-                                     {admins.map((admin) => (
+                                     {admins.map((admin: string) => (
                                          <div key={admin}>
                                              {renderMemberCard(admin, true)}
                                          </div>
@@ -647,7 +604,7 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
                                      Members ({members.length})
                                  </h4>
                                 <div className="grid gap-3">
-                                    {members.map((member) => (
+                                    {members.map((member: string) => (
                                         <div key={member}>
                                             {renderMemberCard(member, false)}
                                         </div>
@@ -662,7 +619,7 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
                                  <div>
                                      <h4 className="text-sm font-medium text-gray-700 mb-4">Current Team Members</h4>
                                      <div className="grid gap-3">
-                                         {selectedProjectData.members.map((member) => (
+                                         {selectedProjectData.members.map((member: string) => (
                                              <div key={member}>
                                                  {renderMemberCard(member, admins.includes(member), true, selectedProject)}
                                              </div>
@@ -710,8 +667,25 @@ const MemberList = ({ admins, members, userRole, orgId, projectsData, isMockMode
                      ) : (
                          <div className="text-center py-12">
                              <FolderOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                             <h3 className="text-lg font-medium text-gray-900 mb-2">Select project to view details</h3>
-                             <p className="text-gray-500">Select a project from the left project list to view team members.</p>
+                             {projectTeams.length === 0 ? (
+                                 <div>
+                                     <h3 className="text-lg font-medium text-gray-900 mb-2">没有项目数据</h3>
+                                     <p className="text-gray-500 mb-4">此组织中还没有项目。请检查以下内容：</p>
+                                     <div className="text-sm text-gray-400 space-y-2 max-w-md mx-auto">
+                                         <p>1. 确保数据库中有项目数据</p>
+                                         <p>2. 检查项目数据结构是否正确</p>
+                                         <p>3. 查看浏览器控制台的调试信息</p>
+                                     </div>
+                                     <div className="mt-6 text-xs text-gray-400 bg-gray-50 p-4 rounded-lg">
+                                         <p><strong>调试信息:</strong> 打开浏览器开发者工具 (F12) 查看控制台输出</p>
+                                     </div>
+                                 </div>
+                             ) : (
+                                 <div>
+                                     <h3 className="text-lg font-medium text-gray-900 mb-2">选择项目查看详情</h3>
+                                     <p className="text-gray-500">从左侧项目列表选择一个项目来查看团队成员。</p>
+                                 </div>
+                             )}
                          </div>
                     )}
                 </div>

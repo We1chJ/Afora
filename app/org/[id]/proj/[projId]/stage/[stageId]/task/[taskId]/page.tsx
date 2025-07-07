@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useDocument } from "react-firebase-hooks/firestore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit3, Clock, User, Calendar, UserPlus, CheckCircle, Upload, Target } from "lucide-react";
+import { Edit3, Clock, User, Calendar, UserPlus, CheckCircle, Upload, Target, Star, Trophy, TrendingUp } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -58,7 +58,6 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
   const [isEditing, setIsEditing] = useState(false);
   const stageStatus: boolean[] = useSelector((state: RootState) => state.stageStatus.status);
   const [taskLocked, setTaskLocked] = useState(false);
-  const [userRole, setUserRole] = useState<'admin' | 'user'>('admin');
   const [stageData, stageLoading, stageError] = useDocument(doc(db, 'projects', projId, 'stages', stageId));
   const dispatch = useDispatch();
   
@@ -69,6 +68,10 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [showSubmissionDialog, setShowSubmissionDialog] = useState(false);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
+  
+  // 用户角色状态
+  const [userRole, setUserRole] = useState<'admin' | 'member' | null>(null);
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
   
   useEffect(() => {
     // check to make sure update lock status at least once
@@ -207,6 +210,36 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
     loadSubmissions();
   }, [projId, stageId, taskId]);
 
+  // 获取用户角色
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!userEmail || !id) return;
+      
+      try {
+        // 获取组织数据
+        const orgDoc = await import('firebase/firestore').then(({ doc, getDoc }) => 
+          getDoc(doc(db, 'organizations', id))
+        );
+        
+        if (orgDoc.exists()) {
+          const orgData = orgDoc.data();
+          const isAdmin = orgData?.admins?.includes(userEmail);
+          const isMember = orgData?.members?.includes(userEmail);
+          
+          if (isAdmin) {
+            setUserRole('admin');
+          } else if (isMember) {
+            setUserRole('member');
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error);
+      }
+    };
+
+    fetchUserRole();
+  }, [userEmail, id]);
+
   const [taskData, taskLoading, taskError] = useDocument(doc(db, 'projects', projId, 'stages', stageId, 'tasks', taskId));
   const task = taskData?.data() as Task;
 
@@ -237,7 +270,7 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
                     </p>
                     
                     {/* Task Meta Info */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                       <div className="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-2">
                         <User className="h-4 w-4" />
                         <span className="font-medium">Assigned to:</span>
@@ -253,22 +286,26 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
                         <span className="font-medium">Hard Deadline:</span>
                         <span>{task?.hard_deadline || "None"}</span>
                       </div>
+                      <div className="flex items-center space-x-2 bg-white/10 rounded-lg px-3 py-2">
+                        <Star className="h-4 w-4" />
+                        <span className="font-medium">Points:</span>
+                        <span>{task?.points || 1}</span>
+                      </div>
                     </div>
                   </div>
                   
-                  {userRole === 'admin' && (
-                    <Drawer open={isEditing}>
-                      <DrawerTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-white hover:bg-white/20 transition-all duration-200 backdrop-blur-sm border border-white/20" 
-                          onClick={() => setIsEditing(true)}
-                        >
-                          <Edit3 className="mr-2 h-4 w-4" />
-                          Edit Task
-                        </Button>
-                      </DrawerTrigger>
+                  <Drawer open={isEditing}>
+                    <DrawerTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-white hover:bg-white/20 transition-all duration-200 backdrop-blur-sm border border-white/20" 
+                        onClick={() => setIsEditing(true)}
+                      >
+                        <Edit3 className="mr-2 h-4 w-4" />
+                        Edit Task
+                      </Button>
+                    </DrawerTrigger>
                       <DrawerContent className="p-6 w-full h-5/6">
                         <DrawerTitle className="text-2xl font-bold mb-2">📝 Edit Task</DrawerTitle>
                         <DrawerDescription className="text-gray-600 mb-6">
@@ -364,16 +401,25 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
                         </DrawerFooter>
                       </DrawerContent>
                     </Drawer>
-                  )}
                 </div>
               </CardHeader>
             </Card>
           </div>
 
+          {/* Main Content */}
+          <TaskMainContent 
+                      projId={projId}
+                      stageId={stageId} 
+                      taskId={taskId}
+                      task={task}
+                      taskLocked={taskLocked}
+                    />
+
           {/* Task Pool Management Section */}
-          <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Task Status & Actions */}
-            <Card>
+          {userRole === 'admin' && (
+            <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Task Status & Actions */}
+              <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Target className="h-5 w-5 text-blue-600" />
@@ -389,16 +435,16 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
                   </Badge>
                 </div>
                 
-                                 {/* Task Progress */}
-                 {task?.completionPercentage !== undefined && (
-                   <div className="space-y-2">
-                     <div className="flex items-center justify-between">
-                       <span className="font-medium">Progress:</span>
-                       <span className="text-sm text-gray-600">{task.completionPercentage}%</span>
-                     </div>
-                     <Progress value={task.completionPercentage} className="w-full" />
-                   </div>
-                 )}
+                {/* Task Progress */}
+                  {task?.completionPercentage !== undefined && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">Progress:</span>
+                        <span className="text-sm text-gray-600">{task.completionPercentage}%</span>
+                      </div>
+                      <Progress value={task.completionPercentage} className="w-full" />
+                    </div>
+                  )}
 
                 {/* Points */}
                 <div className="flex items-center justify-between">
@@ -411,35 +457,33 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
                 {/* Action Buttons */}
                 <div className="space-y-3">
                   {/* Assign Task */}
-                  {userRole === 'admin' && (
-                    <Drawer open={showAssignDialog} onOpenChange={setShowAssignDialog}>
-                      <DrawerTrigger asChild>
-                        <Button className="w-full" variant="outline">
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Assign Task
+                  <Drawer open={showAssignDialog} onOpenChange={setShowAssignDialog}>
+                    <DrawerTrigger asChild>
+                      <Button className="w-full" variant="outline">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Assign Task
+                      </Button>
+                    </DrawerTrigger>
+                    <DrawerContent className="p-6">
+                      <DrawerTitle>Assign Task</DrawerTitle>
+                      <DrawerDescription>Enter the email address of the user to assign this task to.</DrawerDescription>
+                      <div className="space-y-4 mt-4">
+                        <Input
+                          placeholder="user@example.com"
+                          value={assigneeEmail}
+                          onChange={(e) => setAssigneeEmail(e.target.value)}
+                        />
+                      </div>
+                      <DrawerFooter className="flex flex-row justify-end space-x-4">
+                        <DrawerClose asChild>
+                          <Button variant="outline">Cancel</Button>
+                        </DrawerClose>
+                        <Button onClick={handleAssignTask} disabled={isPending}>
+                          {isPending ? 'Assigning...' : 'Assign'}
                         </Button>
-                      </DrawerTrigger>
-                      <DrawerContent className="p-6">
-                        <DrawerTitle>Assign Task</DrawerTitle>
-                        <DrawerDescription>Enter the email address of the user to assign this task to.</DrawerDescription>
-                        <div className="space-y-4 mt-4">
-                          <Input
-                            placeholder="user@example.com"
-                            value={assigneeEmail}
-                            onChange={(e) => setAssigneeEmail(e.target.value)}
-                          />
-                        </div>
-                        <DrawerFooter className="flex flex-row justify-end space-x-4">
-                          <DrawerClose asChild>
-                            <Button variant="outline">Cancel</Button>
-                          </DrawerClose>
-                          <Button onClick={handleAssignTask} disabled={isPending}>
-                            {isPending ? 'Assigning...' : 'Assign'}
-                          </Button>
-                        </DrawerFooter>
-                      </DrawerContent>
-                    </Drawer>
-                  )}
+                      </DrawerFooter>
+                    </DrawerContent>
+                  </Drawer>
 
                   {/* Complete Task */}
                   {task?.assignee === user?.primaryEmailAddress?.emailAddress && !task?.isCompleted && (
@@ -529,15 +573,8 @@ function TaskPage({ params: { id, projId, stageId, taskId } }: {
               </CardContent>
             </Card>
           </div>
-
-          {/* Main Content - using TaskMainContent component */}
-          <TaskMainContent 
-            projId={projId}
-            stageId={stageId} 
-            taskId={taskId}
-            task={task}
-            taskLocked={taskLocked}
-          />
+          )}
+          
         </div>
       )}
     </div>

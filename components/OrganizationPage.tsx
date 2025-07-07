@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCollection, useDocument } from 'react-firebase-hooks/firestore'
-import { collection, doc } from 'firebase/firestore'
+import { collection, doc, query, where } from 'firebase/firestore'
 import { db } from '@/firebase'
 import MemberList from './MemberList'
 import ProjOnboarding from './ProjOnboarding'
@@ -45,7 +45,7 @@ const OrganizationPage = ({ id }: { id: string }) => {
   }, [id, user]);
 
   const [org, loading, error] = useDocument(isMockMode ? null : doc(db, 'organizations', id));
-  const [projectsData, projLoading, projError] = useCollection(isMockMode ? null : collection(db, 'organizations', id, 'projs'));
+  const [projectsData, projLoading, projError] = useCollection(isMockMode ? null : query(collection(db, 'projects'), where('orgId', '==', id)));
   const userEmail = user?.primaryEmailAddress?.emailAddress;
   const [data] = useDocument(userEmail && !isMockMode ? doc(db, 'users', userEmail, 'orgs', id) : null);
 

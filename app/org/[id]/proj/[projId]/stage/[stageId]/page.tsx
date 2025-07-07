@@ -181,8 +181,7 @@ function StagePage({ params: { id, projId, stageId } }: {
   const [isEditing, setIsEditing] = useState(false);
   const [bountyBoardOpen, setBountyBoardOpen] = useState(false);
 
-  const [userRole, setUserRole] = useState<'admin' | 'user'>('admin');
-  const [currentUserEmail, setCurrentUserEmail] = useState('admin@test.com');
+
   
   // 新增：存储从后端获取的过期任务和可用任务
   const [backendOverdueTasks, setBackendOverdueTasks] = useState<any[]>([]);
@@ -306,51 +305,19 @@ function StagePage({ params: { id, projId, stageId } }: {
                     {'Stage ' + (stage.order + 1) + '. ' + stage.title}
                   </h1>
                   <div className="flex items-center gap-3">
-                    {/* 角色切换开关 */}
-                    <div className="flex items-center gap-2 px-3 py-1 bg-white/20 rounded-lg">
-                      <span className="text-white text-sm font-medium">
-                        {userRole === 'admin' ? 'Admin' : 'User'}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-white hover:bg-white/20 h-6 w-12 p-0 transition-colors"
-                        onClick={() => {
-                          const newRole = userRole === 'admin' ? 'user' : 'admin';
-                          setUserRole(newRole);
-                          if (newRole === 'user') {
-                            setCurrentUserEmail('bob@test.com'); // 模拟普通用户
-                          } else {
-                            setCurrentUserEmail('admin@test.com');
-                          }
-
-                        }}
-                      >
-                        <div className={`w-10 h-5 rounded-full transition-colors ${
-                          userRole === 'admin' ? 'bg-blue-500' : 'bg-green-500'
-                        } relative`}>
-                          <div className={`w-4 h-4 bg-white rounded-full transition-transform absolute top-0.5 ${
-                            userRole === 'admin' ? 'transform translate-x-0.5' : 'transform translate-x-5'
-                          }`} />
-                        </div>
-                      </Button>
-                    </div>
-
                     <BountyBoardButton
                       overdueTasks={overdueTasks.length}
                       showBountyBoard={false}
                       onClick={() => setBountyBoardOpen(true)}
                     />
-                    {userRole === 'admin' && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="text-white hover:bg-white/20 transition-colors" 
-                        onClick={() => setIsEditing(!isEditing)}
-                      >
-                        <Edit3 className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="text-white hover:bg-white/20 transition-colors" 
+                      onClick={() => setIsEditing(!isEditing)}
+                    >
+                      <Edit3 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
                 
@@ -466,8 +433,6 @@ function StagePage({ params: { id, projId, stageId } }: {
           orgId={id}
           projId={projId}
           stageId={stageId}
-          userRole={userRole}
-          currentUserEmail={currentUserEmail}
         />
       </div>
     </div>

@@ -38,7 +38,6 @@ function TaskMainContent({ projId, stageId, taskId, task, taskLocked }: TaskMain
   const [isCompleted, setIsCompleted] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isModifying, setIsModifying] = useState(false);
-  const [userRole, setUserRole] = useState<'admin' | 'user'>('admin');
 
   const [publicComments, publicCommentsLoading, publicCommentsError] = useCollection(
     collection(db, 'projects', projId, 'stages', stageId, 'tasks', taskId, 'public')
@@ -117,38 +116,15 @@ function TaskMainContent({ projId, stageId, taskId, task, taskLocked }: TaskMain
   if (publicCommentsError) return <div>Error loading comments: {publicCommentsError.message}</div>;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-12 mb-8">
       {/* Left Side - Combined Progress + Proof of Completion */}
-      <div className="lg:col-span-3">
+      <div className="lg:col-span-2">
         <Card>
           {/* Progress Section */}
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Target className="h-5 w-5 text-[#6F61EF]" />
               <span>Task Progress</span>
-              
-              {/* Role toggle switch */}
-              <div className="flex items-center gap-2 px-3 py-1 bg-white/20 rounded-lg">
-                <span className="text-gray-500 text-sm font-medium">
-                  {userRole === 'admin' ? 'Admin' : 'User'}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-gray-500 hover:bg-gray-200 h-6 w-12 p-0 transition-colors"
-                  onClick={() => {
-                    setUserRole(userRole === 'admin' ? 'user' : 'admin');
-                  }}
-                >
-                  <div className={`w-10 h-5 rounded-full transition-colors ${
-                    userRole === 'admin' ? 'bg-purple-500' : 'bg-blue-500'
-                  } relative`}>
-                    <div className={`w-4 h-4 bg-white rounded-full transition-transform absolute top-0.5 ${
-                      userRole === 'admin' ? 'transform translate-x-0.5' : 'transform translate-x-5'
-                    }`} />
-                  </div>
-                </Button>
-              </div>
               
               <div className={`ml-auto flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium ${
                 isCompleted ? 'bg-green-100 text-green-700' : completionPercentage[0] > 50 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
@@ -164,22 +140,13 @@ function TaskMainContent({ projId, stageId, taskId, task, taskLocked }: TaskMain
                 <div className="w-2 h-6 bg-gradient-to-b from-[#6F61EF] to-purple-600 rounded-full"></div>
                 <h3 className="text-xl font-semibold text-gray-800">Proof of Completion</h3>
               </div>
-              {(userRole === 'admin' || task?.assignee === user?.emailAddresses?.[0]?.emailAddress) ? (
-                <SubmissionCard 
-                  projId={projId} 
-                  stageId={stageId} 
-                  taskId={taskId} 
-                  task={task} 
-                  taskLocked={taskLocked}
-                />
-              ) : (
-                <div className="text-center py-8 bg-gray-50 rounded-lg">
-                  <p className="text-gray-500 text-sm">
-                    You don't have permission to submit files for this task.
-                    {task?.assignee ? ` This task is assigned to ${task.assignee}.` : ' This task is unassigned.'}
-                  </p>
-                </div>
-              )}
+              <SubmissionCard 
+                projId={projId} 
+                stageId={stageId} 
+                taskId={taskId} 
+                task={task} 
+                taskLocked={taskLocked}
+              />
               <Separator className="my-6" />
             </div>
               <div className="flex justify-between items-center">
@@ -192,8 +159,8 @@ function TaskMainContent({ projId, stageId, taskId, task, taskLocked }: TaskMain
                 className="h-3"
               />
               
-              {/* Progress controls - only for admin or assigned user */}
-              {(userRole === 'admin' || task?.assignee === user?.emailAddresses?.[0]?.emailAddress) ? (
+              {/* Progress controls - only for assigned user */}
+              {task?.assignee === user?.emailAddresses?.[0]?.emailAddress ? (
                 <>
                   {!isModifying ? (
                     /* View Mode */
@@ -303,10 +270,10 @@ function TaskMainContent({ projId, stageId, taskId, task, taskLocked }: TaskMain
         </Card>
       </div>
 
-      {/* Right Side - Comments (1/4 width) */}
-      <div className="lg:col-span-1">
-        <Card className="bg-white h-auto">
-          <CardHeader className="pb-4">
+      {/* Right Side - Comments (1/2 width) */}
+      <div className="lg:col-span-2">
+        <Card className="bg-white h-full relative flex flex-col">
+          <CardHeader className="pb-4 flex-shrink-0">
             <CardTitle className="text-xl font-semibold text-gray-800 flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <MessageSquare className="h-5 w-5 text-[#6F61EF]" />
@@ -317,10 +284,11 @@ function TaskMainContent({ projId, stageId, taskId, task, taskLocked }: TaskMain
               </div>
             </CardTitle>
           </CardHeader>
-          <Separator className="mx-6" />
-          <CardContent className="pt-6">
-            {/* Comments List */}
-            <div className="space-y-4 max-h-96 overflow-y-auto mb-6 pr-2">
+          <Separator className="mx-6 flex-shrink-0" />
+          
+          {/* Comments List - 可滚动区域 */}
+          <div className="flex-1 px-6 pt-6 pb-2 overflow-hidden">
+            <div className="space-y-4 h-full overflow-y-auto pr-2">
               {sortedPublicComments.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
@@ -334,18 +302,18 @@ function TaskMainContent({ projId, stageId, taskId, task, taskLocked }: TaskMain
                 ))
               )}
             </div>
-            
-            {/* Comment Input */}
-            <div className="border-t pt-4">
-              <CommentBox 
-                isPublic={true} 
-                projId={projId} 
-                stageId={stageId} 
-                taskId={taskId} 
-                className="shadow-none border-0" 
-              />
-            </div>
-          </CardContent>
+          </div>
+          
+          {/* Comment Input - 固定在底部 */}
+          <div className="flex-shrink-0 border-t bg-gray-50/50 px-6 py-4">
+            <CommentBox 
+              isPublic={true} 
+              projId={projId} 
+              stageId={stageId} 
+              taskId={taskId} 
+              className="shadow-none border-0 bg-white" 
+            />
+          </div>
         </Card>
       </div>
     </div>

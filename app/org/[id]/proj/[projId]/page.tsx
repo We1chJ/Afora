@@ -539,22 +539,7 @@ function ProjectPage({
                                                     />
                                                 </div>
                                                 <span className="font-bold text-white text-lg min-w-[3rem]">
-                                                    {Math.round(
-                                                        (stages.reduce(
-                                                            (acc, stage) =>
-                                                                acc +
-                                                                stage.tasksCompleted,
-                                                            0,
-                                                        ) /
-                                                            stages.reduce(
-                                                                (acc, stage) =>
-                                                                    acc +
-                                                                    stage.totalTasks,
-                                                                0,
-                                                            )) *
-                                                            100,
-                                                    )}
-                                                    %
+                                                    {Math.round((stages.reduce((acc, stage) => acc + stage.tasksCompleted, 0) / stages.reduce((acc, stage) => acc + stage.totalTasks, 0)) * 100)}%
                                                 </span>
                                             </div>
                                         </div>
@@ -733,20 +718,10 @@ function ProjectPage({
                                                                             ] ||
                                                                             ""
                                                                         }
-                                                                        onChange={(
-                                                                            e,
-                                                                        ) => {
-                                                                            const newResponses =
-                                                                                [
-                                                                                    ...responses,
-                                                                                ];
-                                                                            newResponses[
-                                                                                index
-                                                                            ] =
-                                                                                e.target.value;
-                                                                            setResponses(
-                                                                                newResponses,
-                                                                            );
+                                                                        onChange={(e) => {
+                                                                            const newResponses = [...responses];
+                                                                            newResponses[index] = e.target.value;
+                                                                            setResponses(newResponses);
                                                                         }}
                                                                     />
                                                                 </div>
@@ -820,28 +795,14 @@ function ProjectPage({
                                                                         <span className="w-full text-lg font-semibold">
                                                                             {isEditing ? (
                                                                                 <div className="flex flex-row items-center">
-                                                                                    {index +
-                                                                                        1}
-                                                                                    .{" "}
+                                                                                    <span>{index + 1}. </span>
                                                                                     <input
                                                                                         type="text"
-                                                                                        value={
-                                                                                            stage.title
-                                                                                        }
-                                                                                        onChange={(
-                                                                                            e,
-                                                                                        ) => {
-                                                                                            const newStages =
-                                                                                                [
-                                                                                                    ...reorderedStages,
-                                                                                                ];
-                                                                                            newStages[
-                                                                                                index
-                                                                                            ].title =
-                                                                                                e.target.value;
-                                                                                            setReorderedStages(
-                                                                                                newStages,
-                                                                                            );
+                                                                                        value={stage.title}
+                                                                                        onChange={(e) => {
+                                                                                            const newStages = [...reorderedStages];
+                                                                                            newStages[index].title = e.target.value;
+                                                                                            setReorderedStages(newStages);
                                                                                         }}
                                                                                         className="w-full focus:outline-none ml-2 underline"
                                                                                     />
@@ -860,20 +821,7 @@ function ProjectPage({
                                                                                         <LockKeyhole className="mr-4" />
                                                                                     </HoverCardTrigger>
                                                                                     <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
-                                                                                        <p className="text-sm">
-                                                                                            This
-                                                                                            stage
-                                                                                            is
-                                                                                            locked.
-                                                                                            Help
-                                                                                            your
-                                                                                            team
-                                                                                            members
-                                                                                            finish
-                                                                                            their
-                                                                                            tasks
-                                                                                            first!
-                                                                                        </p>
+                                                                                        <p className="text-sm">This stage is locked. Help your team members finish their tasks first!</p>
                                                                                     </HoverCardContent>
                                                                                 </HoverCard>
                                                                             )}
@@ -887,13 +835,7 @@ function ProjectPage({
                                                                                     </HoverCardTrigger>
                                                                                     <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
                                                                                         <p className="text-sm">
-                                                                                            This
-                                                                                            stage
-                                                                                            is
-                                                                                            in
-                                                                                            progress.
-                                                                                            Keep
-                                                                                            going!
+                                                                                            This stage is in progress. Keep going!
                                                                                         </p>
                                                                                     </HoverCardContent>
                                                                                 </HoverCard>
@@ -908,12 +850,7 @@ function ProjectPage({
                                                                                     </HoverCardTrigger>
                                                                                     <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
                                                                                         <p className="text-sm">
-                                                                                            This
-                                                                                            stage
-                                                                                            is
-                                                                                            completed.
-                                                                                            Great
-                                                                                            job!
+                                                                                            This stage is completed. Great job!
                                                                                         </p>
                                                                                     </HoverCardContent>
                                                                                 </HoverCard>
@@ -938,33 +875,13 @@ function ProjectPage({
                                                                                         Deletion
                                                                                     </AlertDialogTitle>
                                                                                     <AlertDialogDescription>
-                                                                                        Are
-                                                                                        you
-                                                                                        sure
-                                                                                        you
-                                                                                        want
-                                                                                        to
-                                                                                        delete
-                                                                                        this
-                                                                                        stage?
-                                                                                        All
-                                                                                        information
-                                                                                        under
-                                                                                        this
-                                                                                        will
-                                                                                        be
-                                                                                        deleted
-                                                                                        forever!
+                                                                                        Are you sure you want to delete this stage? All information under this stage will be deleted forever!
                                                                                     </AlertDialogDescription>
                                                                                 </AlertDialogHeader>
                                                                                 <AlertDialogFooter>
                                                                                     <Button
                                                                                         variant="secondary"
-                                                                                        onClick={() =>
-                                                                                            setIsOpen(
-                                                                                                false,
-                                                                                            )
-                                                                                        }
+                                                                                        onClick={() => setIsOpen(false)}
                                                                                     >
                                                                                         Cancel
                                                                                     </Button>
@@ -973,12 +890,7 @@ function ProjectPage({
                                                                                         onClick={() => {
                                                                                             const newStages =
                                                                                                 reorderedStages.filter(
-                                                                                                    (
-                                                                                                        _,
-                                                                                                        i,
-                                                                                                    ) =>
-                                                                                                        i !==
-                                                                                                        index,
+                                                                                                    (_, i) => i !== index,
                                                                                                 );
                                                                                             setReorderedStages(
                                                                                                 newStages,
@@ -1060,18 +972,7 @@ function ProjectPage({
                                                                         </HoverCardTrigger>
                                                                         <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
                                                                             <p className="text-sm">
-                                                                                This
-                                                                                stage
-                                                                                is
-                                                                                locked.
-                                                                                Help
-                                                                                your
-                                                                                team
-                                                                                members
-                                                                                finish
-                                                                                their
-                                                                                tasks
-                                                                                first!
+                                                                                This stage is locked. Help your team members finish their tasks first!
                                                                             </p>
                                                                         </HoverCardContent>
                                                                     </HoverCard>
@@ -1085,13 +986,7 @@ function ProjectPage({
                                                                         </HoverCardTrigger>
                                                                         <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
                                                                             <p className="text-sm">
-                                                                                This
-                                                                                stage
-                                                                                is
-                                                                                in
-                                                                                progress.
-                                                                                Keep
-                                                                                going!
+                                                                                This stage is in progress. Keep going!
                                                                             </p>
                                                                         </HoverCardContent>
                                                                     </HoverCard>
@@ -1105,12 +1000,7 @@ function ProjectPage({
                                                                         </HoverCardTrigger>
                                                                         <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
                                                                             <p className="text-sm">
-                                                                                This
-                                                                                stage
-                                                                                is
-                                                                                completed.
-                                                                                Great
-                                                                                job!
+                                                                                This stage is completed. Great job!
                                                                             </p>
                                                                         </HoverCardContent>
                                                                     </HoverCard>
@@ -1195,8 +1085,7 @@ function ProjectPage({
                                             No team members assigned
                                         </p>
                                         <p className="text-sm">
-                                            Add team members to start
-                                            collaboration
+                                            Add team members to start collaboration
                                         </p>
                                     </div>
                                 )}

@@ -831,7 +831,7 @@ const MemberList = ({
                                 </Button>
                             </>
                         )}
-                        {userRole === "admin" && <InviteUserToOrganization />}
+                        
                     </div>
                 </div>
             </div>
@@ -929,10 +929,13 @@ const MemberList = ({
                         <div className="space-y-6">
                             {/* Admins Section */}
                             <div>
-                                <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
-                                    <Crown className="h-4 w-4 text-yellow-500" />
-                                    Admins ({admins.length})
-                                </h4>
+                                <div>
+                                    <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
+                                        <Crown className="h-4 w-4 text-yellow-500" />
+                                        Admins ({admins.length})
+                                        {userRole === "admin" && <InviteUserToOrganization defaultAccessRole="admin" />}
+                                    </h4>
+                                </div>
                                 <div className="grid gap-3">
                                     {admins.map((admin: string) => (
                                         <div key={admin}>
@@ -949,6 +952,7 @@ const MemberList = ({
                                 <h4 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
                                     <Users className="h-4 w-4 text-blue-500" />
                                     Members ({members.length})
+                                    {userRole === "admin" && <InviteUserToOrganization defaultAccessRole="editor" />}
                                 </h4>
                                 <div className="grid gap-3">
                                     {members.map((member: string) => (

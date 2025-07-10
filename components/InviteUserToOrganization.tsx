@@ -26,13 +26,14 @@ import {
 import { ChevronRight } from "lucide-react";
 import { access_roles } from "@/types/types";
 
-function InviteUser() {
+function InviteUser(props) {
     const [isOpen, setIsOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
     const [email, setEmail] = useState("");
     const pathname = usePathname();
     // const router = useRouter();
-    const [access, setAccess] = useState(access_roles[0]);
+    const defaultAccessRole = props.defaultAccessRole || "editor"; // Default to 'editor' if not provided
+    const [access, setAccess] = useState(defaultAccessRole);
 
     const handleInvite = async (e: FormEvent) => {
         e.preventDefault();

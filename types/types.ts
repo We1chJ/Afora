@@ -229,12 +229,69 @@ export type TeamCompatibilityAnalysis = {
         interests: string[];
         compatibility_score: number;
         role_suggestion: string;
+        detailed_analysis: {
+            technical_proficiency: {
+                score: number;
+                strengths: string[];
+                areas_for_improvement: string[];
+            };
+            collaboration_style: {
+                preferred_methods: string[];
+                communication_frequency: string;
+                team_role: string;
+            };
+            project_contribution: {
+                primary_responsibilities: string[];
+                potential_impact: string;
+                risk_factors: string[];
+            };
+        };
     }[];
     team_analysis: {
         team_strengths: string[];
         potential_gaps: string[];
         collaboration_potential: string;
         recommendations: string[];
+        project_fit: {
+            technical_alignment: number;
+            schedule_compatibility: number;
+            interest_alignment: number;
+            charter_alignment: {
+                vision_alignment: number;
+                values_compatibility: number;
+                key_findings: string[];
+                detailed_assessment: {
+                    shared_values: string[];
+                    potential_conflicts: string[];
+                    team_culture: string;
+                    decision_making: string;
+                };
+            };
+            technical_assessment: {
+                skill_coverage: {
+                    strong_areas: string[];
+                    weak_areas: string[];
+                    coverage_percentage: number;
+                };
+                technology_stack: {
+                    frontend: string[];
+                    backend: string[];
+                    other: string[];
+                };
+                expertise_distribution: {
+                    junior: number;
+                    mid: number;
+                    senior: number;
+                };
+            };
+            schedule_assessment: {
+                overlap_hours: number;
+                peak_availability: string[];
+                timezone_distribution: string[];
+                flexibility_score: number;
+            };
+            comments: string[];
+        };
     };
 };
 

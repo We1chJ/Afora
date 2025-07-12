@@ -67,6 +67,23 @@ const OrganizationScoreCard = ({
                 ],
                 compatibility_score: 88,
                 role_suggestion: "Frontend Development Lead",
+                detailed_analysis: {
+                    technical_proficiency: {
+                        score: 92,
+                        strengths: ["Modern Frontend Frameworks", "UI Component Design", "Performance Optimization"],
+                        areas_for_improvement: ["Mobile-First Development", "Testing Automation"]
+                    },
+                    collaboration_style: {
+                        preferred_methods: ["Slack", "Video Calls", "Design Reviews"],
+                        communication_frequency: "Daily stand-ups and as-needed discussions",
+                        team_role: "Technical Lead & Design System Architect"
+                    },
+                    project_contribution: {
+                        primary_responsibilities: ["Frontend Architecture", "UI Component Library", "Design System Implementation"],
+                        potential_impact: "Can significantly improve development efficiency through component standardization",
+                        risk_factors: ["Time division between development and design tasks", "Potential bottleneck in design decisions"]
+                    }
+                }
             },
             {
                 member_email: "bob@example.com",
@@ -79,6 +96,23 @@ const OrganizationScoreCard = ({
                 interests: ["Cloud Computing", "Microservices", "DevOps"],
                 compatibility_score: 82,
                 role_suggestion: "Backend Architect",
+                detailed_analysis: {
+                    technical_proficiency: {
+                        score: 88,
+                        strengths: ["Database Optimization", "API Design", "Cloud Infrastructure"],
+                        areas_for_improvement: ["Documentation", "Frontend Integration"]
+                    },
+                    collaboration_style: {
+                        preferred_methods: ["GitHub Discussions", "Technical Documentation", "Architecture Reviews"],
+                        communication_frequency: "Bi-weekly architecture reviews and daily updates",
+                        team_role: "Backend Lead & Infrastructure Specialist"
+                    },
+                    project_contribution: {
+                        primary_responsibilities: ["API Development", "Database Architecture", "Cloud Infrastructure"],
+                        potential_impact: "Will establish robust and scalable backend foundation",
+                        risk_factors: ["Complex technical decisions", "Integration challenges"]
+                    }
+                }
             },
             {
                 member_email: "charlie@example.com",
@@ -95,7 +129,24 @@ const OrganizationScoreCard = ({
                 ],
                 compatibility_score: 87,
                 role_suggestion: "Project Manager",
-            },
+                detailed_analysis: {
+                    technical_proficiency: {
+                        score: 85,
+                        strengths: ["Project Planning", "Risk Management", "Stakeholder Communication"],
+                        areas_for_improvement: ["Technical Documentation", "Agile Methodologies"]
+                    },
+                    collaboration_style: {
+                        preferred_methods: ["Regular Team Meetings", "Email Updates", "One-on-One Sessions"],
+                        communication_frequency: "Daily check-ins and weekly detailed reviews",
+                        team_role: "Project Coordinator & Team Facilitator"
+                    },
+                    project_contribution: {
+                        primary_responsibilities: ["Project Planning", "Team Coordination", "Resource Management"],
+                        potential_impact: "Will ensure smooth project execution and team alignment",
+                        risk_factors: ["Balancing technical and business priorities", "Team communication overhead"]
+                    }
+                }
+            }
         ],
         team_analysis: {
             team_strengths: [
@@ -117,6 +168,64 @@ const OrganizationScoreCard = ({
                 "Establish regular technical sharing sessions",
                 "Define clear code review processes",
             ],
+            project_fit: {
+                technical_alignment: 85,
+                schedule_compatibility: 78,
+                interest_alignment: 92,
+                charter_alignment: {
+                    vision_alignment: 88,
+                    values_compatibility: 85,
+                    key_findings: [
+                        "Team shares a strong vision for project success",
+                        "Values align well with project goals",
+                        "Some minor differences in working style preferences",
+                        "High commitment to quality and innovation"
+                    ],
+                    detailed_assessment: {
+                        shared_values: [
+                            "Quality-First Development",
+                            "User-Centric Design",
+                            "Continuous Learning",
+                            "Open Communication"
+                        ],
+                        potential_conflicts: [
+                            "Different preferences in work scheduling",
+                            "Varying opinions on technical debt priorities"
+                        ],
+                        team_culture: "Collaborative and innovation-focused with emphasis on technical excellence",
+                        decision_making: "Consensus-driven with clear technical leadership hierarchy"
+                    }
+                },
+                technical_assessment: {
+                    skill_coverage: {
+                        strong_areas: ["Frontend Development", "API Design", "Cloud Infrastructure"],
+                        weak_areas: ["Mobile Development", "Security Testing"],
+                        coverage_percentage: 85
+                    },
+                    technology_stack: {
+                        frontend: ["React", "TypeScript", "Next.js", "TailwindCSS"],
+                        backend: ["Node.js", "PostgreSQL", "Redis", "Docker"],
+                        other: ["AWS", "GitHub Actions", "Jest"]
+                    },
+                    expertise_distribution: {
+                        junior: 20,
+                        mid: 50,
+                        senior: 30
+                    }
+                },
+                schedule_assessment: {
+                    overlap_hours: 6,
+                    peak_availability: ["10:00-16:00 EST"],
+                    timezone_distribution: ["EST", "PST", "GMT"],
+                    flexibility_score: 75
+                },
+                comments: [
+                    "Team's technical stack aligns well with project requirements",
+                    "Some schedule conflicts may need adjustment",
+                    "High interest in project goals and technologies",
+                    "Strong potential for innovative solutions"
+                ]
+            }
         },
     };
 
@@ -349,6 +458,201 @@ Question 3 Answer: ${member.responses[2] || "No answer"}`;
                                         </p>
                                     </div>
 
+                                    {/* Project Fit Analysis */}
+                                    {analysis.team_analysis.project_fit && (
+                                        <>
+                                            {/* Technical Assessment */}
+                                            {analysis.team_analysis.project_fit?.technical_assessment && (
+                                                <div className="mt-6">
+                                                    <h4 className="font-semibold mb-4">Technical Assessment</h4>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <div className="bg-slate-50 p-4 rounded-lg">
+                                                            <h5 className="text-sm font-medium text-slate-700 mb-2">Skill Coverage</h5>
+                                                            <div className="space-y-2">
+                                                                <div>
+                                                                    <span className="text-sm text-slate-600">Coverage:</span>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-lg font-bold text-blue-600">
+                                                                            {analysis.team_analysis.project_fit.technical_assessment.skill_coverage?.coverage_percentage || 0}%
+                                                                        </span>
+                                                                        <Progress 
+                                                                            value={analysis.team_analysis.project_fit.technical_assessment.skill_coverage?.coverage_percentage || 0} 
+                                                                            className="flex-1"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-sm text-green-600">Strong Areas:</span>
+                                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                                        {analysis.team_analysis.project_fit.technical_assessment.skill_coverage?.strong_areas.map((area, i) => (
+                                                                            <Badge key={i} variant="secondary" className="bg-green-100 text-green-800">
+                                                                                {area}
+                                                                            </Badge>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-sm text-orange-600">Areas for Improvement:</span>
+                                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                                        {analysis.team_analysis.project_fit.technical_assessment.skill_coverage?.weak_areas.map((area, i) => (
+                                                                            <Badge key={i} variant="outline" className="border-orange-300 text-orange-700">
+                                                                                {area}
+                                                                            </Badge>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="bg-slate-50 p-4 rounded-lg">
+                                                            <h5 className="text-sm font-medium text-slate-700 mb-2">Technology Stack</h5>
+                                                            <div className="space-y-2">
+                                                                <div>
+                                                                    <span className="text-sm text-blue-600">Frontend:</span>
+                                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                                        {analysis.team_analysis.project_fit.technical_assessment.technology_stack?.frontend.map((tech, i) => (
+                                                                            <Badge key={i} variant="secondary" className="bg-blue-100 text-blue-800">
+                                                                                {tech}
+                                                                            </Badge>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-sm text-purple-600">Backend:</span>
+                                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                                        {analysis.team_analysis.project_fit.technical_assessment.technology_stack?.backend.map((tech, i) => (
+                                                                            <Badge key={i} variant="secondary" className="bg-purple-100 text-purple-800">
+                                                                                {tech}
+                                                                            </Badge>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-sm text-gray-600">Other:</span>
+                                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                                        {analysis.team_analysis.project_fit.technical_assessment.technology_stack?.other.map((tech, i) => (
+                                                                            <Badge key={i} variant="secondary" className="bg-gray-100 text-gray-800">
+                                                                                {tech}
+                                                                            </Badge>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Schedule Assessment */}
+                                            {analysis.team_analysis.project_fit?.schedule_assessment && (
+                                                <div className="mt-6">
+                                                    <h4 className="font-semibold mb-4">Schedule Assessment</h4>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <div className="bg-slate-50 p-4 rounded-lg">
+                                                            <h5 className="text-sm font-medium text-slate-700 mb-2">Time Overlap</h5>
+                                                            <div className="space-y-2">
+                                                                <div>
+                                                                    <span className="text-sm text-slate-600">Common Hours:</span>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-lg font-bold text-blue-600">
+                                                                            {analysis.team_analysis.project_fit.schedule_assessment?.overlap_hours || 0}h
+                                                                        </span>
+                                                                        <span className="text-sm text-slate-500">per day</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-sm text-slate-600">Peak Availability:</span>
+                                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                                        {analysis.team_analysis.project_fit.schedule_assessment?.peak_availability?.map((time, i) => (
+                                                                            <Badge key={i} variant="secondary" className="bg-blue-100 text-blue-800">
+                                                                                {time}
+                                                                            </Badge>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="bg-slate-50 p-4 rounded-lg">
+                                                            <h5 className="text-sm font-medium text-slate-700 mb-2">Team Distribution</h5>
+                                                            <div className="space-y-2">
+                                                                <div>
+                                                                    <span className="text-sm text-slate-600">Timezones:</span>
+                                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                                        {analysis.team_analysis.project_fit.schedule_assessment?.timezone_distribution?.map((tz, i) => (
+                                                                            <Badge key={i} variant="outline" className="border-blue-300 text-blue-700">
+                                                                                {tz}
+                                                                            </Badge>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-sm text-slate-600">Schedule Flexibility:</span>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className={`text-lg font-bold ${getScoreColor(analysis.team_analysis.project_fit.schedule_assessment?.flexibility_score || 0)}`}>
+                                                                            {analysis.team_analysis.project_fit.schedule_assessment?.flexibility_score || 0}%
+                                                                        </span>
+                                                                        <Progress 
+                                                                            value={analysis.team_analysis.project_fit.schedule_assessment?.flexibility_score || 0} 
+                                                                            className="flex-1"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Team Culture and Values */}
+                                            {analysis.team_analysis.project_fit?.charter_alignment?.detailed_assessment && (
+                                                <div className="mt-6">
+                                                    <h4 className="font-semibold mb-4">Team Culture & Values</h4>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <div className="bg-slate-50 p-4 rounded-lg">
+                                                            <h5 className="text-sm font-medium text-slate-700 mb-2">Shared Values</h5>
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {analysis.team_analysis.project_fit.charter_alignment.detailed_assessment?.shared_values?.map((value, i) => (
+                                                                    <Badge key={i} variant="secondary" className="bg-green-100 text-green-800">
+                                                                        {value}
+                                                                    </Badge>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="bg-slate-50 p-4 rounded-lg">
+                                                            <h5 className="text-sm font-medium text-slate-700 mb-2">Potential Challenges</h5>
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {analysis.team_analysis.project_fit.charter_alignment.detailed_assessment?.potential_conflicts?.map((conflict, i) => (
+                                                                    <Badge key={i} variant="outline" className="border-orange-300 text-orange-700">
+                                                                        {conflict}
+                                                                    </Badge>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="col-span-1 md:col-span-2 bg-slate-50 p-4 rounded-lg">
+                                                            <div className="space-y-3">
+                                                                <div>
+                                                                    <h5 className="text-sm font-medium text-slate-700 mb-1">Team Culture</h5>
+                                                                    <p className="text-sm text-slate-600">
+                                                                        {analysis.team_analysis.project_fit.charter_alignment.detailed_assessment?.team_culture}
+                                                                    </p>
+                                                                </div>
+                                                                <div>
+                                                                    <h5 className="text-sm font-medium text-slate-700 mb-1">Decision Making</h5>
+                                                                    <p className="text-sm text-slate-600">
+                                                                        {analysis.team_analysis.project_fit.charter_alignment.detailed_assessment?.decision_making}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+
                                     <div>
                                         <h4 className="font-semibold mb-2">
                                             Improvement Recommendations
@@ -373,134 +677,106 @@ Question 3 Answer: ${member.responses[2] || "No answer"}`;
                             </Card>
 
                             {/* Member detailed analysis */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>
-                                        Member Detailed Analysis
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <Accordion
-                                        type="single"
-                                        collapsible
-                                        className="w-full"
-                                    >
-                                        {analysis.member_analyses.map(
-                                            (member, index) => (
-                                                <AccordionItem
-                                                    key={member.member_email}
-                                                    value={`member-${index}`}
-                                                >
-                                                    <AccordionTrigger className="hover:no-underline">
-                                                        <div className="flex items-center justify-between w-full pr-2">
-                                                            <span className="font-medium">
-                                                                {
-                                                                    member.member_email
-                                                                }
-                                                            </span>
-                                                            <div className="flex items-center gap-2">
-                                                                <span
-                                                                    className={`text-sm ${getScoreColor(member.compatibility_score)}`}
-                                                                >
-                                                                    {
-                                                                        member.compatibility_score
-                                                                    }{" "}
-                                                                    pts
-                                                                </span>
-                                                                <Badge variant="outline">
-                                                                    {
-                                                                        member.role_suggestion
-                                                                    }
+                            <div className="mt-6">
+                                <h4 className="font-semibold mb-4">Member Detailed Analysis</h4>
+                                {analysis.member_analyses.map((member, index) => (
+                                    <div key={member.member_email} className="mb-4 bg-white rounded-lg border p-4">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div>
+                                                <h5 className="font-medium">{member.member_email}</h5>
+                                                <Badge variant="outline" className="mt-1">
+                                                    {member.role_suggestion}
+                                                </Badge>
+                                            </div>
+                                            <span className={`text-lg font-bold ${getScoreColor(member.detailed_analysis?.technical_proficiency?.score || 0)}`}>
+                                                {member.detailed_analysis?.technical_proficiency?.score || 0}%
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                            <div>
+                                                <h6 className="text-sm font-medium text-slate-700 mb-2">Technical Proficiency</h6>
+                                                <div className="space-y-2">
+                                                    <div>
+                                                        <span className="text-sm text-green-600">Strengths:</span>
+                                                        <div className="flex flex-wrap gap-1 mt-1">
+                                                            {member.detailed_analysis?.technical_proficiency?.strengths?.map((strength, i) => (
+                                                                <Badge key={i} variant="secondary" className="bg-green-100 text-green-800">
+                                                                    {strength}
                                                                 </Badge>
-                                                            </div>
+                                                            ))}
                                                         </div>
-                                                    </AccordionTrigger>
-                                                    <AccordionContent className="space-y-3">
-                                                        <div>
-                                                            <h5 className="font-medium text-sm mb-1">
-                                                                Core Strengths
-                                                            </h5>
-                                                            <div className="flex flex-wrap gap-1">
-                                                                {member.strengths.map(
-                                                                    (
-                                                                        strength,
-                                                                        i,
-                                                                    ) => (
-                                                                        <Badge
-                                                                            key={
-                                                                                i
-                                                                            }
-                                                                            variant="secondary"
-                                                                            className="text-xs"
-                                                                        >
-                                                                            {
-                                                                                strength
-                                                                            }
-                                                                        </Badge>
-                                                                    ),
-                                                                )}
-                                                            </div>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-sm text-orange-600">Areas for Improvement:</span>
+                                                        <div className="flex flex-wrap gap-1 mt-1">
+                                                            {member.detailed_analysis?.technical_proficiency?.areas_for_improvement?.map((area, i) => (
+                                                                <Badge key={i} variant="outline" className="border-orange-300 text-orange-700">
+                                                                    {area}
+                                                                </Badge>
+                                                            ))}
                                                         </div>
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                                                        <div>
-                                                            <h5 className="font-medium text-sm mb-1">
-                                                                Technical Skills
-                                                            </h5>
-                                                            <div className="flex flex-wrap gap-1">
-                                                                {member.skills.map(
-                                                                    (
-                                                                        skill,
-                                                                        i,
-                                                                    ) => (
-                                                                        <Badge
-                                                                            key={
-                                                                                i
-                                                                            }
-                                                                            variant="outline"
-                                                                            className="text-xs"
-                                                                        >
-                                                                            {
-                                                                                skill
-                                                                            }
-                                                                        </Badge>
-                                                                    ),
-                                                                )}
-                                                            </div>
+                                            <div>
+                                                <h6 className="text-sm font-medium text-slate-700 mb-2">Collaboration Style</h6>
+                                                <div className="space-y-2">
+                                                    <div>
+                                                        <span className="text-sm text-slate-600">Preferred Methods:</span>
+                                                        <div className="flex flex-wrap gap-1 mt-1">
+                                                            {member.detailed_analysis?.collaboration_style?.preferred_methods?.map((method, i) => (
+                                                                <Badge key={i} variant="secondary" className="bg-blue-100 text-blue-800">
+                                                                    {method}
+                                                                </Badge>
+                                                            ))}
                                                         </div>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-sm text-slate-600">Communication:</span>
+                                                        <p className="text-sm text-slate-600 mt-1">
+                                                            {member.detailed_analysis?.collaboration_style?.communication_frequency}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                                                        <div>
-                                                            <h5 className="font-medium text-sm mb-1">
-                                                                Areas of
-                                                                Interest
-                                                            </h5>
-                                                            <div className="flex flex-wrap gap-1">
-                                                                {member.interests.map(
-                                                                    (
-                                                                        interest,
-                                                                        i,
-                                                                    ) => (
-                                                                        <Badge
-                                                                            key={
-                                                                                i
-                                                                            }
-                                                                            variant="secondary"
-                                                                            className="text-xs bg-blue-100 text-blue-800"
-                                                                        >
-                                                                            {
-                                                                                interest
-                                                                            }
-                                                                        </Badge>
-                                                                    ),
-                                                                )}
-                                                            </div>
+                                            <div className="col-span-1 md:col-span-2">
+                                                <h6 className="text-sm font-medium text-slate-700 mb-2">Project Contribution</h6>
+                                                <div className="space-y-2">
+                                                    <div>
+                                                        <span className="text-sm text-slate-600">Primary Responsibilities:</span>
+                                                        <div className="flex flex-wrap gap-1 mt-1">
+                                                            {member.detailed_analysis?.project_contribution?.primary_responsibilities?.map((resp, i) => (
+                                                                <Badge key={i} variant="secondary" className="bg-purple-100 text-purple-800">
+                                                                    {resp}
+                                                                </Badge>
+                                                            ))}
                                                         </div>
-                                                    </AccordionContent>
-                                                </AccordionItem>
-                                            ),
-                                        )}
-                                    </Accordion>
-                                </CardContent>
-                            </Card>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-sm text-slate-600">Potential Impact:</span>
+                                                        <p className="text-sm text-slate-600 mt-1">
+                                                            {member.detailed_analysis?.project_contribution?.potential_impact}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-sm text-orange-600">Risk Factors:</span>
+                                                        <div className="flex flex-wrap gap-1 mt-1">
+                                                            {member.detailed_analysis?.project_contribution?.risk_factors?.map((risk, i) => (
+                                                                <Badge key={i} variant="outline" className="border-orange-300 text-orange-700">
+                                                                    {risk}
+                                                                </Badge>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </CardContent>

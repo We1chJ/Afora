@@ -61,6 +61,78 @@ const responseFormat = {
                                 description:
                                     "Suggested role or position for this member in the team",
                             },
+                            detailed_analysis: {
+                                type: "object",
+                                description: "Detailed analysis of member's capabilities and fit",
+                                properties: {
+                                    technical_proficiency: {
+                                        type: "object",
+                                        properties: {
+                                            score: {
+                                                type: "number",
+                                                description: "Technical proficiency score from 0-100",
+                                                minimum: 0,
+                                                maximum: 100
+                                            },
+                                            strengths: {
+                                                type: "array",
+                                                items: { type: "string" },
+                                                description: "Technical strengths"
+                                            },
+                                            areas_for_improvement: {
+                                                type: "array",
+                                                items: { type: "string" },
+                                                description: "Areas needing improvement"
+                                            }
+                                        },
+                                        required: ["score", "strengths", "areas_for_improvement"],
+                                        additionalProperties: false
+                                    },
+                                    collaboration_style: {
+                                        type: "object",
+                                        properties: {
+                                            preferred_methods: {
+                                                type: "array",
+                                                items: { type: "string" },
+                                                description: "Preferred collaboration methods"
+                                            },
+                                            communication_frequency: {
+                                                type: "string",
+                                                description: "Preferred communication frequency"
+                                            },
+                                            team_role: {
+                                                type: "string",
+                                                description: "Natural team role"
+                                            }
+                                        },
+                                        required: ["preferred_methods", "communication_frequency", "team_role"],
+                                        additionalProperties: false
+                                    },
+                                    project_contribution: {
+                                        type: "object",
+                                        properties: {
+                                            primary_responsibilities: {
+                                                type: "array",
+                                                items: { type: "string" },
+                                                description: "Primary project responsibilities"
+                                            },
+                                            potential_impact: {
+                                                type: "string",
+                                                description: "Potential impact on project"
+                                            },
+                                            risk_factors: {
+                                                type: "array",
+                                                items: { type: "string" },
+                                                description: "Potential risk factors"
+                                            }
+                                        },
+                                        required: ["primary_responsibilities", "potential_impact", "risk_factors"],
+                                        additionalProperties: false
+                                    }
+                                },
+                                required: ["technical_proficiency", "collaboration_style", "project_contribution"],
+                                additionalProperties: false
+                            }
                         },
                         required: [
                             "member_email",
@@ -69,6 +141,7 @@ const responseFormat = {
                             "interests",
                             "compatibility_score",
                             "role_suggestion",
+                            "detailed_analysis"
                         ],
                         additionalProperties: false,
                     },
@@ -82,6 +155,66 @@ const responseFormat = {
                             items: {
                                 type: "string",
                             },
+                        },
+                        project_fit: {
+                            type: "object",
+                            description: "Analysis of how well the team fits the project requirements",
+                            properties: {
+                                technical_alignment: {
+                                    type: "number",
+                                    description: "Score 0-100 indicating how well team's technical skills match project needs",
+                                    minimum: 0,
+                                    maximum: 100
+                                },
+                                schedule_compatibility: {
+                                    type: "number",
+                                    description: "Score 0-100 indicating how well team members' schedules align",
+                                    minimum: 0,
+                                    maximum: 100
+                                },
+                                interest_alignment: {
+                                    type: "number",
+                                    description: "Score 0-100 indicating how well team's interests align with project goals",
+                                    minimum: 0,
+                                    maximum: 100
+                                },
+                                charter_alignment: {
+                                    type: "object",
+                                    description: "Analysis of team charter alignment",
+                                    properties: {
+                                        vision_alignment: {
+                                            type: "number",
+                                            description: "Score 0-100 indicating how well team members align on project vision",
+                                            minimum: 0,
+                                            maximum: 100
+                                        },
+                                        values_compatibility: {
+                                            type: "number",
+                                            description: "Score 0-100 indicating how well team members' values and working styles align",
+                                            minimum: 0,
+                                            maximum: 100
+                                        },
+                                        key_findings: {
+                                            type: "array",
+                                            description: "Key observations from team charter analysis",
+                                            items: {
+                                                type: "string"
+                                            }
+                                        }
+                                    },
+                                    required: ["vision_alignment", "values_compatibility", "key_findings"],
+                                    additionalProperties: false
+                                },
+                                comments: {
+                                    type: "array",
+                                    description: "Specific observations about project-team fit",
+                                    items: {
+                                        type: "string"
+                                    }
+                                }
+                            },
+                            required: ["technical_alignment", "schedule_compatibility", "interest_alignment", "charter_alignment", "comments"],
+                            additionalProperties: false
                         },
                         potential_gaps: {
                             type: "array",
@@ -107,6 +240,7 @@ const responseFormat = {
                     },
                     required: [
                         "team_strengths",
+                        "project_fit",
                         "potential_gaps",
                         "collaboration_potential",
                         "recommendations",
@@ -123,24 +257,53 @@ const responseFormat = {
 export const analyzeTeamCompatibility = async (
     onboardingQuestions,
     memberResponses,
+    teamCharterResponse
 ) => {
-    const context = `You are a professional team analyst responsible for analyzing team member compatibility and synergy.
+    const context = `
+You are a professional team analyst responsible for analyzing team member compatibility and synergy.
 
-Please analyze each team member's capabilities in detail based on their onboarding survey responses and evaluate the overall team compatibility.
+Please analyze each team member's capabilities in detail based on their onboarding survey responses, team charter responses, and evaluate the overall team compatibility, with special focus on project requirements and goals.
 
 Analysis Requirements:
-1. Analyze each member's core skills, areas of interest, and potential contributions
+1. Analyze each member's core skills, areas of interest, and potential contributions to the specific project
 2. Evaluate complementarity and collaboration potential between members
-3. Identify overall team strengths and potential weaknesses
-4. Provide a 0-100 team compatibility score
-5. Provide specific and actionable team improvement recommendations
+3. Identify overall team strengths and potential weaknesses in relation to project needs
+4. Assess schedule compatibility based on provided time slots
+5. Evaluate technical skill alignment with project requirements
+6. Analyze interest alignment with project goals
+7. Analyze team charter alignment including shared vision and values
+8. Provide a 0-100 team compatibility score
+9. Provide specific and actionable team improvement recommendations
+
+For each team member, provide detailed analysis in these areas:
+
+Technical Proficiency:
+- Technical proficiency score (0-100)
+- Key technical strengths
+- Areas needing improvement
+
+Collaboration Style:
+- Preferred collaboration methods
+- Communication frequency preferences
+- Natural team role
+
+Project Contribution:
+- Primary project responsibilities
+- Potential impact on project success
+- Risk factors to consider
 
 Scoring Criteria:
-- 90-100 points: Team members have highly complementary skills with excellent collaboration potential
-- 80-89 points: Good team configuration with strong collaboration foundation
-- 70-79 points: Balanced team with some room for improvement
-- 60-69 points: Team has obvious shortcomings requiring adjustments
-- Below 60 points: Team configuration has serious issues
+- 90-100 points: Team members have highly complementary skills with excellent collaboration potential, strong project alignment, and shared vision
+- 80-89 points: Good team configuration with strong collaboration foundation, good project fit, and aligned values
+- 70-79 points: Balanced team with some room for improvement in project alignment or vision alignment
+- 60-69 points: Team has obvious shortcomings requiring adjustments in skills, project fit, or team alignment
+- Below 60 points: Team configuration has serious issues with project compatibility or team cohesion
+
+Project-Specific Analysis:
+- Technical Alignment: Evaluate how well the team's combined technical skills match project requirements
+- Schedule Compatibility: Analyze how well team members' available time slots align
+- Interest Alignment: Assess how well team members' interests and goals align with the project
+- Charter Alignment: Evaluate how well team members align on vision, values, and working approaches
 
 Please provide your analysis in English with specific, actionable recommendations.`;
 
@@ -152,10 +315,26 @@ Please provide your analysis in English with specific, actionable recommendation
 Onboarding Survey Questions:
 ${onboardingQuestions.join("\n")}
 
-Team Member Responses:
-${memberResponses.join("\n\n")}
+Team Charter Response:
+${teamCharterResponse || 'Not provided'}
 
-Please conduct a comprehensive compatibility analysis for this team.`;
+Team Member Responses:
+${memberResponses.map(response => {
+    const [answers, timeSlots] = response.split('Time Slots:');
+    return `
+Member Responses:
+${answers}
+
+Available Time Slots:
+${timeSlots || 'Not provided'}`
+}).join("\n\n")}
+
+Please conduct a comprehensive compatibility analysis for this team, paying special attention to:
+1. Technical skill alignment with project requirements
+2. Schedule compatibility based on provided time slots
+3. Interest and goal alignment with the project
+4. Team charter alignment and shared vision
+5. Team dynamics and collaboration potential`;
 
     return await apiRequest({ context, responseFormat, input });
 };

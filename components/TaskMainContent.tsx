@@ -21,6 +21,8 @@ import { useSelector } from "react-redux";
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { assignTask } from "@/actions/actions";
+import { useRouter } from "next/navigation";
 
 interface TaskMainContentProps {
     projId: string;
@@ -196,7 +198,7 @@ function TaskMainContent({
 
                         {/* Progress controls - only for assigned user */}
                         {task?.assignee ===
-                        user?.emailAddresses?.[0]?.emailAddress ? (
+                        user?.primaryEmailAddress?.emailAddress ? (
                             <>
                                 {!isModifying ? (
                                     /* View Mode */
@@ -321,15 +323,50 @@ function TaskMainContent({
                                     </div>
                                 )}
                             </>
+                            ) : !task?.assignee ? (
+                              // 未分配，显示“接受任务”按钮
+                              <div className="">
+                                <Button
+                                  onClick={async () => {
+                                    if (!user?.primaryEmailAddress?.emailAddress) {
+                                      toast.error("Please login first");
+                                      return;
+                                    }
+                                    try {
+                                      const result = await assignTask(
+                                        projId,
+                                        stageId,
+                                        taskId,
+                                        user.primaryEmailAddress.emailAddress
+                                      );
+                                      if (result.success) {
+                                        toast.success("Task accepted!");
+                                        if (router.refresh) router.refresh();
+                                      } else {
+                                        toast.error(result.message || "Accept task failed");
+                                      }
+                                    } catch (e) {
+                                      toast.error("Accept task failed");
+                                    }
+                                  }}
+                                  disabled={taskLocked}
+                                  variant="default"
+                                  className="w-full"
+                                >
+                                  Accept Task
+                                </Button>
+                              </div>
                         ) : (
-                            <div className="text-center py-6 bg-gray-50 rounded-lg">
-                                <p className="text-gray-500 text-sm">
-                                    You don't have permission to modify this
-                                    task's progress.
-                                    {task?.assignee
-                                        ? ` This task is assigned to ${task.assignee}.`
-                                        : " This task is unassigned."}
-                                </p>
+                            <div className="">
+                              <Button
+                                onClick={() => setIsModifying(true)}
+                                disabled={true}
+                                variant="outline"
+                                className="w-full cursor-not-allowed"
+                              >
+                                <Edit3 className="mr-2 h-4 w-4" />
+                                  You can not modify progress
+                              </Button>
                             </div>
                         )}
                     </CardContent>

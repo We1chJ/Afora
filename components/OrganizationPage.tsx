@@ -10,7 +10,7 @@ import ProjOnboarding from "./ProjOnboarding";
 import { Organization, UserOrgData } from "@/types/types";
 import { useUser } from "@clerk/nextjs";
 import ProjTab from "./ProjTab";
-import { Copy } from "lucide-react";
+import { Copy, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import ImageSearchDialog from "./ImageSearchDialog";
 import OrganizationScoreCard from "./OrganizationScoreCard";
@@ -22,6 +22,7 @@ const OrganizationPage = ({ id }: { id: string }) => {
     const [mockUserOrgData, setMockUserOrgData] = useState<UserOrgData | null>(
         null,
     );
+    const [showAccessCode, setShowAccessCode] = useState(false);
 
     const userId = user?.id || "nonemptyString";
     // Check if this is the mock organization
@@ -204,23 +205,31 @@ const OrganizationPage = ({ id }: { id: string }) => {
 
                         {/* Access Code Card */}
                         {userOrgData && userOrgData.role === "admin" && (
-                            <div className="backdrop-blur-md bg-white/75 rounded-xl p-4 min-w-[200px]">
+                            <div className="backdrop-blur-md bg-white/75 rounded-xl p-4 min-w-[220px]">
                                 <div className="text-sm font-medium text-gray-600 mb-1">
                                     Access Code
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <code className="text-lg font-mono font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded">
-                                        {userOrgData.orgId}
+                                    <code className="text-lg font-mono font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded select-all">
+                                        {showAccessCode ? userOrgData.orgId : "••••••••••••••••••••"}
                                     </code>
+                                    <button
+                                        type="button"
+                                        className="focus:outline-none"
+                                        onClick={() => setShowAccessCode((v) => !v)}
+                                        title={showAccessCode ? "隐藏" : "显示"}
+                                    >
+                                        {showAccessCode ? (
+                                            <EyeOff className="w-5 h-5 text-gray-600 hover:text-gray-900 transition-colors" />
+                                        ) : (
+                                            <Eye className="w-5 h-5 text-gray-600 hover:text-gray-900 transition-colors" />
+                                        )}
+                                    </button>
                                     <Copy
                                         className="w-5 h-5 cursor-pointer text-gray-600 hover:text-gray-900 transition-colors"
                                         onClick={() => {
-                                            navigator.clipboard.writeText(
-                                                userOrgData.orgId,
-                                            );
-                                            toast.success(
-                                                "Access code copied to clipboard!",
-                                            );
+                                            navigator.clipboard.writeText(userOrgData.orgId);
+                                            toast.success("Access code copied to clipboard!");
                                         }}
                                     />
                                 </div>

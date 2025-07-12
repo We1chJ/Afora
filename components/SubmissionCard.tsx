@@ -3,11 +3,12 @@ import React, { useState, useEffect, useTransition } from "react";
 // Card components removed - now using direct div layout
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { File, X, Upload, Loader, Clock7, Check } from "lucide-react";
+import { File, X, Upload, Loader, Clock7, Check, Target } from "lucide-react";
 import { Task } from "@/types/types";
 import { toast } from "sonner";
 import { getDownloadURL, listAll, ref, uploadBytes } from "firebase/storage";
 import { storage } from "@/firebase";
+import { useUser } from "@clerk/nextjs";
 
 interface FileItem {
     id: string;
@@ -32,6 +33,7 @@ const SubmissionCard = ({
     taskId: string;
     taskLocked: boolean;
 }) => {
+    const { user } = useUser();
     const [files, setFiles] = useState<FileItem[]>([]);
     const [isDragging, setIsDragging] = useState(false);
     const [isSubmittingPending, startSubmittingTransition] = useTransition();
@@ -244,54 +246,80 @@ const SubmissionCard = ({
                             Upload Files
                         </h4>
 
-                        <div
-                            className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors bg-gray-50 hover:bg-blue-50"
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={handleDrop}
-                        >
-                            <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                            <p className="text-sm text-gray-600 mb-2">
-                                Drag & drop files here, or{" "}
-                                <label className="text-blue-600 hover:text-blue-700 cursor-pointer font-medium">
-                                    browse
-                                    <Input
-                                        id="fileUpload"
-                                        type="file"
-                                        onChange={(e) =>
-                                            e.target.files &&
-                                            handleFiles(e.target.files)
-                                        }
-                                        multiple
-                                        className="hidden"
-                                        disabled={taskLocked}
-                                    />
-                                </label>
-                            </p>
-                            <p className="text-xs text-gray-500">
-                                Maximum file size: 10MB total
-                            </p>
-                        </div>
+                        {/* Check if user is assigned to this task */}
+                        {task?.assignee === user?.primaryEmailAddress?.emailAddress ? (
+                            <>
+                                <div
+                                    className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors bg-gray-50 hover:bg-blue-50"
+                                    onDragOver={(e) => e.preventDefault()}
+                                    onDrop={handleDrop}
+                                >
+                                    <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                                    <p className="text-sm text-gray-600 mb-2">
+                                        Drag & drop files here, or{" "}
+                                        <label className="text-blue-600 hover:text-blue-700 cursor-pointer font-medium">
+                                            browse
+                                            <Input
+                                                id="fileUpload"
+                                                type="file"
+                                                onChange={(e) =>
+                                                    e.target.files &&
+                                                    handleFiles(e.target.files)
+                                                }
+                                                multiple
+                                                className="hidden"
+                                                disabled={taskLocked}
+                                            />
+                                        </label>
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                        Maximum file size: 10MB total
+                                    </p>
+                                </div>
 
-                        {/* Submit Button */}
-                        {files.length > 0 && (
-                            <Button
-                                onClick={handleSubmit}
-                                disabled={isSubmittingPending || taskLocked}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                            >
-                                {isSubmittingPending ? (
-                                    <>
-                                        <Loader className="h-4 w-4 mr-2 animate-spin" />
-                                        Uploading...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Upload className="h-4 w-4 mr-2" />
-                                        Submit {files.length} File
-                                        {files.length > 1 ? "s" : ""}
-                                    </>
+                                {/* Submit Button */}
+                                {files.length > 0 && (
+                                    <Button
+                                        onClick={handleSubmit}
+                                        disabled={isSubmittingPending || taskLocked}
+                                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                                    >
+                                        {isSubmittingPending ? (
+                                            <>
+                                                <Loader className="h-4 w-4 mr-2 animate-spin" />
+                                                Uploading...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Upload className="h-4 w-4 mr-2" />
+                                                Submit {files.length} File
+                                                {files.length > 1 ? "s" : ""}
+                                            </>
+                                        )}
+                                    </Button>
                                 )}
-                            </Button>
+                            </>
+                        ) : (
+                            <div className="text-center py-6 bg-gray-50 rounded-lg border border-gray-200">
+                                <div className="flex flex-col items-center space-y-3">
+                                    <Target className="h-8 w-8 text-gray-300" />
+                                    <div className="space-y-1">
+                                        <p className="text-gray-700 font-medium text-sm">
+                                            {task?.assignee
+                                                ? "This task is assigned by others"
+                                                : "This task is unassigned"}
+                                        </p>
+                                        <p className="text-gray-500 text-xs">
+                                            {task?.assignee
+                                                ? `Assigned to: ${task.assignee}`
+                                                : "No one has been assigned to this task yet"}
+                                        </p>
+                                        <p className="text-gray-500 text-xs">
+                                            You can browse other tasks in the project
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         )}
                     </div>
                 )}

@@ -31,7 +31,7 @@ const ProjectCard = ({
     const memberCount = Math.floor(Math.random() * 8) + 2;
     const taskCount = Math.floor(Math.random() * 12) + 3;
     const completedTasks = Math.floor(taskCount * (Math.random() * 0.7 + 0.1));
-    const progress = Math.round((completedTasks / taskCount) * 100);
+    const progress = Math.floor((completedTasks / taskCount) * 100);
     
     // Generate random project type
     const projectTypes = ['Frontend', 'Backend', 'Mobile', 'AI/ML', 'DevOps', 'Design'];

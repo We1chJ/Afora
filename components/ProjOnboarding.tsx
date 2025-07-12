@@ -47,8 +47,6 @@ const ProjOnboarding = ({ orgId }: { orgId: string }) => {
     }
 
     const { user } = useUser();
-    const userId = user?.id || "nonemptyString";
-
     const userEmail = user?.primaryEmailAddress?.emailAddress;
     const shouldFetchUserData = Boolean(userEmail && orgId);
     
@@ -84,24 +82,18 @@ const ProjOnboarding = ({ orgId }: { orgId: string }) => {
                         <>
                             <AlertDialogTitle>{projHeader[page - 1]}</AlertDialogTitle>
                             <p>{`Q${page}: ${projQuestions[page - 1]}`}</p>
-                            {page === projQuestions.length ? (
-                                <TimeSlotSelector
-                                    selectedSlots={selectedSlots}
-                                    setSelectedSlots={setSelectedSlots}
-                                />
-                            ) : (
-                                <Textarea
-                                    placeholder="Enter your response"
-                                    value={responses[page - 1]}
-                                    onChange={(e) => {
-                                        setResponses((prev) => {
-                                            const newR = [...prev];
-                                            newR[page - 1] = e.target.value;
-                                            return newR;
-                                        });
-                                    }}
-                                />
-                            )}
+                            
+                            <Textarea
+                                placeholder="Enter your response"
+                                value={responses[page - 1]}
+                                onChange={(e) => {
+                                    setResponses((prev) => {
+                                        const newR = [...prev];
+                                        newR[page - 1] = e.target.value;
+                                        return newR;
+                                    });
+                                }}
+                            />
                         </>
                     }
 

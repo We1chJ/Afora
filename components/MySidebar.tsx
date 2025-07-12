@@ -1,6 +1,6 @@
 'use client';
 
-import { Home } from "lucide-react"
+import { Home, CircleCheckBig } from "lucide-react"
 import { useCollection } from "react-firebase-hooks/firestore"
 import { useUser } from "@clerk/nextjs";
 import { collection, DocumentData, query, where } from "firebase/firestore";
@@ -32,7 +32,7 @@ interface OrgDocument extends DocumentData {
 function MySidebar() {
   const { user } = useUser()
   const [userOrgs] = useCollection(
-    user && user.primaryEmailAddress && collection(db, "users", user.primaryEmailAddress.toString(), "orgs")
+    user?.primaryEmailAddress && collection(db, "users", user.primaryEmailAddress.toString(), "orgs")
   );
   const [orgIds, setOrgIds] = useState<string[]>([]);
   const [orgMap, setOrgMap] = useState<Map<string, string>>(new Map());
@@ -84,6 +84,14 @@ function MySidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarHeader>
+
+          <SidebarMenuButton asChild>
+            <Link href="/" className="flex items-center space-x-2">
+              <CircleCheckBig className="w-5 h-5" />
+              <span className="font-bold">Tasks</span>
+            </Link>
+          </SidebarMenuButton>
+
           <SidebarGroup>
             <SidebarGroupLabel>Organizations</SidebarGroupLabel>
             <SidebarGroupContent>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Home } from "lucide-react";
+import { Home, Settings, Mail, Calendar } from "lucide-react";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { useUser } from "@clerk/nextjs";
 import { collection, DocumentData, query, where } from "firebase/firestore";
@@ -17,8 +17,10 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarFooterGroup,
 } from "@/components/ui/sidebar";
 import { Organization } from "@/types/types";
+import ContactUs from "./ContactUs";
 
 interface OrgDocument extends DocumentData {
     createdAt: string;
@@ -81,95 +83,136 @@ function MySidebar() {
     }, [value]);
 
     return (
-        <div className="h-screen">
+        <div className="h-full">
             <Sidebar collapsible="icon">
                 <SidebarContent>
-                    <SidebarHeader className="flex items-center justify-between bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
-                        <SidebarMenuButton asChild>
-                            <Link
-                                href="/"
-                                className="flex items-center space-x-2"
-                            >
-                                <Home className="w-5 h-5" />
-                                <span className="font-bold">Home</span>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarHeader>
-                    <SidebarGroup>
-                        <SidebarGroupLabel>Organizations</SidebarGroupLabel>
-                        <SidebarGroupContent>
-                            <SidebarMenu>
-                                {/* Test Organization */}
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton asChild>
-                                        <Link
-                                            className="group-data-[collapsible=icon]:hidden"
-                                            href={`/org/mock-org-123`}
-                                        >
-                                            <span className="truncate border-e-indigo-50 font-bold">
-                                                Mock Organization
-                                            </span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-
-                                {/* Loading state */}
-                                {loading && (
+                    <div className="flex-1">
+                        <SidebarGroup>
+                            <SidebarGroupLabel>Organizations</SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    {/* Test Organization */}
                                     <SidebarMenuItem>
-                                        <div className="px-2 py-1 text-sm text-gray-500">
-                                            Loading organizations...
-                                        </div>
+                                        <SidebarMenuButton asChild>
+                                            <Link
+                                                className="group-data-[collapsible=icon]:hidden"
+                                                href={`/org/mock-org-123`}
+                                            >
+                                                <span className="truncate border-e-indigo-50 font-bold">
+                                                    Mock Organization
+                                                </span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                        <SidebarMenuButton asChild className="hidden group-data-[collapsible=icon]:flex">
+                                            <Link href={`/org/mock-org-123`}>
+                                                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-purple-100 text-purple-700 font-semibold">
+                                                    M
+                                                </div>
+                                            </Link>
+                                        </SidebarMenuButton>
                                     </SidebarMenuItem>
-                                )}
 
-                                {/* Error state */}
-                                {error && (
-                                    <SidebarMenuItem>
-                                        <div className="px-2 py-1 text-sm text-red-500">
-                                            Error loading organizations
-                                        </div>
-                                    </SidebarMenuItem>
-                                )}
-
-                                {/* Organizations list */}
-                                {!loading &&
-                                    !error &&
-                                    orgMap &&
-                                    Array.from(orgMap.entries()).map(
-                                        ([id, title]) => (
-                                            <SidebarMenuItem key={id}>
-                                                <SidebarMenuButton asChild>
-                                                    <Link
-                                                        className="group-data-[collapsible=icon]:hidden"
-                                                        href={`/org/${id}`}
-                                                    >
-                                                        <span className="truncate border-e-indigo-50 font-bold">
-                                                            {title}
-                                                        </span>
-                                                    </Link>
-                                                </SidebarMenuButton>
-                                            </SidebarMenuItem>
-                                        ),
-                                    )}
-
-                                {/* Empty state */}
-                                {!loading &&
-                                    !error &&
-                                    orgMap &&
-                                    orgMap.size === 0 &&
-                                    orgIds.length === 0 && (
+                                    {/* Loading state */}
+                                    {loading && (
                                         <SidebarMenuItem>
                                             <div className="px-2 py-1 text-sm text-gray-500">
-                                                No organizations found
+                                                Loading organizations...
                                             </div>
                                         </SidebarMenuItem>
                                     )}
-                            </SidebarMenu>
-                        </SidebarGroupContent>
-                    </SidebarGroup>
+
+                                    {/* Error state */}
+                                    {error && (
+                                        <SidebarMenuItem>
+                                            <div className="px-2 py-1 text-sm text-red-500">
+                                                Error loading organizations
+                                            </div>
+                                        </SidebarMenuItem>
+                                    )}
+
+                                    {/* Organizations list */}
+                                    {!loading &&
+                                        !error &&
+                                        orgMap &&
+                                        Array.from(orgMap.entries()).map(
+                                            ([id, title]) => (
+                                                <SidebarMenuItem key={id}>
+                                                    <SidebarMenuButton asChild>
+                                                        <Link
+                                                            className="group-data-[collapsible=icon]:hidden"
+                                                            href={`/org/${id}`}
+                                                        >
+                                                            <span className="truncate border-e-indigo-50 font-bold">
+                                                                {title}
+                                                            </span>
+                                                        </Link>
+                                                    </SidebarMenuButton>
+                                                    <SidebarMenuButton asChild className="hidden group-data-[collapsible=icon]:flex">
+                                                        <Link href={`/org/${id}`}>
+                                                            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-purple-100 text-purple-700 font-semibold">
+                                                                {title.charAt(0).toUpperCase()}
+                                                            </div>
+                                                        </Link>
+                                                    </SidebarMenuButton>
+                                                </SidebarMenuItem>
+                                            ),
+                                        )}
+
+                                    {/* Empty state */}
+                                    {!loading &&
+                                        !error &&
+                                        orgMap &&
+                                        orgMap.size === 0 &&
+                                        orgIds.length === 0 && (
+                                            <SidebarMenuItem>
+                                                <div className="px-2 py-1 text-sm text-gray-500">
+                                                    No organizations found
+                                                </div>
+                                            </SidebarMenuItem>
+                                        )}
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+
+                        <SidebarGroup>
+                            <SidebarGroupLabel>Tools</SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton asChild>
+                                            <Link href="/notifications" className="flex items-center gap-2">
+                                                <Mail className="h-4 w-4" />
+                                                <span className="truncate">Notifications</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                        <SidebarMenuButton asChild>
+                                            <Link href="#calendar" className="flex items-center gap-2">
+                                                <Calendar className="h-4 w-4" />
+                                                <span className="truncate">Calendar</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+                    </div>
+
+                    <SidebarFooterGroup>
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild>
+                                    <Link href="/setting" className="flex items-center gap-2">
+                                        <Settings className="h-4 w-4" />
+                                        <span className="truncate">Settings</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarFooterGroup>
                 </SidebarContent>
             </Sidebar>
         </div>
     );
 }
+
 export default MySidebar;

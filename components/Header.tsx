@@ -3,9 +3,7 @@
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import Breadcrumbs from "./Breadcrumbs";
 import Link from "next/link";
-import { Settings } from "lucide-react";
 import FundUs from "./FundUs";
-import ContactUs from "./ContactUs";
 import { SidebarTrigger } from "./ui/sidebar";
 import { Button } from "./ui/button";
 import Image from "next/image";
@@ -38,17 +36,10 @@ function Header() {
 
                     <div className="flex gap-6 items-center text-white">
                         <FundUs />
-                        <ContactUs />
                         <SignedOut>
                             <SignInButton />
                         </SignedOut>
-
                         <SignedIn>
-                            <Link href={"/setting"}>
-                                <p className="truncate">
-                                    <Settings className="text-white hover:translate-y-[-2px] transition-transform duration-300" />
-                                </p>
-                            </Link>
                             <UserButton />
                         </SignedIn>
                     </div>

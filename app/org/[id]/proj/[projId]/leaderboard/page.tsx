@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -11,14 +11,11 @@ import Leaderboard from "@/components/Leaderboard";
 import { UserScore } from "@/types/types";
 import { getProjectLeaderboard, getUserScore } from "@/actions/actions";
 
-function LeaderboardPage({
-    params: { id, projId },
-}: {
-    params: {
-        id: string;
-        projId: string;
-    };
-}) {
+function LeaderboardPage() {
+    const params = useParams();
+    const id = params.id as string;
+    const projId = params.projId as string;
+    
     const { isSignedIn, isLoaded } = useAuth();
     const { user } = useUser();
     const router = useRouter();

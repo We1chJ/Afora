@@ -2,21 +2,18 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import OrganizationScoreCard from "@/components/OrganizationScoreCard";
 
-function TeamScorePage({
-    params: { id, projId },
-}: {
-    params: {
-        id: string;
-        projId: string;
-    };
-}) {
+function TeamScorePage() {
+    const params = useParams();
+    const id = params.id as string;
+    const projId = params.projId as string;
+    
     const { isSignedIn, isLoaded } = useAuth();
     const router = useRouter();
     const [projectTitle, setProjectTitle] = useState("");

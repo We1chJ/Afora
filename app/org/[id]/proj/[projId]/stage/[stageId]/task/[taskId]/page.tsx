@@ -3,8 +3,8 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/firebase";
 import { useAuth, useUser } from "@clerk/nextjs";
-import { doc } from "firebase/firestore";
-import { useRouter } from "next/navigation";
+import { doc, getDoc } from "firebase/firestore";
+import { useRouter, useParams } from "next/navigation";
 import { useEffect } from "react";
 import { useDocument } from "react-firebase-hooks/firestore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,16 +54,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { updateStatus } from "@/lib/store/features/stageStatus/stageStatusSlice";
 import TaskMainContent from "@/components/TaskMainContent";
 
-function TaskPage({
-    params: { id, projId, stageId, taskId },
-}: {
-    params: {
-        id: string;
-        projId: string;
-        stageId: string;
-        taskId: string;
-    };
-}) {
+function TaskPage() {
+    const params = useParams();
+    const id = params.id as string;
+    const projId = params.projId as string;
+    const stageId = params.stageId as string;
+    const taskId = params.taskId as string;
+    
     const { isSignedIn, isLoaded } = useAuth();
     const { user } = useUser();
     const router = useRouter();
@@ -276,11 +273,7 @@ function TaskPage({
             if (!userEmail || !id) return;
 
             try {
-                // 获取组织数据
-                const orgDoc = await import("firebase/firestore").then(
-                    ({ doc, getDoc }) => getDoc(doc(db, "organizations", id)),
-                );
-
+                const orgDoc = await getDoc(doc(db, "organizations", id));
                 if (orgDoc.exists()) {
                     const orgData = orgDoc.data();
                     const isAdmin = orgData?.admins?.includes(userEmail);

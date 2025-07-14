@@ -2664,3 +2664,120 @@ async function updateUserTaskStats(
         console.error("Failed to update user task stats:", error);
     }
 }
+
+export async function unassignTask(
+    projId: string,
+    stageId: string,
+    taskId: string,
+) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        const taskRef = adminDb
+            .collection("projects")
+            .doc(projId)
+            .collection("stages")
+            .doc(stageId)
+            .collection("tasks")
+            .doc(taskId);
+
+        const taskDoc = await taskRef.get();
+        if (!taskDoc.exists) {
+            throw new Error("Task not found");
+        }
+
+        const taskData = taskDoc.data();
+        if (!taskData?.assignee) {
+            throw new Error("Task is not assigned");
+        }
+
+        // 更新任务状态为未分配
+        await taskRef.update({
+            assignee: "",
+            status: "available",
+            assigned_at: null,
+            completion_percentage: 0,
+        });
+
+        // 更新用户任务统计
+        await updateUserTaskStats(taskData.assignee, projId, "unassigned");
+
+        return { success: true, message: "Task unassigned successfully" };
+    } catch (error) {
+        console.error("Error unassigning task:", error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+export async function reassignTask(
+    projId: string,
+    stageId: string,
+    taskId: string,
+    newAssigneeEmail: string,
+) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        // 验证输入
+        if (!newAssigneeEmail) {
+            throw new Error("New assignee email is required");
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(newAssigneeEmail)) {
+            throw new Error("Invalid email format");
+        }
+
+        // 验证新分配用户是否存在
+        const userDoc = await adminDb
+            .collection("users")
+            .doc(newAssigneeEmail)
+            .get();
+        if (!userDoc.exists) {
+            throw new Error("User not found");
+        }
+
+        const taskRef = adminDb
+            .collection("projects")
+            .doc(projId)
+            .collection("stages")
+            .doc(stageId)
+            .collection("tasks")
+            .doc(taskId);
+
+        const taskDoc = await taskRef.get();
+        if (!taskDoc.exists) {
+            throw new Error("Task not found");
+        }
+
+        const taskData = taskDoc.data();
+        if (!taskData?.assignee) {
+            throw new Error("Task is not assigned");
+        }
+
+        const oldAssigneeEmail = taskData.assignee;
+
+        // 更新任务分配
+        await taskRef.update({
+            assignee: newAssigneeEmail,
+            status: "assigned",
+            assigned_at: Timestamp.now(),
+            completion_percentage: 0,
+        });
+
+        // 更新统计：移除旧分配者，添加新分配者
+        await updateUserTaskStats(oldAssigneeEmail, projId, "unassigned");
+        await updateUserTaskStats(newAssigneeEmail, projId, "assigned");
+
+        return { success: true, message: "Task reassigned successfully" };
+    } catch (error) {
+        console.error("Error reassigning task:", error);
+        return { success: false, message: (error as Error).message };
+    }
+}

@@ -2,16 +2,13 @@
 
 import OrganizationPage from "@/components/OrganizationPage";
 import { useAuth } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useEffect } from "react";
 
-function OrgPage({
-    params: { id },
-}: {
-    params: {
-        id: string;
-    };
-}) {
+function OrgPage() {
+    const params = useParams();
+    const id = params.id as string;
+    
     const { isSignedIn, isLoaded } = useAuth(); // Get authentication state
     const router = useRouter();
     useEffect(() => {

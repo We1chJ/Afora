@@ -2,11 +2,12 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useAuth, useUser } from "@clerk/nextjs";
+import { useRouter, useParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
+import React from "react";
 import Link from "next/link";
-import { getOverdueTasks, getAvailableTasks } from "@/actions/actions";
+import { getOverdueTasks, getAvailableTasks, assignTask, unassignTask, reassignTask } from "@/actions/actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { db } from "@/firebase";
@@ -37,25 +38,35 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-function StagePage({
-    params: { id, projId, stageId },
-}: {
-    params: {
-        id: string;
-        projId: string;
-        stageId: string;
-    };
-}) {
+type PageParams = {
+    id: string;
+    projId: string;
+    stageId: string;
+};
+
+function StagePage() {
+    const params = useParams();
+    const id = params.id as string;
+    const projId = params.projId as string;
+    const stageId = params.stageId as string;
+    
     const { isSignedIn, isLoaded } = useAuth();
+    const { user } = useUser();
     const router = useRouter();
     const [isMockMode, setIsMockMode] = useState(false);
     const [mockTasks, setMockTasks] = useState<Task[]>([]);
+    const [swapTaskDialogOpen, setSwapTaskDialogOpen] = useState(false);
+    const [currentTaskId, setCurrentTaskId] = useState<string>("");
+    const [swapAssigneeEmail, setSwapAssigneeEmail] = useState("");
 
     useEffect(() => {
         if (isLoaded && !isSignedIn) {
@@ -324,6 +335,101 @@ function StagePage({
         });
     };
 
+    const handleAcceptTask = async (taskId: string) => {
+        const userEmail = user?.primaryEmailAddress?.emailAddress;
+        if (!userEmail) {
+            toast.error("User email not found");
+            return;
+        }
+        
+        startTransition(async () => {
+            const result = await assignTask(
+                projId,
+                stageId,
+                taskId,
+                userEmail
+            );
+            
+            if (result.success) {
+                toast.success("Task accepted successfully!");
+            } else {
+                toast.error(result.message || "Failed to accept task");
+            }
+        });
+    };
+
+    const handleSwapTask = async (taskId: string) => {
+        setCurrentTaskId(taskId);
+        setSwapAssigneeEmail("");
+        setSwapTaskDialogOpen(true);
+    };
+
+    const handleSwapTaskConfirm = async () => {
+        if (!swapAssigneeEmail.trim()) {
+            toast.error("Please enter an email address");
+            return;
+        }
+
+        if (isMockMode) {
+            // 更新 mock 数据
+            setMockTasks(prevTasks => 
+                prevTasks.map(task => 
+                    task.id === currentTaskId 
+                        ? { ...task, assignee: swapAssigneeEmail.trim() }
+                        : task
+                )
+            );
+            toast.success("Task swapped successfully! (Mock mode)");
+            setSwapTaskDialogOpen(false);
+            setSwapAssigneeEmail("");
+            setCurrentTaskId("");
+            return;
+        }
+
+        startTransition(async () => {
+            const result = await reassignTask(
+                projId, 
+                stageId, 
+                currentTaskId, 
+                swapAssigneeEmail.trim()
+            );
+            
+            if (result.success) {
+                toast.success("Task swapped successfully!");
+                setSwapTaskDialogOpen(false);
+                setSwapAssigneeEmail("");
+                setCurrentTaskId("");
+            } else {
+                toast.error(result.message || "Failed to swap task");
+            }
+        });
+    };
+
+    const handleDropTask = async (taskId: string) => {
+        if (isMockMode) {
+            // 更新 mock 数据
+            setMockTasks(prevTasks => 
+                prevTasks.map(task => 
+                    task.id === taskId 
+                        ? { ...task, assignee: "", status: "available" as const }
+                        : task
+                )
+            );
+            toast.success("Task dropped successfully! (Mock mode)");
+            return;
+        }
+
+        startTransition(async () => {
+            const result = await unassignTask(projId, stageId, taskId);
+            
+            if (result.success) {
+                toast.success("Task dropped successfully!");
+            } else {
+                toast.error(result.message || "Failed to drop task");
+            }
+        });
+    };
+
     return (
         <div className="w-full h-full flex flex-col bg-gray-100">
             {/* Header Section - 类似项目页面的设计风格 */}
@@ -397,16 +503,14 @@ function StagePage({
                 >
                     <DialogContent className="max-w-7xl h-3/4">
                         <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2 text-orange-800">
-                                <AlertTriangle className="h-5 w-5 text-red-500" />
-                                Bounty Board - Overdue Tasks
-                                <span className="text-sm font-normal text-gray-600">
-                                    ({overdueTasks.length} tasks available)
+                            <DialogTitle className="flex items-center gap-2 text-2xl font-bold">
+                                Bounty Board
+                                <span className="text-base font-normal text-gray-500">
+                                    ({overdueTasks.length} tasks)
                                 </span>
                             </DialogTitle>
-                            <DialogDescription>
-                                These tasks are overdue and available for anyone
-                                to claim. Complete them to earn points!
+                            <DialogDescription className="text-gray-600">
+                                Claim overdue tasks to earn extra points and help the team stay on track.
                             </DialogDescription>
                         </DialogHeader>
 
@@ -522,18 +626,67 @@ function StagePage({
                     </DialogContent>
                 </Dialog>
 
+                {/* Swap Task Dialog */}
+                <Dialog open={swapTaskDialogOpen} onOpenChange={setSwapTaskDialogOpen}>
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle>Swap Task Assignment</DialogTitle>
+                            <DialogDescription>
+                                Enter the email address of the person you want to assign this task to.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="assignee-email" className="text-right">
+                                    Email
+                                </Label>
+                                <Input
+                                    id="assignee-email"
+                                    type="email"
+                                    placeholder="user@example.com"
+                                    value={swapAssigneeEmail}
+                                    onChange={(e) => setSwapAssigneeEmail(e.target.value)}
+                                    className="col-span-3"
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button 
+                                variant="outline" 
+                                onClick={() => {
+                                    setSwapTaskDialogOpen(false);
+                                    setSwapAssigneeEmail("");
+                                    setCurrentTaskId("");
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button 
+                                onClick={handleSwapTaskConfirm}
+                                disabled={isPending || !swapAssigneeEmail.trim()}
+                            >
+                                {isPending ? "Swapping..." : "Swap Task"}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
                 {/* Task Management Component */}
                 <TaskManagement
                     tasks={tasks}
                     isEditing={isEditing}
                     handleNewTask={handleNewTask}
                     handleDeleteTask={handleDeleteTask}
+                    handleSwapTask={handleSwapTask}
+                    handleDropTask={handleDropTask}
+                    handleAcceptTask={handleAcceptTask}
                     isPending={isPending}
                     isOpen={isOpen}
                     setIsOpen={setIsOpen}
                     orgId={id}
                     projId={projId}
                     stageId={stageId}
+                    currentUserEmail={user?.primaryEmailAddress?.emailAddress}
                 />
             </div>
         </div>

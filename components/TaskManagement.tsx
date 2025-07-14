@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CircleCheckBig, Clock7, Trash, User } from "lucide-react";
+import { CircleCheckBig, Clock7, Trash, User, MoreVertical, ArrowLeftRight, XCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
 import { Task } from "@/types/types";
@@ -15,18 +15,22 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 interface TaskManagementProps {
     tasks: Task[];
     isEditing: boolean;
     handleNewTask: () => void;
     handleDeleteTask: (taskId: string) => void;
+    handleSwapTask?: (taskId: string) => void;
+    handleDropTask?: (taskId: string) => void;
     isPending: boolean;
     isOpen: boolean;
     setIsOpen: (open: boolean) => void;
     orgId: string;
     projId: string;
     stageId: string;
+    currentUserEmail?: string;
 }
 
 const TaskManagement = ({
@@ -34,12 +38,15 @@ const TaskManagement = ({
     isEditing,
     handleNewTask,
     handleDeleteTask,
+    handleSwapTask,
+    handleDropTask,
     isPending,
     isOpen,
     setIsOpen,
     orgId,
     projId,
     stageId,
+    currentUserEmail,
 }: TaskManagementProps) => {
     const tasksCompleted = tasks.filter((task) => task.isCompleted).length;
 
@@ -90,7 +97,7 @@ const TaskManagement = ({
                                 return (
                                     <Card
                                         key={task.id}
-                                        className="transition-all duration-200 hover:shadow-lg"
+                                        className="transition-all duration-200 hover:shadow-lg group relative"
                                     >
                                         <CardHeader className="pb-3">
                                             <div className="flex items-start justify-between">
@@ -111,81 +118,58 @@ const TaskManagement = ({
                                                         </CardTitle>
                                                     </div>
                                                 </div>
-
-                                                {/* Delete Task Button */}
-                                                {isEditing && (
-                                                    <AlertDialog open={isOpen}>
-                                                        <AlertDialogTrigger
-                                                            asChild
-                                                        >
+                                                {currentUserEmail && task.assignee === currentUserEmail && (
+                                                    <DropdownMenu.Root>
+                                                        <DropdownMenu.Trigger asChild>
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="text-red-500 hover:bg-red-50 ml-2"
-                                                                onClick={(
-                                                                    e,
-                                                                ) => {
-                                                                    e.stopPropagation();
-                                                                    setIsOpen(
-                                                                        true,
-                                                                    );
-                                                                }}
+                                                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                                             >
-                                                                <Trash className="h-4 w-4" />
+                                                                <MoreVertical className="h-4 w-4" />
                                                             </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>
-                                                                    Confirm
-                                                                    Deletion
-                                                                </AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    Are you sure
-                                                                    you want to
-                                                                    delete this
-                                                                    task? This
-                                                                    action
-                                                                    cannot be
-                                                                    undone!
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <Button
-                                                                    variant="secondary"
-                                                                    onClick={() =>
-                                                                        setIsOpen(
-                                                                            false,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    Cancel
-                                                                </Button>
-                                                                <Button
-                                                                    variant="destructive"
+                                                        </DropdownMenu.Trigger>
+                                                        <DropdownMenu.Portal>
+                                                            <DropdownMenu.Content
+                                                                align="end"
+                                                                side="left"
+                                                                className="z-50 min-w-[8rem] overflow-hidden rounded-md border border-slate-100 bg-white p-1 shadow-md animate-in slide-in-from-right-2"
+                                                            >
+                                                                {handleSwapTask && (
+                                                                    <DropdownMenu.Item
+                                                                        className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-blue-50 text-blue-600 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                                                                        onClick={() => handleSwapTask(task.id)}
+                                                                    >
+                                                                        <ArrowLeftRight className="mr-2 h-4 w-4" />
+                                                                        Swap Task
+                                                                    </DropdownMenu.Item>
+                                                                )}
+                                                                {handleDropTask && (
+                                                                    <DropdownMenu.Item
+                                                                        className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-yellow-50 text-yellow-600 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                                                                        onClick={() => handleDropTask(task.id)}
+                                                                    >
+                                                                        <XCircle className="mr-2 h-4 w-4" />
+                                                                        Drop Task
+                                                                    </DropdownMenu.Item>
+                                                                )}
+                                                                <DropdownMenu.Item
+                                                                    className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-red-50 text-red-600 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                                                                     onClick={() => {
-                                                                        handleDeleteTask(
-                                                                            task.id,
-                                                                        );
+                                                                        setIsOpen(true);
                                                                     }}
-                                                                    disabled={
-                                                                        isPending
-                                                                    }
                                                                 >
-                                                                    {isPending ? (
-                                                                        <Clock7 className="animate-spin" />
-                                                                    ) : (
-                                                                        "Delete"
-                                                                    )}
-                                                                </Button>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
+                                                                    <Trash className="mr-2 h-4 w-4" />
+                                                                    Delete Task
+                                                                </DropdownMenu.Item>
+                                                            </DropdownMenu.Content>
+                                                        </DropdownMenu.Portal>
+                                                    </DropdownMenu.Root>
                                                 )}
                                             </div>
                                         </CardHeader>
 
-                                        <CardContent className="space-y-4">
+                                        <CardContent className="space-y-4 group-data-[state=open]:blur-sm transition-all">
                                             <div className="text-sm text-gray-600 line-clamp-3">
                                                 {task.description}
                                             </div>

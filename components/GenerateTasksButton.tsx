@@ -81,6 +81,12 @@ const GenerateTasksButton = ({
             return;
         }
 
+        // Validate team charter responses
+        if (!teamCharterResponses || teamCharterResponses.length < 12) {
+            toast.error("Please complete all team charter questions first");
+            return;
+        }
+
         const memberList = projData.members;
         const userDataPromise = memberList.map(async (user) => {
             const userOrg = await getDoc(doc(db, "users", user, "org", orgId));
@@ -98,15 +104,15 @@ const GenerateTasksButton = ({
                 projQuestions,
                 userData,
                 teamCharterQuestions,
-                teamCharterResponses,
+                teamCharterResponses
             )
                 .then((output: string) => {
-                    console.log("API Response:", output); // Log the output from the matching function
+                    console.log("API Response:", output);
                     const parsed: GeneratedTasks = JSON.parse(output);
                     setGeneratedOutput(parsed);
                 })
                 .catch((error: Error) => {
-                    console.error("Error:", error); // Handle any errors
+                    console.error("Error:", error);
                     toast.error(error.message);
                 }),
         );

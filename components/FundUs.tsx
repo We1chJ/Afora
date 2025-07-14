@@ -1,17 +1,15 @@
 import React from "react";
+import Link from "next/link";
+import { Heart } from "lucide-react";
+import { Button } from "./ui/button";
 
 function FundUs() {
     return (
-        // ADD Venmo or paypal in the future
-        <a
-            href="https://afora.vercel.app/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-white hover:translate-y-[-2px] transition-transform duration-300"
-        >
-            {" "}
-            Fund Us!
-        </a>
+        <Link href="/fund">
+            <Button variant="ghost" className="text-white hover:text-white hover:bg-white/20">
+                Fund Us!
+            </Button>
+        </Link>
     );
 }
 

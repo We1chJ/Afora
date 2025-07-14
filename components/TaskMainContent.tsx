@@ -40,6 +40,7 @@ function TaskMainContent({
     taskLocked,
 }: TaskMainContentProps) {
     const { user } = useUser();
+    const router = useRouter();
 
     const [completionPercentage, setCompletionPercentage] = useState([0]);
     const [tempCompletionPercentage, setTempCompletionPercentage] = useState([

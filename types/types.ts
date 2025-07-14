@@ -162,9 +162,25 @@ export const projQuestions = [
 
 //TODO: make this customizable
 export const teamCharterQuestions = [
-    "Project Purpose",
-    "Key Project Stakeholders",
-    "Product Objectives",
+    // 1. Project Basic Information
+    "Project Purpose (Describe the main goals and intentions of the project)",
+    "Key Project Stakeholders (List all key stakeholders and their roles)",
+    "Product Objectives (List specific functional goals and expected outcomes)",
+    
+    // 2. Team Information
+    "Team Structure and Roles (Describe team members, their expertise and responsibilities)",
+    "Team Communication Preferences (Communication methods and frequency)",
+    "Team Working Style (e.g., Agile, Waterfall, or hybrid approach)",
+    
+    // 3. Timeline Planning
+    "Project Timeline (Expected project duration, e.g., 2 months/12 weeks)",
+    "Major Milestones (List key project milestones)",
+    "Team Availability (Weekly time commitment per team member)",
+    
+    // 4. Additional Key Information
+    "Success Criteria (Metrics to measure project success)",
+    "Potential Risks and Challenges (Identify possible risks and challenges)",
+    "Resource Requirements (Required technologies, tools, and resources)"
 ];
 
 // export interface Task {

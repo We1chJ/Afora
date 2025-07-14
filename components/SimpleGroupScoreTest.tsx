@@ -87,6 +87,15 @@ const SimpleGroupScoreTest = () => {
                                 Assurance, Automation)
                             </p>
                         </div>
+
+                        <Button 
+                            onClick={handleTestConnection}
+                            className="w-full mt-4"
+                            variant="outline"
+                        >
+                            <Wifi className="mr-2 h-4 w-4" />
+                            Test OpenAI Connection
+                        </Button>
                     </div>
                 </CardContent>
             </Card>

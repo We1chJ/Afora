@@ -229,23 +229,23 @@ const TaskManagement = ({
                                                     </span>
                                                     <span
                                                         className={`text-xs font-bold ${
-                                                            (task.completionPercentage ||
+                                                            (task.completion_percentage ||
                                                                 0) === 100
                                                                 ? "text-green-600"
-                                                                : (task.completionPercentage ||
+                                                                : (task.completion_percentage ||
                                                                         0) >= 50
                                                                   ? "text-blue-600"
                                                                   : "text-gray-600"
                                                         }`}
                                                     >
-                                                        {task.completionPercentage ||
+                                                        {task.completion_percentage ||
                                                             0}
                                                         %
                                                     </span>
                                                 </div>
                                                 <Progress
                                                     value={
-                                                        task.completionPercentage ||
+                                                        task.completion_percentage ||
                                                         0
                                                     }
                                                     className="h-2"

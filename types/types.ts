@@ -208,7 +208,7 @@ export type Task = {
     assignee: string;
     order: number;
     isCompleted: boolean;
-    completionPercentage?: number; // Task completion percentage (0-100)
+    completion_percentage?: number; // Task completion percentage (0-100)
     // Task pool related fields
     points: number; // Points earned for completing the task (default: 1)
     status: "available" | "assigned" | "completed" | "overdue"; // Task status

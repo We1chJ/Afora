@@ -21,7 +21,7 @@ import { useSelector } from "react-redux";
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { assignTask } from "@/actions/actions";
+import { assignTask, completeTaskWithProgress } from "@/actions/actions";
 import { useRouter } from "next/navigation";
 
 interface TaskMainContentProps {
@@ -51,18 +51,7 @@ function TaskMainContent({
     const [isModifying, setIsModifying] = useState(false);
 
     const [publicComments, publicCommentsLoading, publicCommentsError] =
-        useCollection(
-            collection(
-                db,
-                "projects",
-                projId,
-                "stages",
-                stageId,
-                "tasks",
-                taskId,
-                "public",
-            ),
-        );
+        useCollection(collection(db, "projects", projId, "stages", stageId, "tasks", taskId, "public"));
 
     const sortedPublicComments = useMemo(() => {
         if (!publicComments) return [];
@@ -82,6 +71,8 @@ function TaskMainContent({
     // Initialize completion data from task
     useEffect(() => {
         if (task) {
+            console.log("penis")
+            console.log(task)
             const taskCompletion = task.completion_percentage || 0;
             setCompletionPercentage([taskCompletion]);
             setTempCompletionPercentage([taskCompletion]);
@@ -108,6 +99,7 @@ function TaskMainContent({
 
     const handleUpdateProgress = () => {
         if (!taskLocked) {
+            completeTaskWithProgress(projId, stageId, taskId, tempCompletionPercentage[0])
             setCompletionPercentage(tempCompletionPercentage);
             if (tempCompletionPercentage[0] === 100 && !isCompleted) {
                 setIsCompleted(true);

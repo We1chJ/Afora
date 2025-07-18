@@ -963,6 +963,7 @@ export async function updateTask(
     soft_deadline: string,
     hard_deadline: string,
     points?: number,
+    completion_percentage?: number
 ) {
     const { userId } = await auth();
     if (!userId) {
@@ -980,6 +981,9 @@ export async function updateTask(
         // 如果提供了积分，则更新积分
         if (points !== undefined && points > 0) {
             updateData.points = points;
+        }
+        if (completion_percentage !== undefined) {
+            updateData.completion_percentage = completion_percentage;
         }
 
         await adminDb
@@ -1465,12 +1469,9 @@ export async function getTaskSubmissions(
 
     try {
         const submissionsSnapshot = await adminDb
-            .collection("projects")
-            .doc(projId)
-            .collection("stages")
-            .doc(stageId)
-            .collection("tasks")
-            .doc(taskId)
+            .collection("projects").doc(projId)
+            .collection("stages").doc(stageId)
+            .collection("tasks").doc(taskId)
             .collection("submissions")
             .orderBy("submitted_at", "desc")
             .get();

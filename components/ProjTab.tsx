@@ -327,6 +327,7 @@ const ProjTab = ({
                         </div>
                     </div>
                 </div>
+                
 
                 {/* Navigation */}
 
@@ -702,7 +703,8 @@ const ProjTab = ({
                                                     projId={proj.projId}
                                                     projectName={proj.title}
                                                     backgroundImage={""}
-                                                    tasks={[]}
+                                                    tasks={proj.tasks}
+                                                    members={proj.members}
                                                 />
                                             </div>
                                         ))}

@@ -82,7 +82,7 @@ function TaskMainContent({
     // Initialize completion data from task
     useEffect(() => {
         if (task) {
-            const taskCompletion = task.completionPercentage || 0;
+            const taskCompletion = task.completion_percentage || 0;
             setCompletionPercentage([taskCompletion]);
             setTempCompletionPercentage([taskCompletion]);
             setIsCompleted(task.isCompleted || taskCompletion === 100);

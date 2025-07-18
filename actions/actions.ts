@@ -12,7 +12,6 @@ export async function createNewUser(
     username: string,
     userImage: string,
 ) {
-    console.log(`createNewUser(${userEmail}, ${username}, ${userImage})`);
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -47,9 +46,6 @@ export async function createNewOrganization(
     }
 
     try {
-        console.log("blah");
-        console.log(x);
-
         // 获取用户邮箱而不是用户ID
         let userEmail: string | undefined;
         if (sessionClaims?.email && typeof sessionClaims.email === "string") {
@@ -126,7 +122,6 @@ export async function deleteOrg(orgId: string) {
         throw new Error("Unauthorized");
     }
 
-    console.log(orgId);
     try {
         await adminDb.collection("organizations").doc(orgId).delete();
 

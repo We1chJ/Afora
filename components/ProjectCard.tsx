@@ -2,11 +2,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FolderOpen, Users, ArrowRight, Target } from "lucide-react";
-
-interface Task {
-    id: string;
-    title: string;
-}
+import { Task } from "@/types/types";
 
 interface ProjectCardProps {
     projectName: string;
@@ -14,6 +10,7 @@ interface ProjectCardProps {
     tasks: Task[];
     projId: string;
     orgId: string;
+    members?: string[];
 }
 
 const ProjectCard = ({
@@ -26,24 +23,16 @@ const ProjectCard = ({
         { id: "2", title: "Implement backend API" },
         { id: "3", title: "Write unit tests" },
     ],
+    members = [],
 }: ProjectCardProps) => {
-    // Generate random team member count for demo
-    const memberCount = Math.floor(Math.random() * 8) + 2;
-    const taskCount = Math.floor(Math.random() * 12) + 3;
-    const completedTasks = Math.floor(taskCount * (Math.random() * 0.7 + 0.1));
-    const progress = Math.round((completedTasks / taskCount) * 100);
-
-    // Generate random project type
-    const projectTypes = [
-        "Frontend",
-        "Backend",
-        "Mobile",
-        "AI/ML",
-        "DevOps",
-        "Design",
-    ];
-    const projectType =
-        projectTypes[Math.floor(Math.random() * projectTypes.length)];
+    // Calculate actual values based on real data
+    const memberCount = members.length;
+    const taskCount = tasks.length;
+    const completedTasks = tasks.filter((task) => task.isCompleted).length;
+    const progress =
+        taskCount > 0
+            ? Math.round((completedTasks / taskCount) * 100)
+            : 0;
 
     // Color schemes based on project name - softer colors
     const getProjectTheme = (name: string) => {

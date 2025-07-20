@@ -261,19 +261,46 @@ const ProjTab = ({
                             teamSize,
                             questions: projQuestions,
                             input: userData,
-                            totalMembers: memberList.length  // 添加总成员数
+                            totalMembers: memberList.length
                         })
                     });
                     
+                    // 检查HTTP状态码
                     if (!response.ok) {
-                        throw new Error(`API call failed: ${response.status}`);
+                        const errorText = await response.text();
+                        console.error("❌ ProjTab.tsx - API响应错误:", {
+                            status: response.status,
+                            statusText: response.statusText,
+                            body: errorText
+                        });
+                        throw new Error(`API调用失败 (${response.status}): ${errorText || response.statusText}`);
+                    }
+
+                    // 检查Content-Type
+                    const contentType = response.headers.get("content-type");
+                    if (!contentType || !contentType.includes("application/json")) {
+                        throw new Error("API返回的不是JSON格式");
                     }
                     
-                    teamOutput = await response.json();
+                    // 解析JSON响应
+                    const jsonResponse = await response.json();
+                    console.log("🔍 ProjTab.tsx - API响应数据:", jsonResponse);
+
+                    // 验证响应数据结构
+                    if (!jsonResponse || typeof jsonResponse !== 'object') {
+                        throw new Error("API返回的数据格式无效");
+                    }
+
+                    if (!Array.isArray(jsonResponse.groups)) {
+                        throw new Error("API返回的groups不是数组");
+                    }
+
+                    teamOutput = jsonResponse;
                     console.log("🔍 ProjTab.tsx - matching API调用完成");
                 } catch (error) {
                     console.error("❌ ProjTab.tsx - matching API调用失败:", error);
-                    throw error;
+                    toast.error(`团队生成失败: ${(error as Error).message}`);
+                    return;
                 }
                 
                 console.log("🔍 ProjTab.tsx - teamOutput:", teamOutput);

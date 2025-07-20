@@ -226,6 +226,9 @@ function StagePage() {
             : collection(db, "projects", projId, "stages", stageId, "tasks"),
     );
 
+    console.log("\n\n\nTASKS DATA\n\n");
+    console.log(tasksData);
+
     const tasks: Task[] = useMemo(() => {
         if (isMockMode) {
             return mockTasks;

@@ -154,6 +154,7 @@ function TaskPage() {
                 softDeadline,
                 hardDeadline,
                 points,
+                completionPercentage
             )
                 .then(() => {
                     toast.success("Task updated successfully!");

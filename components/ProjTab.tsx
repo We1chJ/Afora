@@ -85,6 +85,7 @@ const ProjTab = ({
         ? query(collection(db, "projects"), where("orgId", "==", orgId))
         : null;
     const [allProjects, apLoading, apError] = useCollection(adminQ);
+    
 
     const userQ = !isMockMode
         ? query(
@@ -144,6 +145,8 @@ const ProjTab = ({
                             (doc) => doc.data() as Project,
                         );
                         setUserProjList(projects);
+                        console.log("DEBUG - PROJECTS");
+                        console.log(projects);
                     }
                 } else if (
                     !userLoading &&

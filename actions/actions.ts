@@ -12,7 +12,6 @@ export async function createNewUser(
     username: string,
     userImage: string,
 ) {
-    console.log(`createNewUser(${userEmail}, ${username}, ${userImage})`);
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
@@ -47,9 +46,6 @@ export async function createNewOrganization(
     }
 
     try {
-        console.log("blah");
-        console.log(x);
-
         // 获取用户邮箱而不是用户ID
         let userEmail: string | undefined;
         if (sessionClaims?.email && typeof sessionClaims.email === "string") {
@@ -126,7 +122,6 @@ export async function deleteOrg(orgId: string) {
         throw new Error("Unauthorized");
     }
 
-    console.log(orgId);
     try {
         await adminDb.collection("organizations").doc(orgId).delete();
 
@@ -968,6 +963,7 @@ export async function updateTask(
     soft_deadline: string,
     hard_deadline: string,
     points?: number,
+    completion_percentage?: number
 ) {
     const { userId } = await auth();
     if (!userId) {
@@ -985,6 +981,9 @@ export async function updateTask(
         // 如果提供了积分，则更新积分
         if (points !== undefined && points > 0) {
             updateData.points = points;
+        }
+        if (completion_percentage !== undefined) {
+            updateData.completion_percentage = completion_percentage;
         }
 
         await adminDb
@@ -1470,12 +1469,9 @@ export async function getTaskSubmissions(
 
     try {
         const submissionsSnapshot = await adminDb
-            .collection("projects")
-            .doc(projId)
-            .collection("stages")
-            .doc(stageId)
-            .collection("tasks")
-            .doc(taskId)
+            .collection("projects").doc(projId)
+            .collection("stages").doc(stageId)
+            .collection("tasks").doc(taskId)
             .collection("submissions")
             .orderBy("submitted_at", "desc")
             .get();

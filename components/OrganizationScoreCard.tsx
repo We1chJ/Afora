@@ -1,46 +1,22 @@
 "use client";
 import React, { useState, useTransition } from "react";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import {
-    Loader2,
-    Users,
-    TrendingUp,
-    AlertCircle,
-    CheckCircle,
-} from "lucide-react";
+import { Loader2, Users, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
 import { analyzeTeamCompatibility } from "@/ai_scripts/analyzeTeamCompatibility";
 import { appQuestions, TeamCompatibilityAnalysis } from "@/types/types";
 import { getOrganizationMembersResponses } from "@/actions/actions";
 import { getMockOrganizationMembersResponses } from "@/actions/mockActions";
 import { toast } from "sonner";
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import TeamScoreChart from "./TeamScoreChart";
-
-interface OrganizationScoreCardProps {
-    orgId: string;
-    members: string[];
-    mockData?: boolean; // Used for displaying mock data
-    projectFilter?: string; // Optional project filter for project-specific analysis
-}
+import { OrganizationScoreCardProps } from "@/types/types";
 
 const OrganizationScoreCard = ({
     orgId,
     members,
-    mockData = false,
     projectFilter,
 }: OrganizationScoreCardProps) => {
     const [analysis, setAnalysis] = useState<TeamCompatibilityAnalysis | null>(
@@ -48,228 +24,21 @@ const OrganizationScoreCard = ({
     );
     const [isPending, startTransition] = useTransition();
 
-    // Mock data
-    const mockAnalysis: TeamCompatibilityAnalysis = {
-        overall_score: 85,
-        member_analyses: [
-            {
-                member_email: "alice@example.com",
-                strengths: [
-                    "Frontend Development",
-                    "UI/UX Design",
-                    "Team Collaboration",
-                ],
-                skills: ["React", "TypeScript", "Figma", "CSS"],
-                interests: [
-                    "User Experience",
-                    "Mobile Development",
-                    "Design Systems",
-                ],
-                compatibility_score: 88,
-                role_suggestion: "Frontend Development Lead",
-                detailed_analysis: {
-                    technical_proficiency: {
-                        score: 92,
-                        strengths: ["Modern Frontend Frameworks", "UI Component Design", "Performance Optimization"],
-                        areas_for_improvement: ["Mobile-First Development", "Testing Automation"]
-                    },
-                    collaboration_style: {
-                        preferred_methods: ["Slack", "Video Calls", "Design Reviews"],
-                        communication_frequency: "Daily stand-ups and as-needed discussions",
-                        team_role: "Technical Lead & Design System Architect"
-                    },
-                    project_contribution: {
-                        primary_responsibilities: ["Frontend Architecture", "UI Component Library", "Design System Implementation"],
-                        potential_impact: "Can significantly improve development efficiency through component standardization",
-                        risk_factors: ["Time division between development and design tasks", "Potential bottleneck in design decisions"]
-                    }
-                }
-            },
-            {
-                member_email: "bob@example.com",
-                strengths: [
-                    "Backend Development",
-                    "Database Design",
-                    "System Architecture",
-                ],
-                skills: ["Node.js", "PostgreSQL", "Docker", "AWS"],
-                interests: ["Cloud Computing", "Microservices", "DevOps"],
-                compatibility_score: 82,
-                role_suggestion: "Backend Architect",
-                detailed_analysis: {
-                    technical_proficiency: {
-                        score: 88,
-                        strengths: ["Database Optimization", "API Design", "Cloud Infrastructure"],
-                        areas_for_improvement: ["Documentation", "Frontend Integration"]
-                    },
-                    collaboration_style: {
-                        preferred_methods: ["GitHub Discussions", "Technical Documentation", "Architecture Reviews"],
-                        communication_frequency: "Bi-weekly architecture reviews and daily updates",
-                        team_role: "Backend Lead & Infrastructure Specialist"
-                    },
-                    project_contribution: {
-                        primary_responsibilities: ["API Development", "Database Architecture", "Cloud Infrastructure"],
-                        potential_impact: "Will establish robust and scalable backend foundation",
-                        risk_factors: ["Complex technical decisions", "Integration challenges"]
-                    }
-                }
-            },
-            {
-                member_email: "charlie@example.com",
-                strengths: [
-                    "Project Management",
-                    "Business Analysis",
-                    "Communication",
-                ],
-                skills: ["Scrum", "Data Analysis", "Product Planning", "Excel"],
-                interests: [
-                    "Product Management",
-                    "User Research",
-                    "Market Analysis",
-                ],
-                compatibility_score: 87,
-                role_suggestion: "Project Manager",
-                detailed_analysis: {
-                    technical_proficiency: {
-                        score: 85,
-                        strengths: ["Project Planning", "Risk Management", "Stakeholder Communication"],
-                        areas_for_improvement: ["Technical Documentation", "Agile Methodologies"]
-                    },
-                    collaboration_style: {
-                        preferred_methods: ["Regular Team Meetings", "Email Updates", "One-on-One Sessions"],
-                        communication_frequency: "Daily check-ins and weekly detailed reviews",
-                        team_role: "Project Coordinator & Team Facilitator"
-                    },
-                    project_contribution: {
-                        primary_responsibilities: ["Project Planning", "Team Coordination", "Resource Management"],
-                        potential_impact: "Will ensure smooth project execution and team alignment",
-                        risk_factors: ["Balancing technical and business priorities", "Team communication overhead"]
-                    }
-                }
-            }
-        ],
-        team_analysis: {
-            team_strengths: [
-                "Strong skill complementarity",
-                "Full-stack coverage",
-                "Clear role division",
-                "Good communication and collaboration",
-            ],
-            potential_gaps: [
-                "Lack of dedicated testing personnel",
-                "Limited mobile development experience",
-                "Limited marketing and promotion capabilities",
-            ],
-            collaboration_potential:
-                "Team members have highly complementary skills with a strong collaboration foundation. Frontend, backend, and project management roles are clearly defined, and the team is expected to collaborate efficiently to achieve project goals.",
-            recommendations: [
-                "Consider adding a QA testing engineer",
-                "Provide mobile development training for team members",
-                "Establish regular technical sharing sessions",
-                "Define clear code review processes",
-            ],
-            project_fit: {
-                technical_alignment: 85,
-                schedule_compatibility: 78,
-                interest_alignment: 92,
-                charter_alignment: {
-                    vision_alignment: 88,
-                    values_compatibility: 85,
-                    key_findings: [
-                        "Team shares a strong vision for project success",
-                        "Values align well with project goals",
-                        "Some minor differences in working style preferences",
-                        "High commitment to quality and innovation"
-                    ],
-                    detailed_assessment: {
-                        shared_values: [
-                            "Quality-First Development",
-                            "User-Centric Design",
-                            "Continuous Learning",
-                            "Open Communication"
-                        ],
-                        potential_conflicts: [
-                            "Different preferences in work scheduling",
-                            "Varying opinions on technical debt priorities"
-                        ],
-                        team_culture: "Collaborative and innovation-focused with emphasis on technical excellence",
-                        decision_making: "Consensus-driven with clear technical leadership hierarchy"
-                    }
-                },
-                technical_assessment: {
-                    skill_coverage: {
-                        strong_areas: ["Frontend Development", "API Design", "Cloud Infrastructure"],
-                        weak_areas: ["Mobile Development", "Security Testing"],
-                        coverage_percentage: 85
-                    },
-                    technology_stack: {
-                        frontend: ["React", "TypeScript", "Next.js", "TailwindCSS"],
-                        backend: ["Node.js", "PostgreSQL", "Redis", "Docker"],
-                        other: ["AWS", "GitHub Actions", "Jest"]
-                    },
-                    expertise_distribution: {
-                        junior: 20,
-                        mid: 50,
-                        senior: 30
-                    }
-                },
-                schedule_assessment: {
-                    overlap_hours: 6,
-                    peak_availability: ["10:00-16:00 EST"],
-                    timezone_distribution: ["EST", "PST", "GMT"],
-                    flexibility_score: 75
-                },
-                comments: [
-                    "Team's technical stack aligns well with project requirements",
-                    "Some schedule conflicts may need adjustment",
-                    "High interest in project goals and technologies",
-                    "Strong potential for innovative solutions"
-                ]
-            }
-        },
-    };
-
-    const generateMockMemberResponses = () => {
-        return [
-            `User: alice@example.com
-Question 1 Answer: React,TypeScript,UI/UX Design,CSS,JavaScript
-Question 2 Answer: Web Development,Frontend Development,Mobile Development
-Question 3 Answer: Senior Frontend Developer,UI/UX Designer,Product Manager`,
-
-            `User: bob@example.com  
-Question 1 Answer: Node.js,PostgreSQL,Docker,AWS,System Architecture
-Question 2 Answer: Backend Development,Cloud Computing,DevOps
-Question 3 Answer: Backend Architect,DevOps Engineer,Technical Lead`,
-
-            `User: charlie@example.com
-Question 1 Answer: Project Management,Scrum,Data Analysis,Business Analysis
-Question 2 Answer: Product Management,Business Strategy,Team Leadership  
-Question 3 Answer: Project Manager,Product Manager,Business Analyst`,
-        ];
-    };
-
     const handleAnalyzeTeam = async () => {
-        // Always use real GPT API, but data source depends on mockData flag
         startTransition(() => {
             (async () => {
-                try {
-                    // Get user survey responses (use mock data if mockData is true)
-                    const membersData = mockData
-                        ? await getMockOrganizationMembersResponses(orgId)
-                        : await getOrganizationMembersResponses(orgId);
+                try {                    // Get user survey responses (use mock data if mockData is true)
+                    const membersData = await getOrganizationMembersResponses(orgId);
 
                     if (
                         !membersData.success ||
                         !membersData.data ||
                         membersData.data.length === 0
                     ) {
-                        const errorMessage = mockData
-                            ? "Mock data not found, using generated mock responses"
-                            : "No team member survey responses found, using mock data for demonstration";
-                        toast.error(errorMessage);
+                        toast.error("No team member survey responses found");
 
                         // If no data, use generated mock responses
-                        const memberResponses = generateMockMemberResponses();
+                        const memberResponses: string[] = [];
                         const result = await analyzeTeamCompatibility(
                             appQuestions,
                             memberResponses,
@@ -298,18 +67,14 @@ Question 3 Answer: ${member.responses[2] || "No answer"}`;
                         JSON.parse(result);
                     setAnalysis(parsedResult);
 
-                    const successMessage = mockData
-                        ? "GPT team analysis completed!"
-                        : "Team analysis completed!";
+                    const successMessage = "Team analysis completed!";
                     toast.success(successMessage);
                 } catch (error) {
                     console.error("Analysis failed:", error);
-                    const errorMessage = mockData
-                        ? "GPT analysis failed, using mock data for demonstration"
-                        : "Analysis failed, using mock data for demonstration";
+                    const errorMessage = "Analysis failed";
                     toast.error(errorMessage);
                     // Fallback to mock data on error
-                    setAnalysis(mockAnalysis);
+                    setAnalysis(null);
                 }
             })();
         });
@@ -364,13 +129,6 @@ Question 3 Answer: ${member.responses[2] || "No answer"}`;
                             </Button>
                             <p className="text-sm text-muted-foreground mt-2">
                                 Current team member count: {members.length}
-                                {mockData && (
-                                    <span className="text-blue-600">
-                                        {" "}
-                                        (Will use mock data to call real GPT
-                                        API)
-                                    </span>
-                                )}
                             </p>
                         </div>
                     ) : (

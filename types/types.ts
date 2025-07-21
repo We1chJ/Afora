@@ -337,3 +337,16 @@ export type TaskPoolStats = {
     completedTasks: number;
     overdueTasks: number;
 };
+
+export interface StageProgress {
+    stageOrder: number;
+    totalTasks: number;
+    tasksCompleted: number;
+    locked: boolean;
+}
+
+export interface OrganizationScoreCardProps {
+    orgId: string;
+    members: string[];
+    projectFilter?: string;
+}

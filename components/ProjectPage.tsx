@@ -11,43 +11,15 @@ import { Project, Stage, teamCharterQuestions } from "@/types/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import {
-    CircleCheck,
-    EditIcon,
-    Loader2,
-    LockKeyhole,
-    NotepadText,
-    PencilLine,
-    Save,
-    Trash2,
-    Trophy,
-    Target,
-    BarChart3,
-    UsersIcon,
-} from "lucide-react";
+import { CircleCheck, PencilLine, Save, Trophy, Target, BarChart3, Loader2, LockKeyhole, NotepadText, Trash2, UsersIcon, EditIcon } from "lucide-react";
 import { Reorder, useDragControls } from "framer-motion";
 import { toast } from "sonner";
 import GenerateTasksButton from "@/components/GenerateTasksButton";
-import {
-    AlertDialog,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@radix-ui/react-label";
-import {
-    setTeamCharter,
-    updateProjectTitle,
-    updateStages,
-    getProjectStats,
-    getProjectLeaderboard,
-    migrateTasksToTaskPool,
-    initializeUserScores,
-} from "@/actions/actions";
+import { setTeamCharter, updateProjectTitle, updateStages, getProjectStats, getProjectLeaderboard } from "@/actions/actions";
 import { HoverCard, HoverCardTrigger } from "@radix-ui/react-hover-card";
 import { HoverCardContent } from "@/components/ui/hover-card";
 import { ReorderIcon } from "@/components/ReorderIcon";
@@ -59,13 +31,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OrganizationScoreCard from "@/components/OrganizationScoreCard";
 
-export interface StageProgress {
-    stageOrder: number;
-    totalTasks: number;
-    tasksCompleted: number;
-    locked: boolean;
-}
-
 const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const { isSignedIn, isLoaded } = useAuth(); // Get authentication state
     const [responses, setResponses] = useState<string[]>([]);
@@ -75,16 +40,10 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const [isEditing, setIsEditing] = useState(false);
     const [reorderedStages, setReorderedStages] = useState<Stage[]>([]);
     const dragControl = useDragControls();
-    const [isMockMode, setIsMockMode] = useState(false);
-
-    // 新增状态用于项目统计和排行榜
     const [projectStats, setProjectStats] = useState<any>(null);
     const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
     const [statsLoading, setStatsLoading] = useState(false);
 
-    // Mock data
-    const [mockProject, setMockProject] = useState<Project | null>(null);
-    const [mockStages, setMockStages] = useState<Stage[]>([]);
 
     useEffect(() => {
         // Redirect to login if the user is not authenticated
@@ -93,104 +52,8 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         }
     }, [isLoaded, isSignedIn, router]);
 
-    // Check if this is mock mode
-    useEffect(() => {
-        if (id === "mock-org-123") {
-            setIsMockMode(true);
-
-            // Create mock project data based on projId
-            const mockProjects = [
-                {
-                    projId: "proj-1",
-                    orgId: "mock-org-123",
-                    title: "Frontend Development Project",
-                    members: ["alice@test.com", "bob@test.com"],
-                    teamCharterResponse: [
-                        "Develop a modern, responsive web application using React and TypeScript",
-                        "Alice (Frontend), Bob (Backend), Product Manager (External)",
-                        "Create an intuitive user interface with optimal user experience",
-                    ],
-                },
-                {
-                    projId: "proj-2",
-                    orgId: "mock-org-123",
-                    title: "Backend Architecture Project",
-                    members: ["charlie@test.com", "david@test.com"],
-                    teamCharterResponse: [
-                        "Design and implement scalable backend architecture",
-                        "Charlie (Project Manager), David (QA Engineer)",
-                        "Build robust, secure, and performant backend services",
-                    ],
-                },
-            ];
-
-            const project = mockProjects.find((p) => p.projId === projId);
-            if (project) {
-                setMockProject(project);
-
-                // Create mock stages
-                const stages: Stage[] = [
-                    {
-                        id: "stage-1",
-                        title: "Requirements Analysis & Design",
-                        order: 0,
-                        tasksCompleted: 2,
-                        totalTasks: 3,
-                    },
-                    {
-                        id: "stage-2",
-                        title: "Development Implementation",
-                        order: 1,
-                        tasksCompleted: 1,
-                        totalTasks: 4,
-                    },
-                    {
-                        id: "stage-3",
-                        title: "Testing & Deployment",
-                        order: 2,
-                        tasksCompleted: 0,
-                        totalTasks: 2,
-                    },
-                ];
-                setMockStages(stages);
-            }
-        }
-    }, [id, projId]);
-
     // 加载项目统计数据
     const loadProjectStats = async () => {
-        if (isMockMode) {
-            // Mock 数据
-            setProjectStats({
-                totalTasks: 9,
-                completedTasks: 3,
-                assignedTasks: 4,
-                availableTasks: 2,
-                overdueTasks: 0,
-                completionRate: 33.33,
-                stageCount: 3,
-            });
-            setLeaderboardData([
-                {
-                    id: "1",
-                    user_email: "alice@test.com",
-                    total_points: 15,
-                    tasks_completed: 5,
-                    tasks_assigned: 6,
-                    streak: 3,
-                },
-                {
-                    id: "2",
-                    user_email: "bob@test.com",
-                    total_points: 12,
-                    tasks_completed: 4,
-                    tasks_assigned: 5,
-                    streak: 2,
-                },
-            ]);
-            return;
-        }
-
         setStatsLoading(true);
         try {
             // 加载项目统计
@@ -216,12 +79,12 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         if (projId) {
             loadProjectStats();
         }
-    }, [projId, isMockMode]);
+    }, [projId]);
 
     const [projData, projLoading, projError] = useDocument(
-        isMockMode ? null : doc(db, "projects", projId),
+        doc(db, "projects", projId),
     );
-    const proj = isMockMode ? mockProject : (projData?.data() as Project);
+    const proj = projData?.data() as Project;
     const [projTitle, setProjTitle] = useState(proj?.title || "");
 
     useEffect(() => {
@@ -231,16 +94,13 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     }, [proj]);
 
     const [stagesData, stagesLoading, stagesError] = useCollection(
-        isMockMode ? null : collection(db, "projects", projId, "stages"),
+        collection(db, "projects", projId, "stages"),
     );
     const [teamCharterData, loading, error] = useDocument(
-        isMockMode ? null : doc(db, "projects", projId),
+        doc(db, "projects", projId),
     );
 
     const stages: Stage[] = useMemo(() => {
-        if (isMockMode) {
-            return mockStages;
-        }
         return (
             stagesData?.docs
                 .map((doc) => ({
@@ -248,7 +108,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                 }))
                 .sort((a, b) => a.order - b.order) || []
         );
-    }, [stagesData, isMockMode, mockStages]);
+    }, [stagesData]);
 
     // Update reorderedStages when stages change
     useEffect(() => {
@@ -267,18 +127,14 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                 i > 0 && newStageStatus[i - 1] !== 2
                     ? 0
                     : stage.tasksCompleted == stage.totalTasks
-                      ? 2
-                      : 1;
+                    ? 2
+                    : 1;
         });
         dispatch(updateStatus(newStageStatus.map((status) => status === 0)));
         setStageStatus(newStageStatus);
     }, [stages]);
 
-    if (isMockMode) {
-        if (!mockProject) {
-            return <Skeleton className="w-full h-96" />;
-        }
-    } else {
+    
         if (stagesLoading || projLoading) {
             return <Skeleton className="w-full h-96" />;
         }
@@ -288,13 +144,9 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         if (projError) {
             return <div>Error: {projError.message}</div>;
         }
-    }
+    
 
     const handleOpenEditing = () => {
-        if (isMockMode) {
-            setResponses(mockProject?.teamCharterResponse || []);
-            return;
-        }
         if (!teamCharterData || loading || error) return;
         // fetch the latest team charter data
         const res =
@@ -305,20 +157,9 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const handleTeamCharterSave = () =>
         startTransition(async () => {
             try {
-                if (isMockMode) {
-                    // In mock mode, just update local state
-                    if (mockProject) {
-                        setMockProject({
-                            ...mockProject,
-                            teamCharterResponse: responses,
-                        });
-                    }
-                    toast.success("Mock team charter saved successfully!");
-                } else {
-                    if (!teamCharterData || loading || error) return;
-                    await setTeamCharter(projId, responses);
-                    toast.success("Team Charter saved successfully!");
-                }
+                if (!teamCharterData || loading || error) return;
+                await setTeamCharter(projId, responses);
+                toast.success("Team Charter saved successfully!");
             } catch (e) {
                 console.log(e);
                 toast.error("Failed to save Team Charter.");
@@ -328,20 +169,6 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
 
     const handleEditSave = () => {
         try {
-            if (isMockMode) {
-                // In mock mode, just update local state
-                setMockStages([...reorderedStages]);
-                if (mockProject && projTitle !== mockProject.title) {
-                    setMockProject({
-                        ...mockProject,
-                        title: projTitle,
-                    });
-                }
-                toast.success("Mock project roadmap updated successfully!");
-                setIsEditing(false);
-                return;
-            }
-
             const stageUpdates: Stage[] = [];
             reorderedStages.forEach((stage, index) => {
                 const originalStage = stages.find((s) => s.id === stage.id);
@@ -617,22 +444,13 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                         </p>
                                     </div>
                                     <div className="flex justify-center gap-4">
-                                        {!isMockMode ? (
                                             <GenerateTasksButton
                                                 orgId={id}
                                                 projId={projId}
                                                 teamCharterResponses={
-                                                    isMockMode
-                                                        ? mockProject?.teamCharterResponse || []
-                                                        : teamCharterData?.data()?.teamCharterResponse || []
+                                                    teamCharterData?.data()?.teamCharterResponse || []
                                                 }
                                             />
-                                        ) : (
-                                            <Button disabled>
-                                                Mock Mode: Task generation
-                                                disabled
-                                            </Button>
-                                        )}
                                         <AlertDialog
                                             open={isOpen}
                                             onOpenChange={setIsOpen}
@@ -1081,7 +899,6 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                 <OrganizationScoreCard
                                     orgId={id}
                                     members={projectMembers}
-                                    mockData={isMockMode}
                                     projectFilter={projId}
                                 />
                             </CardContent>

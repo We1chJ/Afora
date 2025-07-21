@@ -3,6 +3,7 @@
 // because openai blocks openai api key if used on client side to prevent leaking
 const apiRequest = require("./apiRequest");
 
+
 const responseFormat = {
     type: "json_schema",
     json_schema: {
@@ -140,9 +141,9 @@ const sanitizeAndParseJSON = (jsonString) => {
 };
 
 export const generateTask = async (
-    questions,
+    projQuestions,
     userResponses,
-    charterQuestions,
+    teamCharterQuestions,
     teamCharterResponses,
 ) => {
     try {
@@ -299,6 +300,10 @@ Remember: Each stage should have AT LEAST 5-6 detailed tasks, and complex featur
 Output your response in the following JSON schema format.`;
 
         const input = `
+
+Team Charter Questions:
+${teamCharterQuestions.join("\n")}
+
 Project Information:
 ${JSON.stringify(projectInfo, null, 2)}
 
@@ -311,11 +316,14 @@ ${JSON.stringify(timelineInfo, null, 2)}
 Additional Information:
 ${JSON.stringify(additionalInfo, null, 2)}
 
-Team Survey Responses:
+Member Survey Questions:
+${projQuestions.join("\n")}
+
+Member Survey Responses:
 ${userResponses.join("\n")}
 `;
 
-        const result = await apiRequest({ context, responseFormat, input });
+        const result = await apiRequest({ context, responseFormat, input, functionName: "generateTask" });
         
         // Sanitize and parse the response
         const sanitizedData = sanitizeAndParseJSON(result);

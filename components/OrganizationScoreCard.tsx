@@ -8,9 +8,7 @@ import { Loader2, Users, TrendingUp, AlertCircle, CheckCircle } from "lucide-rea
 import { analyzeTeamCompatibility } from "@/ai_scripts/analyzeTeamCompatibility";
 import { appQuestions, TeamCompatibilityAnalysis } from "@/types/types";
 import { getOrganizationMembersResponses } from "@/actions/actions";
-import { getMockOrganizationMembersResponses } from "@/actions/mockActions";
 import { toast } from "sonner";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import TeamScoreChart from "./TeamScoreChart";
 import { OrganizationScoreCardProps } from "@/types/types";
 
@@ -27,7 +25,7 @@ const OrganizationScoreCard = ({
     const handleAnalyzeTeam = async () => {
         startTransition(() => {
             (async () => {
-                try {                    // Get user survey responses (use mock data if mockData is true)
+                try {
                     const membersData = await getOrganizationMembersResponses(orgId);
 
                     if (
@@ -37,7 +35,6 @@ const OrganizationScoreCard = ({
                     ) {
                         toast.error("No team member survey responses found");
 
-                        // If no data, use generated mock responses
                         const memberResponses: string[] = [];
                         const result = await analyzeTeamCompatibility(
                             appQuestions,
@@ -49,13 +46,12 @@ const OrganizationScoreCard = ({
                         return;
                     }
 
-                    // Format member response data
                     const memberResponses = membersData.data.map(
                         (member: any) => {
                             return `User: ${member.email}
-Question 1 Answer: ${member.responses[0] || "No answer"}
-Question 2 Answer: ${member.responses[1] || "No answer"}
-Question 3 Answer: ${member.responses[2] || "No answer"}`;
+                                    Question 1 Answer: ${member.responses[0] || "No answer"}
+                                    Question 2 Answer: ${member.responses[1] || "No answer"}
+                                    Question 3 Answer: ${member.responses[2] || "No answer"}`;
                         },
                     );
 
@@ -73,7 +69,6 @@ Question 3 Answer: ${member.responses[2] || "No answer"}`;
                     console.error("Analysis failed:", error);
                     const errorMessage = "Analysis failed";
                     toast.error(errorMessage);
-                    // Fallback to mock data on error
                     setAnalysis(null);
                 }
             })();

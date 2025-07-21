@@ -333,7 +333,7 @@ Please conduct a comprehensive compatibility analysis for this team, paying spec
 5. Team dynamics and collaboration potential`;
 
     try {
-        const result = await apiRequest({ context, responseFormat, input });
+        const result = await apiRequest({ context, responseFormat, input, functionName: "analyzeTeamCompatibility" });
         // 确保返回的是有效的 JSON
         if (typeof result === 'string') {
             return result;

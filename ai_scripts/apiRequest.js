@@ -1,13 +1,12 @@
 const dotenv = require("dotenv");
-const OpenAI = require("openai");
-// Load environment variables from .env.local
 dotenv.config();
+const OpenAI = require("openai");
 
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY, // Get the API key from the environment
+    apiKey: process.env.OPENAI_API_KEY,
 });
 
-const apiRequest = async ({ context, responseFormat, input }) => {
+const apiRequest = async ({ context, responseFormat, input, functionName }) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s
 
@@ -23,15 +22,15 @@ const apiRequest = async ({ context, responseFormat, input }) => {
                     {
                         type: "function",
                         function: {
-                            name: "analyzeTeam",
-                            description: "Analyze team compatibility",
+                            name: functionName,
+                            description: `Function for ${functionName}`,
                             parameters: responseFormat.schema,
                         },
                     },
                 ],
                 tool_choice: {
                     type: "function",
-                    function: { name: "analyzeTeam" },
+                    function: { name: functionName },
                 },
                 n: 1,
                 temperature: 0.5,
@@ -50,18 +49,13 @@ const apiRequest = async ({ context, responseFormat, input }) => {
 
         const functionCall = response.choices[0].message.tool_calls?.[0];
         const raw = functionCall?.function?.arguments;
-
-        if (!raw) {
+        const rawStr = typeof raw === "string" ? raw : JSON.stringify(raw);
+        
+        if (!rawStr) {
             throw new Error("No arguments returned from function call.");
         }
-
-        try {
-            return JSON.parse(raw);
-        } catch (parseError) {
-            console.error("❌ JSON parse error:", parseError);
-            console.error("📦 Returned raw string:", raw);
-            throw new Error("Invalid JSON returned by OpenAI function call.");
-        }
+        
+        return rawStr;
     } catch (error) {
         clearTimeout(timeoutId);
 

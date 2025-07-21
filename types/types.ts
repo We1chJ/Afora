@@ -152,6 +152,7 @@ export const projHeader = [
     "Extreme Preferences",
     "Time Availability",
 ];
+
 export const projQuestions = [
     "What are your top three technical or professional skills? Which tools, frameworks, or technologies are you proficient in?",
     "What is your preferred method of communication for this project? (e.g., Slack, Email, Video calls) How often do you prefer to receive updates or engage with teammates? (e.g., daily, weekly)",
@@ -160,24 +161,19 @@ export const projQuestions = [
     "What days and times are you available to work on this project? (Please share a preferred weekly schedule or select available times like in When2Meet)",
 ];
 
-//TODO: make this customizable
 export const teamCharterQuestions = [
-    // 1. Project Basic Information
     "Project Purpose (Describe the main goals and intentions of the project)",
     "Key Project Stakeholders (List all key stakeholders and their roles)",
     "Product Objectives (List specific functional goals and expected outcomes)",
-    
-    // 2. Team Information
+
     "Team Structure and Roles (Describe team members, their expertise and responsibilities)",
     "Team Communication Preferences (Communication methods and frequency)",
     "Team Working Style (e.g., Agile, Waterfall, or hybrid approach)",
     
-    // 3. Timeline Planning
     "Project Timeline (Expected project duration, e.g., 2 months/12 weeks)",
     "Major Milestones (List key project milestones)",
     "Team Availability (Weekly time commitment per team member)",
     
-    // 4. Additional Key Information
     "Success Criteria (Metrics to measure project success)",
     "Potential Risks and Challenges (Identify possible risks and challenges)",
     "Resource Requirements (Required technologies, tools, and resources)"

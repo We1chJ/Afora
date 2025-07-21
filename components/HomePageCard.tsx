@@ -13,8 +13,18 @@ interface HomePageCardProps {
 
 function HomePageCard({ org }: HomePageCardProps) {
     const [showAccessCode, setShowAccessCode] = useState(false);
+    const [data, loading] = useDocumentData(
+        org?.orgId ? doc(db, "organizations", org.orgId) : null,
+        {
+            snapshotListenOptions: { includeMetadataChanges: true }
+        }
+    );
 
-    if (!org || !org.orgId) {
+    if (!org?.orgId || (!loading && !data)) {
+        return null;
+    }
+
+    if (loading) {
         return (
             <div className="flex flex-col h-96 shadow-lg rounded-2xl overflow-hidden bg-white dark:bg-gray-800 w-96 animate-pulse">
                 <div className="h-32 bg-gray-200 dark:bg-gray-700" />
@@ -25,12 +35,11 @@ function HomePageCard({ org }: HomePageCardProps) {
         );
     }
 
-    const [data] = useDocumentData(doc(db, "organizations", org.orgId));
     const basePath = `/org/${org.orgId}`;
     
     return (
         <Link href={basePath} className="block w-96 group">
-            <div className="flex flex-col h-96 rounded-2xl overflow-hidden bg-white dark:bg-gray-800 shadow-md ">
+            <div className="flex flex-col h-96 rounded-2xl overflow-hidden bg-white dark:bg-gray-800 shadow-md">
                 {/* 标题区域 */}
                 <div className="relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500" />

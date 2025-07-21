@@ -50,9 +50,9 @@ function MySidebar() {
         () =>
             orgIds.length > 0 && orgIds.filter(Boolean).length > 0
                 ? query(
-                      collection(db, "organizations"),
-                      where("__name__", "in", orgIds.filter(Boolean)),
-                  )
+                        collection(db, "organizations"),
+                        where("__name__", "in", orgIds.filter(Boolean)),
+                    )
                 : null,
         [orgIds],
     );
@@ -91,27 +91,6 @@ function MySidebar() {
                             <SidebarGroupLabel>Organizations</SidebarGroupLabel>
                             <SidebarGroupContent>
                                 <SidebarMenu>
-                                    {/* Test Organization */}
-                                    <SidebarMenuItem>
-                                        <SidebarMenuButton asChild>
-                                            <Link
-                                                className="group-data-[collapsible=icon]:hidden"
-                                                href={`/org/mock-org-123`}
-                                            >
-                                                <span className="truncate border-e-indigo-50 font-bold">
-                                                    Mock Organization
-                                                </span>
-                                            </Link>
-                                        </SidebarMenuButton>
-                                        <SidebarMenuButton asChild className="hidden group-data-[collapsible=icon]:flex">
-                                            <Link href={`/org/mock-org-123`}>
-                                                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-purple-100 text-purple-700 font-semibold">
-                                                    M
-                                                </div>
-                                            </Link>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
-
                                     {/* Loading state */}
                                     {loading && (
                                         <SidebarMenuItem>

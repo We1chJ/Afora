@@ -34,13 +34,29 @@ function SignedInLanding() {
 
     useEffect(() => {
         if (!orgsData) return;
-        const orgsList = orgsData.docs.map((doc) => {
-            const data = doc.data();
-            if (!data.orgId) {
-                data.orgId = doc.id;
-            }
-            return data;
-        }) as UserOrgData[];
+        console.log('Raw orgs data:', orgsData.docs.map(doc => ({ id: doc.id, data: doc.data() })));
+        
+        const orgsList = orgsData.docs
+            .map((doc) => {
+                const data = doc.data();
+                if (!data.orgId) {
+                    console.warn('Found org document without orgId:', doc.id);
+                    return null;
+                }
+                return {
+                    ...data,
+                    orgId: data.orgId || doc.id
+                };
+            })
+            .filter((org): org is UserOrgData => {
+                if (!org) {
+                    return false;
+                }
+                console.log('Processing org:', org);
+                return true;
+            });
+        
+        console.log('Filtered orgs list:', orgsList);
         setOrgs(orgsList);
     }, [orgsData]);
 
@@ -144,11 +160,11 @@ function SignedInLanding() {
                 {orgs.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {orgs
-                            .filter((org) => org && org.orgId)
-                            .map((org, index) => (
-                                <div key={org.orgId}>
+                            .filter((org) => org && org.orgId && typeof org.orgId === 'string')
+                            .map((org) => (
+                                <React.Fragment key={org.orgId}>
                                     <HomePageCard org={org} />
-                                </div>
+                                </React.Fragment>
                             ))}
                     </div>
                 ) : (

@@ -443,152 +443,62 @@ const ProjTab = ({
 
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-4">
-                    {selectedView === "overview" ? (
-                        <div className="space-y-4">
-                            <div className="text-sm font-medium text-gray-500">
-                                Project Overview
-                            </div>
-                            <Card className="border-0 shadow-sm">
-                                <CardContent className="p-4">
-                                    <div className="space-y-3">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-gray-600">
-                                                Total Projects
-                                            </span>
-                                            <Badge variant="secondary">
-                                                {totalProjects}
-                                            </Badge>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-gray-600">
-                                                Active Projects
-                                            </span>
-                                            <Badge variant="default">
-                                                {activeProjects}
-                                            </Badge>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-gray-600">
-                                                Role
-                                            </span>
-                                            <Badge
-                                                variant={
-                                                    userRole === "admin"
-                                                        ? "destructive"
-                                                        : "secondary"
-                                                }
-                                            >
-                                                {userRole === "admin"
-                                                    ? "Admin"
-                                                    : "Member"}
-                                            </Badge>
-                                        </div>
-                                        <Separator />
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-sm text-gray-600">
-                                                Total Members
-                                            </span>
-                                            <Badge variant="outline">
-                                                {new Set(
-                                                    allProjectsList.flatMap(
-                                                        (proj) => proj.members || []
-                                                    )
-                                                ).size}
-                                            </Badge>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                    <div className="space-y-4">
+                        <div className="text-sm font-medium text-gray-500">
+                            Project Overview
                         </div>
-                    ) : (
-                        <div className="space-y-3">
-                            <div className="text-sm font-medium text-gray-500">
-                                Project List
-                            </div>
-                            {allProjectsList.length > 0 ? (
-                                allProjectsList
-                                    .sort((a, b) =>
-                                        a.title.localeCompare(b.title),
-                                    )
-                                    .map((proj) => (
-                                        <div
-                                            key={proj.projId}
-                                            className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
-                                                selectedProject === proj.projId
-                                                    ? "bg-purple-50 border-2 border-purple-200 shadow-md"
-                                                    : "bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:shadow-sm"
-                                            }`}
-                                            onClick={() =>
-                                                setSelectedProject(proj.projId)
+                        <Card className="border-0 shadow-sm">
+                            <CardContent className="p-4">
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">
+                                            Total Projects
+                                        </span>
+                                        <Badge variant="secondary">
+                                            {totalProjects}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">
+                                            Active Projects
+                                        </span>
+                                        <Badge variant="default">
+                                            {activeProjects}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">
+                                            Role
+                                        </span>
+                                        <Badge
+                                            variant={
+                                                userRole === "admin"
+                                                    ? "destructive"
+                                                    : "secondary"
                                             }
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <Folder
-                                                    className={`h-5 w-5 ${
-                                                        selectedProject ===
-                                                        proj.projId
-                                                            ? "text-purple-600"
-                                                            : "text-gray-400"
-                                                    }`}
-                                                />
-                                                <div className="flex-1 min-w-0">
-                                                    <div
-                                                        className={`font-medium truncate ${
-                                                            selectedProject ===
-                                                            proj.projId
-                                                                ? "text-purple-900"
-                                                                : "text-gray-900"
-                                                        }`}
-                                                    >
-                                                        {proj.title}
-                                                    </div>
-                                                    <div className="text-sm text-gray-500">
-                                                        {proj.members?.length ||
-                                                            0}{" "}
-                                                        members
-                                                    </div>
-                                                </div>
-                                                <div className="flex flex-col items-end gap-1">
-                                                    <Badge
-                                                        variant={
-                                                            (proj.members
-                                                                ?.length || 0) >
-                                                            0
-                                                                ? "default"
-                                                                : "secondary"
-                                                        }
-                                                    >
-                                                        {(proj.members
-                                                            ?.length || 0) > 0
-                                                            ? "Active"
-                                                            : "Empty"}
-                                                    </Badge>
-                                                    {selectedProject ===
-                                                        proj.projId && (
-                                                        <ArrowRight className="h-4 w-4 text-purple-600" />
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                            ) : (
-                                <div className="text-center py-8">
-                                    <Folder className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                                    <p className="text-gray-500 text-sm mb-3">
-                                        {userRole === "admin"
-                                            ? "No projects created yet"
-                                            : "No projects assigned to you"}
-                                    </p>
-                                    {userRole === "admin" && (
-                                        <p className="text-xs text-gray-400">
-                                            Click "New Project" below to create
-                                            your first project
-                                        </p>
-                                    )}
+                                            {userRole === "admin"
+                                                ? "Admin"
+                                                : "Member"}
+                                        </Badge>
+                                    </div>
+                                    <Separator />
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">
+                                            Total Members
+                                        </span>
+                                        <Badge variant="outline">
+                                            {new Set(
+                                                allProjectsList.flatMap(
+                                                    (proj) => proj.members || []
+                                                )
+                                            ).size}
+                                        </Badge>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
-                    )}
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
 
                 {/* Actions */}
@@ -781,63 +691,65 @@ const ProjTab = ({
 
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-6">
-                    {allProjectsList.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {allProjectsList
-                                .sort((a, b) =>
-                                    a.title.localeCompare(b.title),
-                                )
-                                .map((proj) => (
-                                    <div
-                                        key={`project-${proj.projId}`}
-                                        className="group"
-                                    >
-                                        <ProjectCard
-                                            key={`card-${proj.projId}`}
-                                            orgId={orgId}
-                                            projId={proj.projId}
-                                            projectName={proj.title}
-                                            backgroundImage={""}
-                                            tasks={[]}
-                                        />
-                                    </div>
-                                ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-12">
-                            <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-8 max-w-md mx-auto">
-                                <Folder className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                    {userRole === "admin"
-                                        ? "欢迎来到项目管理！"
-                                        : "No projects assigned"}
-                                </h3>
-                                <p className="text-gray-500 mb-4">
-                                    {userRole === "admin"
-                                        ? "开始创建您的第一个项目，体验全新的任务池管理系统"
-                                        : "Wait for admins to create projects and assign you"}
-                                </p>
-                                {userRole === "admin" && (
-                                    <div className="bg-white p-4 rounded-lg border border-purple-200 text-sm text-gray-600">
-                                        <h4 className="font-medium text-purple-800 mb-2">
-                                            💡 Start ：
-                                        </h4>
-                                        <ul className="text-left space-y-1">
-                                            <li>
-                                                • Click the "New Project"
-                                                button on the left
-                                            </li>
-                                            <li>• Enter project name</li>
-                                            <li>
-                                                •
-                                                Start enjoying the new project management features!
-                                            </li>
-                                        </ul>
-                                    </div>
-                                )}
+                    <div className="space-y-6">
+                        {allProjectsList.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {allProjectsList
+                                    .sort((a, b) =>
+                                        a.title.localeCompare(b.title),
+                                    )
+                                    .map((proj) => (
+                                        <div
+                                            key={proj.projId}
+                                            className="group"
+                                        >
+                                            <ProjectCard
+                                                orgId={orgId}
+                                                projId={proj.projId}
+                                                projectName={proj.title}
+                                                backgroundImage={""}
+                                                tasks={proj.tasks}
+                                                members={proj.members}
+                                            />
+                                        </div>
+                                    ))}
                             </div>
-                        </div>
-                    )}
+                        ) : (
+                            <div className="text-center py-12">
+                                <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-8 max-w-md mx-auto">
+                                    <Folder className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                        {userRole === "admin"
+                                            ? "欢迎来到项目管理！"
+                                            : "No projects assigned"}
+                                    </h3>
+                                    <p className="text-gray-500 mb-4">
+                                        {userRole === "admin"
+                                            ? "开始创建您的第一个项目，体验全新的任务池管理系统"
+                                            : "Wait for admins to create projects and assign you"}
+                                    </p>
+                                    {userRole === "admin" && (
+                                        <div className="bg-white p-4 rounded-lg border border-purple-200 text-sm text-gray-600">
+                                            <h4 className="font-medium text-purple-800 mb-2">
+                                                💡 快速开始：
+                                            </h4>
+                                            <ul className="text-left space-y-1">
+                                                <li>
+                                                    • 点击左侧 "New Project"
+                                                    按钮
+                                                </li>
+                                                <li>• 输入项目名称</li>
+                                                <li>
+                                                    •
+                                                    开始享受新的项目管理功能！
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

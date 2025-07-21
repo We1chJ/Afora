@@ -129,8 +129,7 @@ function TaskPage() {
             document.getElementById("hard_deadline") as HTMLInputElement
         ).value;
         const points = parseInt(
-            (document.getElementById("points") as HTMLInputElement)?.value ||
-                "1",
+            (document.getElementById("points") as HTMLInputElement)?.value || "10",
         );
 
         const validateDate = (date: string) => {
@@ -319,7 +318,7 @@ function TaskPage() {
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                         <CardTitle className="text-3xl font-bold mb-3">
-                                            {task?.title || "Task Title"}
+                                            {task?.title || "Task Title"} (⭐{task.points || 10})
                                         </CardTitle>
                                         <p className="text-white/90 text-lg mb-4 leading-relaxed">
                                             {task?.description ||
@@ -363,7 +362,7 @@ function TaskPage() {
                                                 <span className="font-medium">
                                                     Points:
                                                 </span>
-                                                <span>{task?.points || 1}</span>
+                                                <span>{task?.points || 10}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -492,10 +491,9 @@ function TaskPage() {
                                                             id="points"
                                                             name="points"
                                                             min="1"
-                                                            max="10"
+                                                            max="20"
                                                             defaultValue={
-                                                                task?.points ||
-                                                                1
+                                                                task?.points || 10
                                                             }
                                                             className="w-full"
                                                         />

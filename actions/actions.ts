@@ -884,7 +884,7 @@ export async function createTask(
             isCompleted: false,
             // 新增任务池相关字段
             status: "available",
-            points: 1,
+            points: 10,
             completion_percentage: 0,
             can_be_reassigned: true,
             soft_deadline: "",
@@ -1221,7 +1221,7 @@ export async function assignTask(
             assignee: assigneeEmail,
             status: "assigned",
             assigned_at: Timestamp.now(),
-            points: taskData?.points || 1,
+            points: taskData?.points || 10,
             completion_percentage: 0,
             can_be_reassigned: true,
         });
@@ -1345,7 +1345,7 @@ export async function completeTaskWithProgress(
             }
 
             // 更新用户积分
-            pointsEarned = taskData?.points || 1;
+            pointsEarned = taskData?.points || 10;
             await updateUserScore(userEmail, projId, pointsEarned, true);
             await updateUserTaskStats(userEmail, projId, "completed");
         }
@@ -2401,7 +2401,7 @@ export async function migrateTasksToTaskPool() {
                             status: taskData.isCompleted
                                 ? "completed"
                                 : "available",
-                            points: 1,
+                            points: 10,
                             completion_percentage: taskData.isCompleted
                                 ? 100
                                 : 0,

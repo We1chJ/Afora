@@ -379,13 +379,11 @@ const ProjTab = ({
                                                 Total Members
                                             </span>
                                             <Badge variant="outline">
-                                                {allProjectsList.reduce(
-                                                    (total, proj) =>
-                                                        total +
-                                                        (proj.members?.length ||
-                                                            0),
-                                                    0,
-                                                )}
+                                                {new Set(
+                                                    allProjectsList.flatMap(
+                                                        (proj) => proj.members || []
+                                                    )
+                                                ).size}
                                             </Badge>
                                         </div>
                                     </div>

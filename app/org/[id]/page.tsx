@@ -6,8 +6,9 @@ import { useRouter, useParams } from "next/navigation";
 import React from "react";
 import { useEffect } from "react";
 
-function OrgPage({ params }) {
-    const { id } = React.use(params);
+function OrgPage() {
+    const params = useParams();
+    const { id } = params;
     
     const { isSignedIn, isLoaded } = useAuth(); // Get authentication state
     const router = useRouter();
@@ -20,7 +21,7 @@ function OrgPage({ params }) {
 
     return (
         <div className="flex flex-col h-full">
-            {isSignedIn && <OrganizationPage id={id} />}
+            {isSignedIn && <OrganizationPage id={id as string} />}
         </div>
     );
 }

@@ -2777,3 +2777,92 @@ export async function reassignTask(
         return { success: false, message: (error as Error).message };
     }
 }
+
+// 删除项目
+export async function deleteProject(projId: string) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        // 获取项目信息
+        const projectRef = adminDb.collection("projects").doc(projId);
+        const projectDoc = await projectRef.get();
+
+        if (!projectDoc.exists) {
+            throw new Error("Project not found");
+        }
+
+        const projectData = projectDoc.data();
+        const orgId = projectData?.orgId;
+        const members = projectData?.members || [];
+        const admins = projectData?.admins || [];
+
+        // 创建批量操作
+        const batch = adminDb.batch();
+
+        // 1目主文档
+        batch.delete(projectRef);
+
+        // 2. 删除项目下的所有 stages 和 tasks
+        const stagesQuery = await adminDb
+            .collection("projects")
+            .doc(projId)
+            .collection("stages")
+            .get();
+
+        stagesQuery.docs.forEach((stageDoc) => {
+            // 删除 stage 下的所有 tasks
+            const tasksQuery = stageDoc.ref.collection("tasks").get();
+            tasksQuery.then((tasksSnapshot) => {
+                tasksSnapshot.docs.forEach((taskDoc) => {
+                    batch.delete(taskDoc.ref);
+                });
+            });
+            // 删除 stage
+            batch.delete(stageDoc.ref);
+        });
+
+        // 3. 从组织的项目列表中删除
+        const orgProjectsQuery = await adminDb
+            .collection("organizations")
+            .doc(orgId)
+            .collection("projs")
+            .where("projId", "==", projId)
+            .get();
+
+        orgProjectsQuery.docs.forEach((doc) => {
+            batch.delete(doc.ref);
+        });
+
+        // 4. 从所有成员的用户项目中删除引用
+        const allMembers = [...members, ...admins];
+        for (const memberEmail of allMembers) {
+            try {
+                const userProjectRef = adminDb
+                    .collection("users")
+                    .doc(memberEmail)
+                    .collection("projs")
+                    .doc(projId);
+                batch.delete(userProjectRef);
+            } catch (error) {
+                console.error(
+                    `Failed to remove project reference for user ${memberEmail}:`,
+                    error,
+                );
+            }
+        }
+
+        // 执行批量删除
+        await batch.commit();
+
+        return {
+            success: true,
+            message: "Project deleted successfully",
+        };
+    } catch (error) {
+        console.error("Error deleting project:", error);
+        return { success: false, message: (error as Error).message };
+    }
+}

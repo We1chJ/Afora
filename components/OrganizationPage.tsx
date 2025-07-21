@@ -14,96 +14,34 @@ import { Copy, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import ImageSearchDialog from "./ImageSearchDialog";
 import OrganizationScoreCard from "./OrganizationScoreCard";
+import OrgHeader from "./OrgHeader";
 
 const OrganizationPage = ({ id }: { id: string }) => {
     const { user } = useUser();
-    const [isMockMode, setIsMockMode] = useState(false);
-    const [mockOrgData, setMockOrgData] = useState<Organization | null>(null);
-    const [mockUserOrgData, setMockUserOrgData] = useState<UserOrgData | null>(
-        null,
-    );
     const [showAccessCode, setShowAccessCode] = useState(false);
 
     const userId = user?.id || "nonemptyString";
-    // Check if this is the mock organization
-    useEffect(() => {
-        if (id === "mock-org-123") {
-            setIsMockMode(true);
-            // Create mock organization data
-            setMockOrgData({
-                title: "Test Organization",
-                description:
-                    "This is a mock organization for testing group score functionality",
-                admins: ["admin@test.com"],
-                members: [
-                    "alice@test.com",
-                    "bob@test.com",
-                    "charlie@test.com",
-                    "david@test.com",
-                ],
-                backgroundImage: "/logoFull.svg",
-            });
-            // Create mock user org data
-            setMockUserOrgData({
-                createdAt: new Date().toISOString(),
-                role: "admin",
-                orgId: "mock-org-123",
-                userId: user?.id || "user_DUMMY_ID",
-            });
-        }
-    }, [id, user]);
 
     const [org, loading, error] = useDocument(
-        isMockMode ? null : doc(db, "organizations", id),
+        doc(db, "organizations", id),
     );
     const [projectsData, projLoading, projError] = useCollection(
-        isMockMode
-            ? null
-            : query(collection(db, "projects"), where("orgId", "==", id)),
+        query(collection(db, "projects"), where("orgId", "==", id)),
     );
     const userEmail = user?.primaryEmailAddress?.emailAddress;
     const [data] = useDocument(
-        userEmail && !isMockMode
-            ? doc(db, "users", userEmail, "orgs", id)
-            : null,
+        userEmail ? doc(db, "users", userEmail, "orgs", id) : null,
     );
 
     const [userOrgData, setUserOrgData] = useState<UserOrgData>();
 
-    // Mock projects data
-    const mockProjectsData = {
-        docs: [
-            {
-                id: "proj-1",
-                data: () => ({
-                    projId: "proj-1",
-                    title: "Frontend Development Project",
-                    members: ["alice@test.com", "bob@test.com"],
-                    orgId: "mock-org-123",
-                }),
-            },
-            {
-                id: "proj-2",
-                data: () => ({
-                    projId: "proj-2",
-                    title: "Backend Architecture Project",
-                    members: ["charlie@test.com", "david@test.com"],
-                    orgId: "mock-org-123",
-                }),
-            },
-        ],
-    };
-
     // Handle userOrgData - moved before early returns
     useEffect(() => {
-        if (isMockMode) {
-            setUserOrgData(mockUserOrgData || undefined);
-        } else if (data) {
+        if (data) {
             const userOrg = data.data() as UserOrgData;
             console.log("OrganizationPage - User org data loaded:", userOrg);
             setUserOrgData(userOrg);
         } else if (!loading && userEmail && org) {
-            // 如果没有用户组织数据但用户是admin，创建默认数据
             const orgData = org.data() as Organization;
             const isAdmin = orgData?.admins?.includes(userEmail);
             const isMember = orgData?.members?.includes(userEmail);
@@ -122,17 +60,12 @@ const OrganizationPage = ({ id }: { id: string }) => {
                 setUserOrgData(defaultUserOrgData);
             }
         }
-    }, [data, isMockMode, mockUserOrgData, loading, userEmail, org, id]);
+    }, [data, loading, userEmail, org, id]);
 
     // Get orgData before any early returns
-    const orgData = isMockMode ? mockOrgData : (org?.data() as Organization);
+    const orgData = org?.data() as Organization;
 
     // Early returns after all hooks
-    if (isMockMode) {
-        if (!mockOrgData) {
-            return <div>Loading mock data...</div>;
-        }
-    } else {
         if (loading) {
             return <div>Loading...</div>;
         }
@@ -144,7 +77,6 @@ const OrganizationPage = ({ id }: { id: string }) => {
         if (!org) {
             return <div>No organization found</div>;
         }
-    }
 
     if (!orgData) {
         return <div>No organization found</div>;
@@ -152,93 +84,9 @@ const OrganizationPage = ({ id }: { id: string }) => {
 
     return (
         <div className="overflow-x-hidden p-4">
-            {/* Hero Section with Background Image */}
-            <div className="relative w-full h-80 rounded-lg overflow-hidden">
-                {/* Background Image */}
-                <div
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={{
-                        backgroundImage: `url(${orgData.backgroundImage})`,
-                    }}
-                />
-
-                {/* Content Container */}
-                <div className="relative h-full flex flex-col justify-between p-6">
-                    {/* Top Section */}
-                    <div className="flex justify-between items-start">
-                        {/* Project Onboarding */}
-                        {user &&
-                            orgData &&
-                            orgData.admins &&
-                            !orgData.admins.includes(userId) &&
-                            !isMockMode && (
-                                <div className="backdrop-blur-md bg-white/90 rounded-xl p-3 shadow-lg">
-                                    <ProjOnboarding orgId={id} />
-                                </div>
-                            )}
-
-                        {/* Image Search Dialog */}
-                        <div className="ml-auto">
-                            {!isMockMode && (
-                                <div className="backdrop-blur-md bg-white/90 rounded-xl p-2 shadow-lg">
-                                    <ImageSearchDialog orgId={id} />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Bottom Section */}
-                    <div className="flex justify-between items-end">
-                        {/* Organization Title */}
-                        <div className="flex-1">
-                            <div className="backdrop-blur-md bg-white/75 rounded-xl p-4 inline-block">
-                                <h1 className="text-5xl font-bold text-gray-900 mb-2">
-                                    {orgData && orgData.title}
-                                </h1>
-                                {orgData && orgData.description && (
-                                    <p className="text-gray-700 text-lg max-w-2xl">
-                                        {orgData.description}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Access Code Card */}
-                        {userOrgData && userOrgData.role === "admin" && (
-                            <div className="backdrop-blur-md bg-white/75 rounded-xl p-4 min-w-[220px]">
-                                <div className="text-sm font-medium text-gray-600 mb-1">
-                                    Access Code
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <code className="text-lg font-mono font-bold text-gray-900 bg-gray-100 px-2 py-1 rounded select-all">
-                                        {showAccessCode ? userOrgData.orgId : "••••••••••••••••••••"}
-                                    </code>
-                                    <button
-                                        type="button"
-                                        className="focus:outline-none"
-                                        onClick={() => setShowAccessCode((v) => !v)}
-                                        title={showAccessCode ? "隐藏" : "显示"}
-                                    >
-                                        {showAccessCode ? (
-                                            <EyeOff className="w-5 h-5 text-gray-600 hover:text-gray-900 transition-colors" />
-                                        ) : (
-                                            <Eye className="w-5 h-5 text-gray-600 hover:text-gray-900 transition-colors" />
-                                        )}
-                                    </button>
-                                    <Copy
-                                        className="w-5 h-5 cursor-pointer text-gray-600 hover:text-gray-900 transition-colors"
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(userOrgData.orgId);
-                                            toast.success("Access code copied to clipboard!");
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-
+            {/* Header Section */}
+            <OrgHeader id={id} />
+            
             {/* Tabs Section */}
             <Tabs defaultValue="projects" className="mt-6 w-full">
                 <TabsList className="grid w-full grid-cols-2 bg-gray-100 rounded-xl p-1">
@@ -262,13 +110,10 @@ const OrganizationPage = ({ id }: { id: string }) => {
                             userId={user.primaryEmailAddress.toString()}
                             orgId={id}
                             projectsData={
-                                isMockMode
-                                    ? (mockProjectsData as any)
-                                    : projectsData
+                                projectsData
                             }
-                            loading={isMockMode ? false : projLoading}
-                            error={isMockMode ? undefined : projError}
-                            isMockMode={isMockMode}
+                            loading={projLoading}
+                            error={projError}
                         />
                     )}
                 </TabsContent>
@@ -280,9 +125,8 @@ const OrganizationPage = ({ id }: { id: string }) => {
                             members={orgData.members}
                             orgId={id}
                             projectsData={
-                                isMockMode ? mockProjectsData : projectsData
+                                projectsData
                             }
-                            isMockMode={isMockMode}
                             currentUserEmail={userEmail}
                         />
                     )}

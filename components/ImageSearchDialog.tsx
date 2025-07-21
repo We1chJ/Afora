@@ -245,52 +245,42 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
 
     // Memoize these handlers to prevent unnecessary re-renders
     const handleConfirm = useCallback(async () => {
-        if (uploadedFile && imagePreview && imagePreview.startsWith("blob:")) {
-            if (uploadedFile.size > 10 * 1024 * 1024) {
-                // 10MB limit
-                toast.error(
-                    "Image size exceeds the 10MB limit. Please choose a smaller image.",
-                );
+        if (uploadedFile) {
+            if (uploadedFile.size > 10 * 1024 * 1024) { // 10MB limit
+                toast.error("Image size exceeds the 10MB limit. Please choose a smaller image.");
                 return;
             }
             try {
+                const filename = `${Date.now()}-${uploadedFile.name}`;
                 const storageRef = ref(
                     storage,
-                    `backgroundImages/${uploadedFile.name}`,
+                    `backgroundImages/${filename}`,
                 );
-                await uploadBytes(storageRef, uploadedFile, {
-                    contentDisposition: `attachment; filename="${uploadedFile.name}"`,
-                });
+                await uploadBytes(storageRef, uploadedFile);
                 const downloadURL = await getDownloadURL(storageRef);
-                console.log(downloadURL);
                 await setBgImage(orgId, downloadURL);
-                toast.success(
-                    "Image uploaded and background image changed successfully!",
-                );
+                toast.success("Image uploaded and background image changed successfully!");
             } catch (error) {
                 if (error instanceof Error) {
                     toast.error(`Failed to upload image: ${error.message}`);
                 } else {
-                    toast.error(
-                        "Failed to upload image due to an unknown error.",
-                    );
+                    toast.error("Failed to upload image due to an unknown error.");
                 }
                 console.error("Upload error:", error);
             }
-        } else {
+        } else if (imagePreview) {
             try {
-                await setBgImage(orgId, imagePreview!);
+                await setBgImage(orgId, imagePreview);
                 toast.success("Background image changed successfully!");
             } catch (error) {
-                console.error("Error uploading image:", error);
-                toast.error("Failed to upload the image. Please try again.");
+                console.error("Error setting background image:", error);
+                toast.error("Failed to set the background image. Please try again.");
             }
         }
-        // console.log("Uploading file:", uploadedFile)
         setUploadedFile(null);
         setImagePreview(null);
         setIsOpen(false);
-    }, [uploadedFile]);
+    }, [uploadedFile, imagePreview, orgId]);
 
     const handleCancel = useCallback(() => {
         setUploadedFile(null);
@@ -319,7 +309,7 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
     return (
         <>
             <button
-                className="absolute bottom-4 right-4 bg-white bg-opacity-50 p-2 rounded-lg shadow-md flex items-center justify-center overflow-hidden transition-all duration-300 ease-in-out hover:w-36 w-10 text-black hover:bg-gray-100 group"
+                className="bg-white bg-opacity-50 p-2 rounded-md flex items-center justify-center overflow-hidden transition-all duration-300 ease-in-out hover:w-36 w-10 group"
                 onClick={() => setIsOpen(true)}
             >
                 <div className="flex items-center w-full">

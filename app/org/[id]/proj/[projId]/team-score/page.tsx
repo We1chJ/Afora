@@ -110,7 +110,6 @@ function TeamScorePage() {
             <OrganizationScoreCard
                 orgId={id}
                 members={projectMembers}
-                mockData={isMockMode}
                 projectFilter={projId}
             />
         </div>

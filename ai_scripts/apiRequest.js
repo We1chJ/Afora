@@ -24,7 +24,7 @@ const apiRequest = async ({ context, responseFormat, input, functionName }) => {
                         function: {
                             name: functionName,
                             description: `Function for ${functionName}`,
-                            parameters: responseFormat.schema,
+                            parameters: responseFormat.json_schema.schema,
                         },
                     },
                 ],
@@ -34,7 +34,7 @@ const apiRequest = async ({ context, responseFormat, input, functionName }) => {
                 },
                 n: 1,
                 temperature: 0.5,
-                max_tokens: 1000,
+                max_tokens: 2000,
                 top_p: 1,
                 frequency_penalty: 0,
                 presence_penalty: 0,

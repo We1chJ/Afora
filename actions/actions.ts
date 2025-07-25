@@ -1536,7 +1536,7 @@ export async function getOverdueTasks(projId: string) {
 
         return {
             success: true,
-            tasks: overdueTasks,
+            tasks: JSON.parse(JSON.stringify(overdueTasks)),
             message: "Overdue tasks retrieved successfully",
         };
     } catch (error) {
@@ -1583,7 +1583,7 @@ export async function getAvailableTasks(projId: string) {
 
         return {
             success: true,
-            tasks: availableTasks,
+            tasks: JSON.parse(JSON.stringify(availableTasks)),
             message: "Available tasks retrieved successfully",
         };
     } catch (error) {

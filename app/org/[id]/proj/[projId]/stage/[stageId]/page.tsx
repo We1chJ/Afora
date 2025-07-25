@@ -62,8 +62,6 @@ function StagePage() {
     const { isSignedIn, isLoaded } = useAuth();
     const { user } = useUser();
     const router = useRouter();
-    const [isMockMode, setIsMockMode] = useState(false);
-    const [mockTasks, setMockTasks] = useState<Task[]>([]);
     const [swapTaskDialogOpen, setSwapTaskDialogOpen] = useState(false);
     const [currentTaskId, setCurrentTaskId] = useState<string>("");
     const [swapAssigneeEmail, setSwapAssigneeEmail] = useState("");
@@ -74,124 +72,8 @@ function StagePage() {
         }
     }, [isLoaded, isSignedIn, router]);
 
-    // Check if mock mode
-    useEffect(() => {
-        if (id === "mock-org-123") {
-            setIsMockMode(true);
-            // Create mock tasks with task pool features
-            const mockTasksData: Task[] = [
-                {
-                    id: "task-1",
-                    title: "Design Database Schema",
-                    description:
-                        "Create a comprehensive database schema for the project",
-                    soft_deadline: new Date(
-                        Date.now() + 2 * 24 * 60 * 60 * 1000,
-                    ).toISOString(), // 2 days from now
-                    hard_deadline: new Date(
-                        Date.now() + 7 * 24 * 60 * 60 * 1000,
-                    ).toISOString(), // 7 days from now
-                    assignee: "alice@test.com",
-                    order: 0,
-                    isCompleted: true,
-                    completionPercentage: 100,
-                    points: 1,
-                    status: "completed",
-                    assignedAt: new Date(
-                        Date.now() - 5 * 24 * 60 * 60 * 1000,
-                    ).toISOString(),
-                    completedAt: new Date(
-                        Date.now() - 1 * 24 * 60 * 60 * 1000,
-                    ).toISOString(),
-                },
-                {
-                    id: "task-2",
-                    title: "Implement User Authentication",
-                    description:
-                        "Set up secure user authentication and authorization system",
-                    soft_deadline: new Date(
-                        Date.now() + 1 * 24 * 60 * 60 * 1000,
-                    ).toISOString(), // 1 day from now
-                    hard_deadline: new Date(
-                        Date.now() + 5 * 24 * 60 * 60 * 1000,
-                    ).toISOString(), // 5 days from now
-                    assignee: "bob@test.com",
-                    order: 1,
-                    isCompleted: false,
-                    completionPercentage: 75,
-                    points: 1,
-                    status: "assigned",
-                    assignedAt: new Date(
-                        Date.now() - 2 * 24 * 60 * 60 * 1000,
-                    ).toISOString(),
-                },
-                {
-                    id: "task-3",
-                    title: "Create API Documentation",
-                    description:
-                        "Document all API endpoints with examples and schemas",
-                    soft_deadline: new Date(
-                        Date.now() + 3 * 24 * 60 * 60 * 1000,
-                    ).toISOString(), // 3 days from now
-                    hard_deadline: new Date(
-                        Date.now() + 6 * 24 * 60 * 60 * 1000,
-                    ).toISOString(), // 6 days from now
-                    assignee: "",
-                    order: 2,
-                    isCompleted: false,
-                    completionPercentage: 0,
-                    points: 1,
-                    status: "available",
-                },
-                {
-                    id: "task-4",
-                    title: "Setup CI/CD Pipeline",
-                    description:
-                        "Configure automated testing and deployment pipeline",
-                    soft_deadline: new Date(
-                        Date.now() - 1 * 24 * 60 * 60 * 1000,
-                    ).toISOString(), // 1 day ago (overdue)
-                    hard_deadline: new Date(
-                        Date.now() + 4 * 24 * 60 * 60 * 1000,
-                    ).toISOString(), // 4 days from now
-                    assignee: "charlie@test.com",
-                    order: 3,
-                    isCompleted: false,
-                    completionPercentage: 30,
-                    points: 1,
-                    status: "overdue",
-                    assignedAt: new Date(
-                        Date.now() - 3 * 24 * 60 * 60 * 1000,
-                    ).toISOString(),
-                    canBeReassigned: true,
-                },
-                {
-                    id: "task-5",
-                    title: "Write Unit Tests",
-                    description:
-                        "Create comprehensive unit tests for all components",
-                    soft_deadline: new Date(
-                        Date.now() + 4 * 24 * 60 * 60 * 1000,
-                    ).toISOString(), // 4 days from now
-                    hard_deadline: new Date(
-                        Date.now() + 8 * 24 * 60 * 60 * 1000,
-                    ).toISOString(), // 8 days from now
-                    assignee: "",
-                    order: 4,
-                    isCompleted: false,
-                    completionPercentage: 0,
-                    points: 1,
-                    status: "available",
-                },
-            ];
-            setMockTasks(mockTasksData);
-        }
-    }, [id, projId, stageId]);
-
     // 加载过期任务和可用任务
     const loadTaskPoolData = async () => {
-        if (isMockMode) return;
-
         try {
             // 获取过期任务
             const overdueResult = await getOverdueTasks(projId);
@@ -211,28 +93,21 @@ function StagePage() {
 
     // 加载任务池数据
     useEffect(() => {
-        if (!isMockMode) {
-            loadTaskPoolData();
-        }
-    }, [projId, isMockMode]);
+        loadTaskPoolData();
+    }, [projId]);
 
     const [isPending, startTransition] = useTransition();
     const [stageData, stageLoading, stageError] = useDocument(
-        isMockMode ? null : doc(db, "projects", projId, "stages", stageId),
+        doc(db, "projects", projId, "stages", stageId),
     );
     const [tasksData, tasksLoading, tasksError] = useCollection(
-        isMockMode
-            ? null
-            : collection(db, "projects", projId, "stages", stageId, "tasks"),
+        collection(db, "projects", projId, "stages", stageId, "tasks"),
     );
 
     console.log("\n\n\nTASKS DATA\n\n");
     console.log(tasksData);
 
     const tasks: Task[] = useMemo(() => {
-        if (isMockMode) {
-            return mockTasks;
-        }
         return (
             tasksData?.docs
                 .map((doc) => ({
@@ -240,7 +115,7 @@ function StagePage() {
                 }))
                 .sort((a, b) => a.order - b.order) || []
         );
-    }, [tasksData, isMockMode, mockTasks]);
+    }, [tasksData]);
 
     const [isOpen, setIsOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -257,18 +132,12 @@ function StagePage() {
         id: stageId,
         title: "Requirements Analysis & Design",
         order: 0,
-        tasksCompleted: mockTasks.filter((t) => t.isCompleted).length,
-        totalTasks: mockTasks.length,
+        tasksCompleted: tasks.filter((t) => t.isCompleted).length,
+        totalTasks: tasks.length,
     };
 
     if (!isSignedIn) return null;
 
-    if (isMockMode) {
-        // Mock mode loading simulation
-        if (mockTasks.length === 0) {
-            return <Skeleton className="w-full h-96" />;
-        }
-    } else {
         if (stageLoading || tasksLoading) {
             return <Skeleton className="w-full h-96" />;
         }
@@ -278,11 +147,10 @@ function StagePage() {
         }
 
         if (tasksError) {
-            return <div>Error: {tasksError.message}</div>;
-        }
+        return <div>Error: {tasksError.message}</div>;
     }
 
-    const stage = isMockMode ? mockStage : (stageData?.data() as Stage);
+    const stage = (stageData?.data() as Stage);
 
     if (!stage) {
         return <div>Error: The stage has been deleted.</div>;
@@ -291,21 +159,9 @@ function StagePage() {
     const tasksCompleted = tasks.filter((task) => task.isCompleted).length;
 
     // Get overdue tasks for bounty board
-    const overdueTasks = isMockMode
-        ? tasks.filter((task) => {
-              if (task.isCompleted) return false;
-              const softDeadline = new Date(task.soft_deadline);
-              const now = new Date();
-              return now > softDeadline;
-          })
-        : backendOverdueTasks.filter((task) => task.stage_id === stageId);
+    const overdueTasks = backendOverdueTasks.filter((task) => task.stage_id === stageId);
 
     const handleNewTask = () => {
-        if (isMockMode) {
-            toast.success("Task created successfully! (Mock mode)");
-            return;
-        }
-
         createTask(projId, stageId, tasks.length + 1)
             .then(() => {
                 toast.success("Task created successfully!");
@@ -317,13 +173,6 @@ function StagePage() {
 
     const handleDeleteTask = (taskId: string) => {
         startTransition(() => {
-            if (isMockMode) {
-                toast.success("Task deleted successfully! (Mock mode)");
-                setIsOpen(false);
-                setIsEditing(false);
-                return;
-            }
-
             deleteTask(projId, stageId, taskId)
                 .then(() => {
                     toast.success("Task deleted successfully!");
@@ -373,21 +222,10 @@ function StagePage() {
             return;
         }
 
-        if (isMockMode) {
-            // 更新 mock 数据
-            setMockTasks(prevTasks => 
-                prevTasks.map(task => 
-                    task.id === currentTaskId 
-                        ? { ...task, assignee: swapAssigneeEmail.trim() }
-                        : task
-                )
-            );
-            toast.success("Task swapped successfully! (Mock mode)");
-            setSwapTaskDialogOpen(false);
-            setSwapAssigneeEmail("");
-            setCurrentTaskId("");
-            return;
-        }
+        toast.success("Task swapped successfully! (Mock mode)");
+        setSwapTaskDialogOpen(false);
+        setSwapAssigneeEmail("");
+        setCurrentTaskId("");
 
         startTransition(async () => {
             const result = await reassignTask(
@@ -409,19 +247,6 @@ function StagePage() {
     };
 
     const handleDropTask = async (taskId: string) => {
-        if (isMockMode) {
-            // 更新 mock 数据
-            setMockTasks(prevTasks => 
-                prevTasks.map(task => 
-                    task.id === taskId 
-                        ? { ...task, assignee: "", status: "available" as const }
-                        : task
-                )
-            );
-            toast.success("Task dropped successfully! (Mock mode)");
-            return;
-        }
-
         startTransition(async () => {
             const result = await unassignTask(projId, stageId, taskId);
             

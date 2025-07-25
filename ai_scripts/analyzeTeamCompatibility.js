@@ -4,8 +4,10 @@
 const apiRequest = require("./apiRequest");
 
 const responseFormat = {
-    type: "json_object",
-    schema: {
+    type: "json_schema",
+    json_schema: {
+        name: "team_compatibility",
+        schema: {
         type: "object",
         properties: {
             overall_score: {
@@ -247,7 +249,8 @@ const responseFormat = {
         },
         required: ["overall_score", "member_analyses", "team_analysis"],
         additionalProperties: false,
-    }
+        },
+    },
 };
 
 export const analyzeTeamCompatibility = async (

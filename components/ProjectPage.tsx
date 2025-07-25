@@ -374,56 +374,55 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                                        <div className="text-center">
-                                            <div className="text-2xl font-bold text-blue-600">
+                                    <div className="grid grid-cols-6 gap-4">
+                                        <div className="text-center flex flex-row items-center gap-2">
+                                            
+                                            <div className="text-sm text-gray-500">
+                                                Total Tasks:
+                                            </div>
+                                            <div className="text-xl font-bold text-blue-600">
                                                 {projectStats.totalTasks}
                                             </div>
-                                            <div className="text-sm text-gray-500">
-                                                Total Tasks
-                                            </div>
                                         </div>
-                                        <div className="text-center">
-                                            <div className="text-2xl font-bold text-green-600">
+                                        <div className="text-center flex flex-row items-center gap-2">
+                                            <div className="text-sm text-gray-500">
+                                                Completed:
+                                            </div>
+                                            <div className="text-xl font-bold text-green-600">
                                                 {projectStats.completedTasks}
                                             </div>
-                                            <div className="text-sm text-gray-500">
-                                                Completed
-                                            </div>
+                                            
                                         </div>
-                                        <div className="text-center">
-                                            <div className="text-2xl font-bold text-yellow-600">
+                                        <div className="text-center flex flex-row items-center gap-2">
+                                            <div className="text-sm text-gray-500">
+                                                Assigned:
+                                            </div>
+                                            <div className="text-xl font-bold text-yellow-600">
                                                 {projectStats.assignedTasks}
                                             </div>
-                                            <div className="text-sm text-gray-500">
-                                                Assigned
-                                            </div>
                                         </div>
-                                        <div className="text-center">
-                                            <div className="text-2xl font-bold text-gray-600">
+                                        <div className="text-center flex flex-row items-center gap-2">
+                                            <div className="text-sm text-gray-500">
+                                                Available:
+                                            </div>
+                                            <div className="text-xl font-bold text-gray-600">
                                                 {projectStats.availableTasks}
                                             </div>
-                                            <div className="text-sm text-gray-500">
-                                                Available
-                                            </div>
                                         </div>
-                                        <div className="text-center">
-                                            <div className="text-2xl font-bold text-red-600">
+                                        <div className="text-center flex flex-row items-center gap-2">
+                                            <div className="text-sm text-gray-500">
+                                                Overdue:
+                                            </div>
+                                            <div className="text-xl font-bold text-red-600">
                                                 {projectStats.overdueTasks}
                                             </div>
-                                            <div className="text-sm text-gray-500">
-                                                Overdue
-                                            </div>
                                         </div>
-                                        <div className="text-center">
-                                            <div className="text-2xl font-bold text-purple-600">
-                                                {projectStats.completionRate.toFixed(
-                                                    1,
-                                                )}
-                                                %
-                                            </div>
+                                        <div className="text-center flex flex-row items-center gap-2">
                                             <div className="text-sm text-gray-500">
-                                                Progress
+                                                Completion Rate:
+                                            </div>
+                                            <div className="text-xl font-bold text-purple-600">
+                                                {projectStats.completionRate.toFixed(1)}%
                                             </div>
                                         </div>
                                     </div>
@@ -814,71 +813,39 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="bg-white rounded-lg shadow-sm border p-6">
+                                        <div className="bg-white rounded-lg shadow-sm border p-6 space-y-4">
                                             <h3 className="text-lg font-semibold mb-4 text-gray-800">
                                                 Project Stages
                                             </h3>
-                                            <div className="space-y-3">
-                                                {stages.map((stage, index) => (
-                                                    <Link
-                                                        key={stage.id}
-                                                        href={`/org/${id}/proj/${projId}/stage/${stage.id}`}
-                                                        className="block p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 hover:border-blue-300 hover:shadow-md transition-all duration-300"
-                                                    >
-                                                        <div className="flex w-full justify-between items-center">
-                                                            <span className="text-lg font-semibold">
-                                                                {index + 1}.{" "}
-                                                                {stage.title}
-                                                            </span>
-                                                            <span className="flex items-center text-sm text-gray-500">
-                                                                {stageStatus[
-                                                                    index
-                                                                ] === 0 && (
-                                                                    <HoverCard>
-                                                                        <HoverCardTrigger>
-                                                                            <LockKeyhole className="mr-4" />
-                                                                        </HoverCardTrigger>
-                                                                        <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
-                                                                            <p className="text-sm">
-                                                                                This stage is locked. Help your team members finish their tasks first!
-                                                                            </p>
-                                                                        </HoverCardContent>
-                                                                    </HoverCard>
-                                                                )}
-                                                                {stageStatus[
-                                                                    index
-                                                                ] === 1 && (
-                                                                    <HoverCard>
-                                                                        <HoverCardTrigger>
-                                                                            <NotepadText className="mr-4 text-yellow-500" />
-                                                                        </HoverCardTrigger>
-                                                                        <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
-                                                                            <p className="text-sm">
-                                                                                This stage is in progress. Keep going!
-                                                                            </p>
-                                                                        </HoverCardContent>
-                                                                    </HoverCard>
-                                                                )}
-                                                                {stageStatus[
-                                                                    index
-                                                                ] === 2 && (
-                                                                    <HoverCard>
-                                                                        <HoverCardTrigger>
-                                                                            <CircleCheck className="mr-4 text-green-500" />
-                                                                        </HoverCardTrigger>
-                                                                        <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
-                                                                            <p className="text-sm">
-                                                                                This stage is completed. Great job!
-                                                                            </p>
-                                                                        </HoverCardContent>
-                                                                    </HoverCard>
-                                                                )}
-                                                                {`${stage.tasksCompleted} / ${stage.totalTasks} tasks completed`}
-                                                            </span>
-                                                        </div>
-                                                    </Link>
+                                            {stages.map((stage, index) => (
+                                                <HoverCard key={stage.id}>
+                                                    <HoverCardTrigger asChild>
+                                                        <Link
+                                                            href={`/org/${id}/proj/${projId}/stage/${stage.id}`}
+                                                            className="block p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 hover:border-blue-300 hover:shadow-md transition-all duration-300"
+                                                        >
+                                                            <div className="flex w-full justify-between items-center">
+                                                                <span className="text-lg font-semibold">
+                                                                    {index + 1}. {stage.title}
+                                                                </span>
+                                                                <span className="flex items-center text-sm text-gray-500">
+                                                                    {stageStatus[index] === 0 && (
+                                                                    <LockKeyhole className="mr-4" />
+                                                                    )}
+                                                                    {stageStatus[index] === 1 && (
+                                                                    <NotepadText className="mr-4 text-yellow-500" />
+                                                                    )}
+                                                                    {stageStatus[index] === 2 && (
+                                                                    <CircleCheck className="mr-4 text-green-500" />
+                                                                    )}
+                                                                    {`${stage.tasksCompleted} / ${stage.totalTasks} tasks completed`}
+                                                                </span>
+                                                            </div>
+                                                        </Link>
+                                                    </HoverCardTrigger>
+                                                </HoverCard>
                                                 ))}
-                                            </div>
+
                                         </div>
                                     )}
                                 </div>

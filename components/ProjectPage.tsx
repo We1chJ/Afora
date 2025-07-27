@@ -253,8 +253,11 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         }
     };
 
-    // Get project members
-    const projectMembers = proj?.members || [];
+    // Get project members (including both members and admins)
+    const projectMembers = [
+        ...(proj?.members || []),
+        ...(proj?.admins || [])
+    ];
 
     return (
         <div className="flex flex-col w-full h-full bg-gray-100">
@@ -938,33 +941,36 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                 {projectMembers && projectMembers.length > 0 ? (
                                     <div className="grid gap-3">
                                         {projectMembers.map(
-                                            (member: string, index: number) => (
-                                                <div
-                                                    key={index}
-                                                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                                                >
-                                                    <Avatar className="h-10 w-10">
-                                                        <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-medium">
-                                                            {member
-                                                                .charAt(0)
-                                                                .toUpperCase()}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="flex-1">
-                                                        <p className="font-medium text-gray-900">
-                                                            {member}
-                                                        </p>
-                                                        <div className="flex items-center gap-2 mt-1">
-                                                            <Badge
-                                                                variant="secondary"
-                                                                className="text-xs"
-                                                            >
-                                                                Team Member
-                                                            </Badge>
+                                            (member: string, index: number) => {
+                                                const isAdmin = proj?.admins?.includes(member) || false;
+                                                return (
+                                                    <div
+                                                        key={index}
+                                                        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                                                    >
+                                                        <Avatar className="h-10 w-10">
+                                                            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-medium">
+                                                                {member
+                                                                    .charAt(0)
+                                                                    .toUpperCase()}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="flex-1">
+                                                            <p className="font-medium text-gray-900">
+                                                                {member}
+                                                            </p>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <Badge
+                                                                    variant={isAdmin ? "default" : "secondary"}
+                                                                    className={`text-xs ${isAdmin ? "bg-blue-600 text-white" : ""}`}
+                                                                >
+                                                                    {isAdmin ? "Admin" : "Team Member"}
+                                                                </Badge>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            ),
+                                                );
+                                            },
                                         )}
                                     </div>
                                 ) : (

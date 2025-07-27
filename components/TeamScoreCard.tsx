@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Loader2, Users, TrendingUp, AlertCircle, CheckCircle, BarChart3 } from "lucide-react";
 import { analyzeTeamCompatibility } from "@/ai_scripts/analyzeTeamCompatibility";
 import { appQuestions, TeamCompatibilityAnalysis, TeamScoreCardProps } from "@/types/types";
-import { getOrganizationMembersResponses, saveTeamAnalysis } from "@/actions/actions";
+import { getProjectMembersResponses, saveTeamAnalysis } from "@/actions/actions";
 import { toast } from "sonner";
 import TeamScoreChart from "./TeamScoreChart";
 
@@ -32,7 +32,11 @@ const TeamScoreCard = ({
         startTransition(() => {
             (async () => {
                 try {
-                    const membersData = await getOrganizationMembersResponses(orgId);
+                    if (!projectFilter) {
+                        toast.error("Project ID is required for team analysis");
+                        return;
+                    }
+                    const membersData = await getProjectMembersResponses(projectFilter);
 
                     if (
                         !membersData.success ||
@@ -60,6 +64,10 @@ const TeamScoreCard = ({
                         return;
                     }
 
+                    // 添加调试信息
+                    console.log("Project members data:", membersData.data);
+                    console.log("Expected members count:", members.length);
+                    
                     const memberResponses = membersData.data.map(
                         (member: any) => {
                             return `User: ${member.email}
@@ -68,6 +76,8 @@ const TeamScoreCard = ({
                                     Question 3 Answer: ${member.responses[2] || "No answer"}`;
                         },
                     );
+                    
+                    console.log("Member responses count:", memberResponses.length);
 
                     const result = await analyzeTeamCompatibility(
                         appQuestions,

@@ -2776,7 +2776,7 @@ export async function reassignTask(
     }
 
     try {
-        // 验证输入
+        // validate input
         if (!newAssigneeEmail) {
             throw new Error("New assignee email is required");
         }
@@ -2786,7 +2786,7 @@ export async function reassignTask(
             throw new Error("Invalid email format");
         }
 
-        // 验证新分配用户是否存在
+        // validate new assignee
         const userDoc = await adminDb
             .collection("users")
             .doc(newAssigneeEmail)
@@ -2815,7 +2815,7 @@ export async function reassignTask(
 
         const oldAssigneeEmail = taskData.assignee;
 
-        // 更新任务分配
+        // update task assignment
         await taskRef.update({
             assignee: newAssigneeEmail,
             status: "assigned",
@@ -2823,7 +2823,7 @@ export async function reassignTask(
             completion_percentage: 0,
         });
 
-        // 更新统计：移除旧分配者，添加新分配者
+        // update stats: remove old assignee, add new assignee
         await updateUserTaskStats(oldAssigneeEmail, projId, "unassigned");
         await updateUserTaskStats(newAssigneeEmail, projId, "assigned");
 
@@ -2846,20 +2846,20 @@ export async function saveTeamAnalysis(
     }
 
     try {
-        // 创建文件路径
+        // create file path
         const filePath = `team_analysis/${projId}/latest_analysis.json`;
         
-        // 将分析结果转换为 JSON 字符串
+        // convert analysis result to JSON string
         const analysisJson = JSON.stringify(analysis);
         
-        // 创建 Blob
+        // create Blob
         const blob = new Blob([analysisJson], { type: 'application/json' });
         
-        // 上传到 Firebase Storage
+        // upload to Firebase Storage
         const storageRef = ref(storage, filePath);
         await uploadBytes(storageRef, blob);
         
-        // 保存元数据到 Firestore
+        // save metadata to Firestore
         await adminDb.collection("projects").doc(projId).update({
             lastTeamAnalysis: {
                 timestamp: new Date(),
@@ -2884,7 +2884,7 @@ export async function getTeamAnalysis(projId: string) {
     }
 
     try {
-        // 获取项目文档
+        // fetch project document
         const projectDoc = await adminDb.collection("projects").doc(projId).get();
         const projectData = projectDoc.data();
         
@@ -2892,15 +2892,15 @@ export async function getTeamAnalysis(projId: string) {
             return { success: false, message: "No analysis found" };
         }
 
-        // 从 Storage 获取文件
+        // fetch file from Storage
         const storageRef = ref(storage, projectData.lastTeamAnalysis.filePath);
         const url = await getDownloadURL(storageRef);
         
-        // 获取文件内容
+        // fetch file content
         const response = await fetch(url);
         const analysis = await response.json();
 
-        // 处理 timestamp 字段
+        // handle timestamp field
         let ts = projectData.lastTeamAnalysis.timestamp;
         let timestamp;
         if (ts && typeof ts === 'object' && (ts.seconds !== undefined || ts._seconds !== undefined)) {

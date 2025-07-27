@@ -909,34 +909,21 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                     <TabsContent value="team-analytics" className="space-y-6">
                         {/* Team Score Analysis Section */}
                         <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <BarChart3 className="h-5 w-5 text-purple-600" />
-                                    Team Compatibility Analysis
-                                </CardTitle>
-                                <CardDescription>
-                                    {hasExistingAnalysis 
-                                        ? "View and manage your team's compatibility analysis"
-                                        : "Generate a new team compatibility analysis"}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {analysisLoading ? (
-                                    <div className="space-y-4">
-                                        <Skeleton className="h-8 w-full" />
-                                        <Skeleton className="h-32 w-full" />
-                                        <Skeleton className="h-32 w-full" />
-                                    </div>
-                                ) : (
-                                    <TeamScoreCard
-                                        orgId={id}
-                                        members={projectMembers}
-                                        projectFilter={projId}
-                                        initialAnalysis={analysisData?.analysis || null}
-                                        lastAnalysisTime={analysisData?.timestamp || null}
-                                    />
-                                )}
-                            </CardContent>
+                            {analysisLoading ? (
+                                <div className="space-y-4">
+                                    <Skeleton className="h-8 w-full" />
+                                    <Skeleton className="h-32 w-full" />
+                                    <Skeleton className="h-32 w-full" />
+                                </div>
+                            ) : (
+                                <TeamScoreCard
+                                    orgId={id}
+                                    members={projectMembers}
+                                    projectFilter={projId}
+                                    initialAnalysis={analysisData?.analysis || null}
+                                    lastAnalysisTime={analysisData?.timestamp || null}
+                                />
+                            )}
                         </Card>
 
                         {/* Team Members Section */}

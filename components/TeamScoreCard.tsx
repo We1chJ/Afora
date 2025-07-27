@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Users, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
+import { Loader2, Users, TrendingUp, AlertCircle, CheckCircle, BarChart3 } from "lucide-react";
 import { analyzeTeamCompatibility } from "@/ai_scripts/analyzeTeamCompatibility";
 import { appQuestions, TeamCompatibilityAnalysis, TeamScoreCardProps } from "@/types/types";
 import { getOrganizationMembersResponses, saveTeamAnalysis } from "@/actions/actions";
@@ -114,15 +114,13 @@ const TeamScoreCard = ({
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <Users className="h-5 w-5" />
+                        <BarChart3 className="h-5 w-5 text-purple-600" />
                         {projectFilter
                             ? "Project Team Compatibility Analysis"
                             : "Team Compatibility Analysis"}
                     </CardTitle>
                     <CardDescription>
-                        {projectFilter
-                            ? "Analyze this project team's compatibility and collaboration potential based on member profiles"
-                            : "Analyze team's overall compatibility and collaboration potential based on member onboarding surveys"}
+                        Analyze team's overall compatibility and collaboration potential based on member onboarding surveys
                         {analysisTime && (
                             <div className="mt-2 text-sm text-muted-foreground">
                                 Last analysis: {analysisTime.toLocaleString()}

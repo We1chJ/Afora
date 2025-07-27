@@ -104,11 +104,6 @@ const OrganizationPage = ({ id }: { id: string }) => {
                             userRole={userOrgData.role}
                             userId={user.primaryEmailAddress.toString()}
                             orgId={id}
-                            projectsData={
-                                projectsData
-                            }
-                            loading={projLoading}
-                            error={projError}
                         />
                     )}
                 </TabsContent>
@@ -119,9 +114,7 @@ const OrganizationPage = ({ id }: { id: string }) => {
                             admins={orgData.admins}
                             members={orgData.members}
                             orgId={id}
-                            projectsData={
-                                projectsData
-                            }
+                            projectsData={projectsData}
                             currentUserEmail={userEmail}
                         />
                     )}

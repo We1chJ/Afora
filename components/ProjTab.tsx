@@ -110,7 +110,7 @@ const ProjTab = ({
     }))
     : userProjList;
 
-    // 获取所有项目的任务
+    // fetch all project tasks
     useEffect(() => {
         const fetchProjectTasks = async () => {
             const tasksMap: {[key: string]: Task[]} = {};
@@ -122,14 +122,14 @@ const ProjTab = ({
                 }
                 
                 try {
-                    // 获取项目的所有阶段
+                    // fetch all stages of the project
                     const stagesSnapshot = await getDocs(
                         collection(db, "projects", project.projId, "stages")
                     );
                     
                     let projectTasksList: Task[] = [];
                     
-                    // 获取每个阶段的任务
+                    // fetch all tasks of each stage
                     for (const stageDoc of stagesSnapshot.docs) {
                         const tasksSnapshot = await getDocs(
                             collection(db, "projects", project.projId, "stages", stageDoc.id, "tasks")

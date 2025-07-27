@@ -3,47 +3,18 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-    DialogFooter,
-} from "@/components/ui/dialog";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter} from "@/components/ui/dialog";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import InviteUserToOrganization from "./InviteUserToOrganization";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { collection, query, where } from "firebase/firestore";
 import { db } from "@/firebase";
 import { useCollection } from "react-firebase-hooks/firestore";
-import {
-    Users,
-    Settings,
-    UserPlus,
-    Shuffle,
-    FolderOpen,
-    UserCheck,
-    ArrowRight,
-    Crown,
-    Building2,
-} from "lucide-react";
+import {Users, Settings, UserPlus, Shuffle, FolderOpen, UserCheck, ArrowRight, Crown, Building2} from "lucide-react";
 import { toast } from "sonner";
-import {
-    updateProjectMembers,
-    removeProjectMember,
-    autoAssignMembersToProjects,
-    updateProjectTeamSize,
-} from "@/actions/actions";
+import {updateProjectMembers, removeProjectMember, autoAssignMembersToProjects, updateProjectTeamSize} from "@/actions/actions";
 
 interface MemberListProps {
     admins: string[];
@@ -51,7 +22,6 @@ interface MemberListProps {
     userRole: string;
     orgId: string;
     projectsData?: any;
-    isMockMode?: boolean;
     currentUserEmail?: string;
 }
 
@@ -62,15 +32,7 @@ interface ProjectTeam {
     teamSize: number;
 }
 
-const MemberList = ({
-    admins,
-    members,
-    userRole,
-    orgId,
-    projectsData,
-    isMockMode = false,
-    currentUserEmail,
-}: MemberListProps) => {
+const MemberList = ({admins, members, userRole, orgId, projectsData, currentUserEmail}: MemberListProps) => {
     const [adminsPfp, setAdminsPfp] = useState<{ [email: string]: string }>({});
     const [membersPfp, setMembersPfp] = useState<{ [email: string]: string }>(
         {},
@@ -83,15 +45,15 @@ const MemberList = ({
     const [defaultTeamSize, setDefaultTeamSize] = useState(3);
 
     const myQuery =
-        !isMockMode && [...admins, ...members].length > 0
+        [...admins, ...members].length > 0
             ? query(
-                  collection(db, "users"),
-                  where(
-                      "__name__",
-                      "in",
-                      [...admins, ...members].filter(Boolean),
-                  ),
-              )
+                    collection(db, "users"),
+                    where(
+                        "__name__",
+                        "in",
+                        [...admins, ...members].filter(Boolean),
+                    ),
+                )
             : null;
     const [results, loading, error] = useCollection(myQuery);
 
@@ -99,11 +61,11 @@ const MemberList = ({
     const projects = useMemo(() => projectsData?.docs || [], [projectsData]);
 
     useEffect(() => {
-        if (isMockMode || (!loading && results)) {
+        if (!loading && results) {
             const adminsPfpData: { [email: string]: string } = {};
             const membersPfpData: { [email: string]: string } = {};
 
-            if (!isMockMode && results) {
+            if (results) {
                 results.docs.forEach((doc) => {
                     const data = doc.data();
                     if (admins.includes(doc.id)) {
@@ -117,9 +79,9 @@ const MemberList = ({
             setAdminsPfp(adminsPfpData);
             setMembersPfp(membersPfpData);
         }
-    }, [results, loading, error, isMockMode]);
+    }, [results, loading, error]);
 
-    // 使用 useMemo 来计算 teams，避免不必要的重新计算
+    // use useMemo to calculate teams, avoid unnecessary recalculation
     const teams = useMemo(() => {
         if (!projects || projects.length === 0) {
             return [];
@@ -177,11 +139,6 @@ const MemberList = ({
     const unassignedMembers = calculatedUnassignedMembers;
 
     const handleAutoAssign = useCallback(async () => {
-        if (isMockMode) {
-            toast.success("Members auto-assigned successfully! (Mock mode)");
-            return;
-        }
-
         try {
             const result = await autoAssignMembersToProjects(orgId);
 
@@ -195,7 +152,7 @@ const MemberList = ({
             console.error("Error auto-assigning members:", error);
             toast.error("Failed to auto-assign members");
         }
-    }, [isMockMode, orgId]);
+    }, [orgId]);
 
     const handleMemberMove = useCallback(
         async (
@@ -203,11 +160,6 @@ const MemberList = ({
             fromProjectId: string | null,
             toProjectId: string | null,
         ) => {
-            if (isMockMode) {
-                toast.success("Member moved successfully! (Mock mode)");
-                return;
-            }
-
             try {
                 // Check destination availability first if moving to a project
                 if (toProjectId) {
@@ -319,16 +271,11 @@ const MemberList = ({
                 toast.error("Failed to move member. Please try again.");
             }
         },
-        [isMockMode, projectTeams],
+        [projectTeams],
     );
 
     const updateTeamSize = useCallback(
         async (projectId: string, newSize: number) => {
-            if (isMockMode) {
-                toast.success("Team size updated! (Mock mode)");
-                return;
-            }
-
             try {
                 const result = await updateProjectTeamSize(projectId, newSize);
 
@@ -342,7 +289,7 @@ const MemberList = ({
                 toast.error("Failed to update team size");
             }
         },
-        [isMockMode],
+        [],
     );
 
     const renderMemberCard = useCallback(
@@ -626,24 +573,6 @@ const MemberList = ({
                                             ? "There are no projects in this organization."
                                             : "Please contact the administrator to be assigned to a project."}
                                     </p>
-                                    {userRole === "admin" && (
-                                        <div className="text-xs text-gray-400">
-                                            <p>Possible reasons:</p>
-                                            <ul className="text-left mt-2 space-y-1">
-                                                <li>
-                                                    • No project data in
-                                                    database
-                                                </li>
-                                                <li>
-                                                    • Incorrect project data
-                                                    structure
-                                                </li>
-                                                <li>
-                                                    • Database connection issues
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    )}
                                 </div>
                             ) : (
                                 userAssignedProjects.map(
@@ -1060,33 +989,6 @@ const MemberList = ({
                                             ? "There are no projects in this organization. Please check the following:"
                                             : "Please contact the administrator to be assigned to a project."}
                                     </p>
-                                    {userRole === "admin" ? (
-                                        <div className="text-sm text-gray-400 space-y-2 max-w-md mx-auto">
-                                            <p>
-                                                1. Ensure there is project data
-                                                in the database
-                                            </p>
-                                            <p>
-                                                2. Check if the project data
-                                                structure is correct
-                                            </p>
-                                            <p>
-                                                3. View the browser console for
-                                                debugging information
-                                            </p>
-                                        </div>
-                                    ) : null}
-                                    {userRole === "admin" && (
-                                        <div className="mt-6 text-xs text-gray-400 bg-gray-50 p-4 rounded-lg">
-                                            <p>
-                                                <strong>
-                                                    Debug Information:
-                                                </strong>{" "}
-                                                Open the browser developer tools
-                                                (F12) to view the console output
-                                            </p>
-                                        </div>
-                                    )}
                                 </div>
                             ) : (
                                 <div>

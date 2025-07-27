@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter, useParams } from "next/navigation";
@@ -15,25 +14,12 @@ import { Stage, Task } from "@/types/types";
 import { collection, doc } from "firebase/firestore";
 
 import {
-    CircleCheckBig,
-    Clock7,
-    Trash,
     Edit3,
-    AlertTriangle,
     DollarSign,
 } from "lucide-react";
 import BountyBoardButton from "@/components/BountyBoardButton";
 import TaskManagement from "@/components/TaskManagement";
 import { createTask, deleteTask } from "@/actions/actions";
-import {
-    AlertDialog,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import {
     Dialog,
     DialogContent,
@@ -41,17 +27,11 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-type PageParams = {
-    id: string;
-    projId: string;
-    stageId: string;
-};
 
 function StagePage() {
     const params = useParams();
@@ -127,14 +107,6 @@ function StagePage() {
         [],
     );
 
-    // Mock stage data
-    const mockStage: Stage = {
-        id: stageId,
-        title: "Requirements Analysis & Design",
-        order: 0,
-        tasksCompleted: tasks.filter((t) => t.isCompleted).length,
-        totalTasks: tasks.length,
-    };
 
     if (!isSignedIn) return null;
 

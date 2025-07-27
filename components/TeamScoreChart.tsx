@@ -11,7 +11,6 @@ import {
     YAxis,
     CartesianGrid,
     Tooltip,
-    Legend,
 } from "recharts";
 import {
     Card,

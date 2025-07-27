@@ -1,40 +1,31 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { UserScore, ProjectLeaderboard } from "@/types/types";
+import { UserScore } from "@/types/types";
 import {
     Trophy,
     Medal,
     Award,
-    TrendingUp,
     Clock,
     CheckCircle,
     Target,
     Flame,
-    Crown,
 } from "lucide-react";
 
 interface LeaderboardProps {
-    projectId: string;
-    projectTitle: string;
     userScores: UserScore[];
-    currentUserEmail?: string;
-    isMockMode?: boolean;
+    currentUserEmail?: string; 
 }
 
 type DisplayLimit = 3 | 5 | 10 | "all";
 
 const Leaderboard: React.FC<LeaderboardProps> = ({
-    projectId,
-    projectTitle,
     userScores,
     currentUserEmail,
-    isMockMode = false,
 }) => {
     const [sortedScores, setSortedScores] = useState<UserScore[]>([]);
     const [displayLimit, setDisplayLimit] = useState<DisplayLimit>(10);
@@ -48,7 +39,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     }, [userScores]);
 
     // Get available display options based on total member count
-    const getAvailableDisplayOptions = (): DisplayLimit[] => {
+    const getAvailableDisplayOptions = useCallback((): DisplayLimit[] => {
         const totalMembers = sortedScores.length;
         const options: DisplayLimit[] = [];
 
@@ -58,7 +49,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         options.push("all");
 
         return options;
-    };
+    }, [sortedScores.length]);
 
     // Auto-adjust display limit if current selection is not available
     useEffect(() => {
@@ -66,7 +57,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         if (!availableOptions.includes(displayLimit)) {
             setDisplayLimit(availableOptions[availableOptions.length - 1]); // Default to 'all' or highest available
         }
-    }, [sortedScores.length]);
+    }, [sortedScores.length, displayLimit, getAvailableDisplayOptions]);
 
     const getRankIcon = (rank: number) => {
         switch (rank) {
@@ -153,29 +144,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     const topPerformers = topUsers.slice(0, 3);
     const otherPerformers = topUsers.slice(3);
 
-    // Calculate team stats
-    const teamStats = {
-        totalPoints: userScores.reduce(
-            (sum, user) => sum + user.totalPoints,
-            0,
-        ),
-        totalTasksCompleted: userScores.reduce(
-            (sum, user) => sum + user.tasksCompleted,
-            0,
-        ),
-        totalTasksAssigned: userScores.reduce(
-            (sum, user) => sum + user.tasksAssigned,
-            0,
-        ),
-        averageCompletionTime:
-            userScores.length > 0
-                ? userScores.reduce(
-                      (sum, user) => sum + user.averageCompletionTime,
-                      0,
-                  ) / userScores.length
-                : 0,
-    };
-
     return (
         <div className="space-y-6">
             <Tabs defaultValue="rankings" className="w-full">
@@ -195,7 +163,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                             </CardHeader>
                             <CardContent>
                                 <div className="grid gap-4">
-                                    {topPerformers.map((user, index) => {
+                                    {topPerformers.map((user) => {
                                         const rank =
                                             sortedScores.findIndex(
                                                 (u) => u.userId === user.userId,
@@ -295,7 +263,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-3">
-                                    {otherPerformers.map((user, index) => {
+                                    {otherPerformers.map((user) => {
                                         const rank =
                                             sortedScores.findIndex(
                                                 (u) => u.userId === user.userId,
@@ -480,7 +448,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {sortedScores.map((user, index) => {
+                                        {sortedScores.map((user) => {
                                             const isCurrentUserRow =
                                                 isCurrentUser(user.email);
                                             return (

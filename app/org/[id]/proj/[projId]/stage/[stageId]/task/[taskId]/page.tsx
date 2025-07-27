@@ -7,47 +7,17 @@ import { doc, getDoc } from "firebase/firestore";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect } from "react";
 import { useDocument } from "react-firebase-hooks/firestore";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Edit3,
-    Clock,
-    User,
-    Calendar,
-    UserPlus,
-    CheckCircle,
-    Upload,
-    Target,
-    Star,
-    Trophy,
-    TrendingUp,
-} from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Edit3, Clock, User, Calendar, Star } from "lucide-react";
 import { Task } from "@/types/types";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-    Drawer,
-    DrawerClose,
-    DrawerContent,
-    DrawerDescription,
-    DrawerFooter,
-    DrawerTitle,
-    DrawerTrigger,
-} from "@/components/ui/drawer";
+import {Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerTitle, DrawerTrigger} from "@/components/ui/drawer";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useTransition } from "react";
-import {
-    getStageLockStatus,
-    updateTask,
-    assignTask,
-    completeTaskWithProgress,
-    submitTask,
-    getTaskSubmissions,
-} from "@/actions/actions";
+import {getStageLockStatus, updateTask, assignTask, completeTaskWithProgress, submitTask, getTaskSubmissions} from "@/actions/actions";
 import { toast } from "sonner";
 import { RootState } from "@/lib/store/store";
 import { useDispatch, useSelector } from "react-redux";

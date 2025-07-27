@@ -17,7 +17,7 @@ function OrgPage() {
         if (isLoaded && !isSignedIn) {
             router.replace("/"); // Redirect to the login page
         }
-    }, []);
+    }, [isLoaded, isSignedIn, router]);
 
     return (
         <div className="flex flex-col h-full">

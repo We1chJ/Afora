@@ -18,11 +18,7 @@ const ProjectCard = ({
     orgId,
     projectName = "Sample Project",
     backgroundImage = "/placeholder.svg?height=200&width=600",
-    tasks = [
-        { id: "1", title: "Design user interface" },
-        { id: "2", title: "Implement backend API" },
-        { id: "3", title: "Write unit tests" },
-    ],
+    tasks = [],
     members = [],
 }: ProjectCardProps) => {
     // Calculate actual values based on real data

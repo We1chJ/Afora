@@ -7,7 +7,6 @@ const responseFormat = {
     type: "json_schema",
     json_schema: {
         name: "user_groups",
-        strict: true,
         schema: {
             type: "object",
             properties: {

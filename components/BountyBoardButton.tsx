@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { DollarSign } from "lucide-react";
 
 interface BountyBoardButtonProps {
     overdueTasks: number;

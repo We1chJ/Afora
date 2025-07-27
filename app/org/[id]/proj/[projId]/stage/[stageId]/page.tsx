@@ -3,10 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter, useParams } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition, useCallback } from "react";
 import React from "react";
 import Link from "next/link";
-import { getOverdueTasks, getAvailableTasks, assignTask, unassignTask, reassignTask } from "@/actions/actions";
+import { getOverdueTasks, assignTask, unassignTask, reassignTask } from "@/actions/actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { db } from "@/firebase";
@@ -53,7 +53,7 @@ function StagePage() {
     }, [isLoaded, isSignedIn, router]);
 
     // 加载过期任务和可用任务
-    const loadTaskPoolData = async () => {
+    const loadTaskPoolData = useCallback(async () => {
         try {
             // 获取过期任务
             const overdueResult = await getOverdueTasks(projId);
@@ -61,20 +61,16 @@ function StagePage() {
                 setBackendOverdueTasks(overdueResult.tasks || []);
             }
 
-            // 获取可用任务
-            const availableResult = await getAvailableTasks(projId);
-            if (availableResult.success) {
-                setBackendAvailableTasks(availableResult.tasks || []);
-            }
+
         } catch (error) {
             console.error("Failed to load task pool data:", error);
         }
-    };
+    }, [projId]);
 
     // 加载任务池数据
     useEffect(() => {
         loadTaskPoolData();
-    }, [projId]);
+    }, [loadTaskPoolData]);
 
     const [isPending, startTransition] = useTransition();
     const [stageData, stageLoading, stageError] = useDocument(
@@ -101,11 +97,14 @@ function StagePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [bountyBoardOpen, setBountyBoardOpen] = useState(false);
 
-    // 新增：存储从后端获取的过期任务和可用任务
-    const [backendOverdueTasks, setBackendOverdueTasks] = useState<any[]>([]);
-    const [backendAvailableTasks, setBackendAvailableTasks] = useState<any[]>(
-        [],
-    );
+    // 新增：存储从后端获取的过期任务
+    const [backendOverdueTasks, setBackendOverdueTasks] = useState<Array<{
+        id: string;
+        title: string;
+        description: string;
+        stage_id: string;
+        soft_deadline: string;
+    }>>([]);
 
 
     if (!isSignedIn) return null;
@@ -128,7 +127,7 @@ function StagePage() {
         return <div>Error: The stage has been deleted.</div>;
     }
 
-    const tasksCompleted = tasks.filter((task) => task.isCompleted).length;
+
 
     // Get overdue tasks for bounty board
     const overdueTasks = backendOverdueTasks.filter((task) => task.stage_id === stageId);
@@ -317,7 +316,7 @@ function StagePage() {
                         <div className="py-4">
                             {overdueTasks.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {overdueTasks.map((task, index) => (
+                                    {overdueTasks.map((task) => (
                                         <div
                                             key={task.id}
                                             className="group bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-orange-300 transition-all duration-300 overflow-hidden"

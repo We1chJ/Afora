@@ -5,7 +5,6 @@ import Breadcrumbs from "./Breadcrumbs";
 import Link from "next/link";
 import FundUs from "./FundUs";
 import { SidebarTrigger } from "./ui/sidebar";
-import { Button } from "./ui/button";
 import Image from "next/image";
 
 function Header() {

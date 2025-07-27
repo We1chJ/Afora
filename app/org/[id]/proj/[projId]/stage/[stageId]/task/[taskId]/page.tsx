@@ -3,7 +3,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/firebase";
 import { useAuth, useUser } from "@clerk/nextjs";
-import { doc, getDoc } from "firebase/firestore";
+import { doc } from "firebase/firestore";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect } from "react";
 import { useDocument } from "react-firebase-hooks/firestore";
@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useTransition } from "react";
-import {getStageLockStatus, updateTask, assignTask, completeTaskWithProgress, submitTask, getTaskSubmissions} from "@/actions/actions";
+import {getStageLockStatus, updateTask} from "@/actions/actions";
 import { toast } from "sonner";
 import { RootState } from "@/lib/store/store";
 import { useDispatch, useSelector } from "react-redux";
@@ -26,7 +26,6 @@ import TaskMainContent from "@/components/TaskMainContent";
 
 function TaskPage() {
     const params = useParams();
-    const id = params.id as string;
     const projId = params.projId as string;
     const stageId = params.stageId as string;
     const taskId = params.taskId as string;
@@ -46,17 +45,6 @@ function TaskPage() {
     );
     const dispatch = useDispatch();
 
-    // 新增任务池相关状态
-    const [assigneeEmail, setAssigneeEmail] = useState("");
-    const [submissionContent, setSubmissionContent] = useState("");
-    const [completionPercentage, setCompletionPercentage] = useState(0);
-    const [submissions, setSubmissions] = useState<any[]>([]);
-    const [showSubmissionDialog, setShowSubmissionDialog] = useState(false);
-    const [showAssignDialog, setShowAssignDialog] = useState(false);
-
-    // 用户角色状态
-    const [userRole, setUserRole] = useState<"admin" | "member" | null>(null);
-    const userEmail = user?.primaryEmailAddress?.emailAddress;
 
     useEffect(() => {
         // check to make sure update lock status at least once
@@ -124,7 +112,7 @@ function TaskPage() {
                 softDeadline,
                 hardDeadline,
                 points,
-                completionPercentage
+                0
             )
                 .then(() => {
                     toast.success("Task updated successfully!");
@@ -136,133 +124,7 @@ function TaskPage() {
         });
     };
 
-    // 处理任务分配
-    const handleAssignTask = async () => {
-        if (!assigneeEmail.trim()) {
-            toast.error("Please enter an email address");
-            return;
-        }
 
-        startTransition(async () => {
-            try {
-                const result = await assignTask(
-                    projId,
-                    stageId,
-                    taskId,
-                    assigneeEmail,
-                );
-                if (result.success) {
-                    toast.success("Task assigned successfully!");
-                    setShowAssignDialog(false);
-                    setAssigneeEmail("");
-                } else {
-                    toast.error(result.message || "Failed to assign task");
-                }
-            } catch (error) {
-                toast.error("Failed to assign task");
-                console.error(error);
-            }
-        });
-    };
-
-    // 处理任务完成
-    const handleCompleteTask = async () => {
-        startTransition(async () => {
-            try {
-                const result = await completeTaskWithProgress(
-                    projId,
-                    stageId,
-                    taskId,
-                    completionPercentage,
-                );
-                if (result.success) {
-                    toast.success(
-                        `Task progress updated! ${result.points_earned ? `Earned ${result.points_earned} points` : ""}`,
-                    );
-                } else {
-                    toast.error(
-                        result.message || "Failed to update task progress",
-                    );
-                }
-            } catch (error) {
-                toast.error("Failed to update task progress");
-                console.error(error);
-            }
-        });
-    };
-
-    // 处理任务提交
-    const handleSubmitTask = async () => {
-        if (!submissionContent.trim()) {
-            toast.error("Please enter submission content");
-            return;
-        }
-
-        startTransition(async () => {
-            try {
-                const result = await submitTask(
-                    projId,
-                    stageId,
-                    taskId,
-                    submissionContent,
-                );
-                if (result.success) {
-                    toast.success("Task submitted successfully!");
-                    setShowSubmissionDialog(false);
-                    setSubmissionContent("");
-                    loadSubmissions(); // 重新加载提交记录
-                } else {
-                    toast.error(result.message || "Failed to submit task");
-                }
-            } catch (error) {
-                toast.error("Failed to submit task");
-                console.error(error);
-            }
-        });
-    };
-
-    // 加载任务提交记录
-    const loadSubmissions = async () => {
-        try {
-            const result = await getTaskSubmissions(projId, stageId, taskId);
-            if (result.success) {
-                setSubmissions(result.data || []);
-            }
-        } catch (error) {
-            console.error("Failed to load submissions:", error);
-        }
-    };
-
-    // 加载提交记录
-    useEffect(() => {
-        loadSubmissions();
-    }, [projId, stageId, taskId]);
-
-    // 获取用户角色
-    useEffect(() => {
-        const fetchUserRole = async () => {
-            if (!userEmail || !id) return;
-
-            try {
-                const orgDoc = await getDoc(doc(db, "organizations", id));
-                if (orgDoc.exists()) {
-                    const orgData = orgDoc.data();
-                    const isAdmin = orgData?.admins?.includes(userEmail);
-                    const isMember = orgData?.members?.includes(userEmail);
-
-                    if (isAdmin) {
-                        setUserRole("admin");
-                    } else if (isMember) {
-                        setUserRole("member");
-                    }
-                }
-            } catch (error) {
-                console.error("Error fetching user role:", error);
-            }
-        };
-
-        fetchUserRole();
-    }, [userEmail, id]);
 
     const [taskData, taskLoading, taskError] = useDocument(
         doc(db, "projects", projId, "stages", stageId, "tasks", taskId),

@@ -14,7 +14,7 @@ import { Organization, Project, Stage, Task } from "@/types/types";
 import { doc } from "firebase/firestore";
 
 import { usePathname } from "next/navigation";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useState, useMemo } from "react";
 import { useDocument } from "react-firebase-hooks/firestore";
 
 // 文本截断函数
@@ -26,26 +26,25 @@ const truncateText = (text: string, maxLength: number = 15) => {
 function Breadcrumbs() {
     // Adds a path that a user can refer to know where they are and click to "parent" directories
     const path = usePathname();
-    const [isMockMode, setIsMockMode] = useState(false);
 
     console.log(`Path: "${path}"`);
 
-    const segments = path
-        ? path.split("/").filter((segment) => segment !== "")
-        : [];
+    const segments = useMemo(() => {
+        const pathSegments = path
+            ? path.split("/").filter((segment) => segment !== "")
+            : [];
+        
+        // Filter out non-org routes
+        if (pathSegments.length >= 1 && pathSegments[0] !== "org") {
+            return [];
+        }
+        
+        return pathSegments;
+    }, [path]);
 
     useEffect(() => {
-        if (segments.length >= 1 && segments[0] !== "org") {
-            segments.length = 0;
-        }
-
-        // Check if this is mock mode
-        if (segments.length >= 2 && segments[1] === "mock-org-123") {
-            setIsMockMode(true);
-        }
-
         console.log(segments);
-    }, [path, segments]);
+    }, [segments]);
 
     // Determine route structure
     const isOrgRoute = segments.length >= 2 && segments[0] === "org";
@@ -56,24 +55,20 @@ function Breadcrumbs() {
         segments.length >= 5 && segments[4] === "leaderboard";
 
     // Get document references based on route structure
-    const orgDocRef =
-        isOrgRoute && !isMockMode
-            ? doc(db, "organizations", segments[1])
-            : null;
+    const orgDocRef = isOrgRoute ? doc(db, "organizations", segments[1]) : null;
     const [orgDoc] = useDocument(orgDocRef);
 
-    const projDocRef =
-        isProjRoute && !isMockMode ? doc(db, "projects", segments[3]) : null;
+    const projDocRef = isProjRoute ? doc(db, "projects", segments[3]) : null;
     const [projDoc] = useDocument(projDocRef);
 
     const stageDocRef =
-        isStageRoute && !isMockMode
+        isStageRoute
             ? doc(db, "projects", segments[3], "stages", segments[5])
             : null;
     const [stageDoc] = useDocument(stageDocRef);
 
     const taskDocRef =
-        isTaskRoute && !isMockMode
+        isTaskRoute
             ? doc(
                   db,
                   "projects",
@@ -86,49 +81,22 @@ function Breadcrumbs() {
             : null;
     const [taskDoc] = useDocument(taskDocRef);
 
-    // Get titles - use mock data if in mock mode
-    let orgTitle, projTitle, stageTitle, taskTitle, leaderboardTitle;
-
-    if (isMockMode) {
-        orgTitle = "Test Organization";
-        if (isProjRoute) {
-            const projId = segments[3];
-            if (projId === "proj-1") {
-                projTitle = "Frontend Development Project";
-            } else if (projId === "proj-2") {
-                projTitle = "Backend Architecture Project";
-            } else {
-                projTitle = "Mock Project";
-            }
-        }
-        if (isStageRoute) {
-            stageTitle = "Requirements Analysis & Design";
-        }
-        if (isTaskRoute) {
-            taskTitle = "Mock Task";
-        }
-        if (isLeaderboardRoute) {
-            leaderboardTitle = "Leaderboard";
-        }
-    } else {
-        orgTitle =
-            orgDoc && orgDoc.exists()
-                ? (orgDoc.data() as Organization).title
-                : null;
-        projTitle =
-            projDoc && projDoc.exists()
-                ? (projDoc.data() as Project).title
-                : null;
-        stageTitle =
-            stageDoc && stageDoc.exists()
-                ? (stageDoc.data() as Stage).title
-                : null;
-        taskTitle =
-            taskDoc && taskDoc.exists() ? (taskDoc.data() as Task).title : null;
-        if (isLeaderboardRoute) {
-            leaderboardTitle = "Leaderboard";
-        }
-    }
+    // Get titles from documents
+    const orgTitle =
+        orgDoc && orgDoc.exists()
+            ? (orgDoc.data() as Organization).title
+            : null;
+    const projTitle =
+        projDoc && projDoc.exists()
+            ? (projDoc.data() as Project).title
+            : null;
+    const stageTitle =
+        stageDoc && stageDoc.exists()
+            ? (stageDoc.data() as Stage).title
+            : null;
+    const taskTitle =
+        taskDoc && taskDoc.exists() ? (taskDoc.data() as Task).title : null;
+    const leaderboardTitle = isLeaderboardRoute ? "Leaderboard" : null;
 
     // 定义breadcrumb项目类型
     type BreadcrumbItemType = {

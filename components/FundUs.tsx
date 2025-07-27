@@ -1,6 +1,5 @@
 import React from "react";
 import Link from "next/link";
-import { Heart } from "lucide-react";
 import { Button } from "./ui/button";
 
 function FundUs() {

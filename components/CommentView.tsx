@@ -9,6 +9,7 @@ import { useDocument } from "react-firebase-hooks/firestore";
 import ReactMarkdown from "react-markdown";
 import gfm from "remark-gfm";
 import TurndownService from "turndown";
+import Image from "next/image";
 const turndownService = new TurndownService();
 
 const CommentView = ({ comment }: { comment: Comment }) => {
@@ -24,7 +25,7 @@ const CommentView = ({ comment }: { comment: Comment }) => {
     return (
         <div className="w-full flex space-x-2">
             {pfp ? (
-                <img
+                <Image
                     src={pfp}
                     alt="User profile image"
                     width={40}

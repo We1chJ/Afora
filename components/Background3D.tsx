@@ -5,7 +5,8 @@ const Background3D = () => {
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (!containerRef.current) return;
+        const container = containerRef.current;
+        if (!container) return;
 
         // Scene setup
         const scene = new THREE.Scene();
@@ -27,7 +28,7 @@ const Background3D = () => {
         });
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
-        containerRef.current.appendChild(renderer.domElement);
+        container.appendChild(renderer.domElement);
 
         // Particles setup
         const particles = new THREE.BufferGeometry();
@@ -116,7 +117,7 @@ const Background3D = () => {
             window.removeEventListener('resize', handleResize);
             document.removeEventListener('mousemove', handleMouseMove);
             cancelAnimationFrame(frame);
-            containerRef.current?.removeChild(renderer.domElement);
+            container?.removeChild(renderer.domElement);
             scene.remove(pointCloud);
             particles.dispose();
             material.dispose();

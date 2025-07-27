@@ -5,7 +5,7 @@ import {collection, DocumentData, getDocs, query, where} from "firebase/firestor
 import React, { useEffect, useState, useTransition } from "react";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { Button } from "./ui/button";
-import { updateProjects, createProject } from "@/actions/actions";
+import { updateProjects } from "@/actions/actions";
 import { toast } from "sonner";
 import ProjectCard from "./ProjectCard";
 import {Plus, Folder, Users, Briefcase} from "lucide-react";
@@ -13,7 +13,7 @@ import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
 import { Separator } from "./ui/separator";
-import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter} from "./ui/dialog";
+import CreateProjectDialog from "./CreateProjectDialog";
 
 type MatchingOutput = {
     groupSize: number;
@@ -30,8 +30,6 @@ const ProjTab = ({
     orgId: string;
 }) => {
     const [isPending, startTransition] = useTransition();
-    const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
-    const [newProjectTitle, setNewProjectTitle] = useState("");
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const [output, setOutput] = useState("");
@@ -98,124 +96,91 @@ const ProjTab = ({
                 const parsed: MatchingOutput = JSON.parse(output);
                 setParsedOutput(parsed);
             } catch (error) {
-                console.error("Failed to parse output:", error);
+                console.error("Error parsing output:", error);
             }
         }
     }, [output]);
 
-    const allProjectsList: Project[] = userRole === "admin"
-    ? (allProjects?.docs || []).map((doc: DocumentData) => ({
-        ...(doc.data() as Project),
-        projId: doc.id,
-    }))
-    : userProjList;
-
-    // fetch all project tasks
+    // Fetch project tasks for each project
     useEffect(() => {
         const fetchProjectTasks = async () => {
+            if (!allProjects || allProjects.docs.length === 0) return;
+
             const tasksMap: {[key: string]: Task[]} = {};
             
-            for (const project of allProjectsList) {
-                if (!project.projId) {
-                    console.error("Project missing projId:", project);
-                    continue;
-                }
-                
+            for (const projectDoc of allProjects.docs) {
+                const projectId = projectDoc.id;
                 try {
-                    // fetch all stages of the project
-                    const stagesSnapshot = await getDocs(
-                        collection(db, "projects", project.projId, "stages")
+                    const stagesQuery = query(
+                        collection(db, "projects", projectId, "stages")
                     );
+                    const stagesSnapshot = await getDocs(stagesQuery);
                     
-                    let projectTasksList: Task[] = [];
+                    const allTasks: Task[] = [];
                     
-                    // fetch all tasks of each stage
                     for (const stageDoc of stagesSnapshot.docs) {
-                        const tasksSnapshot = await getDocs(
-                            collection(db, "projects", project.projId, "stages", stageDoc.id, "tasks")
+                        const tasksQuery = query(
+                            collection(db, "projects", projectId, "stages", stageDoc.id, "tasks")
                         );
+                        const tasksSnapshot = await getDocs(tasksQuery);
                         
                         const stageTasks = tasksSnapshot.docs.map(doc => ({
                             ...(doc.data() as Task),
                             id: doc.id
                         }));
                         
-                        projectTasksList = [...projectTasksList, ...stageTasks];
+                        allTasks.push(...stageTasks);
                     }
                     
-                    tasksMap[project.projId] = projectTasksList;
+                    tasksMap[projectId] = allTasks;
                 } catch (error) {
-                    console.error(`Error fetching tasks for project ${project.projId}:`, error);
-                    tasksMap[project.projId] = [];
+                    console.error(`Error fetching tasks for project ${projectId}:`, error);
                 }
             }
             
             setProjectTasks(tasksMap);
         };
 
-        if (allProjectsList.length > 0) {
-            fetchProjectTasks();
-        }
-    }, [allProjectsList]);
-
-    const totalProjects = allProjectsList.length;
-    const activeProjects = allProjectsList.filter(
-        (proj: Project) => proj.members && proj.members.length > 0,
-    ).length;
+        fetchProjectTasks();
+    }, [allProjects, refreshTrigger]);
 
     const handleAccept = () => {
-        if (parsedOutput) {
-            startTransition(async () => {
-                try {
-                    await updateProjects(orgId, parsedOutput.groups);
-                    toast.success("Groups updated successfully");
-                } catch (error) {
-                    console.error("Failed to update groups:", error);
-                    toast.error("Failed to update groups");
-                }
-            });
-            setOutput("");
-        }
-    };
-
-    const handleCreateProject = () => {
-        if (!newProjectTitle.trim()) {
-            toast.error("Please enter a project title");
-            return;
-        }
+        if (!parsedOutput) return;
 
         startTransition(async () => {
             try {
-                const result = await createProject(
-                    orgId,
-                    newProjectTitle,
-                    [],
-                );
-
-                if (result.success) {
-                    toast.success(
-                        result.message ||
-                            `Project "${newProjectTitle}" created successfully!`,
-                    );
+                const result = await updateProjects(orgId, parsedOutput.groups);
+                if (result?.success) {
+                    toast.success("Projects updated successfully!");
+                    setOutput("");
+                    setParsedOutput(null);
                     setRefreshTrigger((prev: number) => prev + 1);
-                    setIsNewProjectDialogOpen(false);
-                    setNewProjectTitle("");
                 } else {
-                    toast.error(
-                        result.message || "Failed to create project",
-                    );
-                    return;
+                    toast.error(result?.message || "Failed to update projects");
                 }
-                setNewProjectTitle("");
-                setIsNewProjectDialogOpen(false);
             } catch (error) {
-                console.error("Failed to create project:", error);
-                toast.error(
-                    "Failed to create project: " + (error as Error).message,
-                );
+                console.error("Failed to update projects:", error);
+                toast.error("Failed to update projects");
             }
         });
     };
+
+    const handleProjectCreated = () => {
+        setRefreshTrigger((prev: number) => prev + 1);
+    };
+
+    const totalProjects = allProjects?.docs.length || 0;
+    const activeProjects = userRole === "admin" 
+        ? (allProjects?.docs || []).filter(proj => (proj.data() as Project).members?.length > 0).length
+        : userProjList.length;
+
+    // 根据用户角色决定显示哪些项目
+    const displayProjects = userRole === "admin" 
+        ? (allProjects?.docs || []).map((doc) => ({
+            ...(doc.data() as Project),
+            projId: doc.id
+        }))
+        : userProjList;
 
     return (
         <div className="flex h-auto bg-gradient-to-br from-gray-50 to-purple-50 rounded-lg overflow-hidden py-12">
@@ -293,7 +258,7 @@ const ProjTab = ({
                                                 Total Members
                                             </span>
                                             <Badge variant="outline">
-                                                {allProjectsList.reduce((total: number, proj: Project) => total + (proj.members?.length || 0), 0)}
+                                                {displayProjects.reduce((total: number, proj: Project) => total + (proj.members?.length || 0), 0)}
                                             </Badge>
                                         </div>
                                     </div>
@@ -307,84 +272,12 @@ const ProjTab = ({
                     <div className="space-y-2">
                         {userRole === "admin" && (
                             <>
-                                <Dialog
-                                    open={isNewProjectDialogOpen}
-                                    onOpenChange={setIsNewProjectDialogOpen}
-                                >
-                                    <DialogTrigger asChild>
-                                        <Button
-                                            className={`w-full ${totalProjects === 0 ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg text-white" : ""}`}
-                                            size={
-                                                totalProjects === 0
-                                                    ? "default"
-                                                    : "sm"
-                                            }
-                                        >
-                                            <Plus className="h-4 w-4 mr-2" />
-                                            {totalProjects === 0
-                                                ? "Create First Project"
-                                                : "New Project"}
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <DialogTitle>
-                                                Create New Project
-                                            </DialogTitle>
-                                            <DialogDescription>
-                                                Enter a name for your new
-                                                project.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="grid gap-4 py-4">
-                                            <div className="flex flex-col gap-2">
-                                                <label
-                                                    htmlFor="project-title"
-                                                    className="text-sm font-medium"
-                                                >
-                                                    Project Title
-                                                </label>
-                                                <Input
-                                                    id="project-title"
-                                                    value={newProjectTitle}
-                                                    onChange={(e) =>
-                                                        setNewProjectTitle(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    placeholder="Enter project title..."
-                                                    onKeyPress={(e) =>
-                                                        e.key === "Enter" &&
-                                                        handleCreateProject()
-                                                    }
-                                                />
-                                            </div>
-                                        </div>
-                                        <DialogFooter>
-                                            <Button
-                                                variant="outline"
-                                                onClick={() =>
-                                                    setIsNewProjectDialogOpen(
-                                                        false,
-                                                    )
-                                                }
-                                            >
-                                                Cancel
-                                            </Button>
-                                            <Button
-                                                onClick={handleCreateProject}
-                                                disabled={
-                                                    isPending ||
-                                                    !newProjectTitle.trim()
-                                                }
-                                            >
-                                                {isPending
-                                                    ? "Creating..."
-                                                    : "Create Project"}
-                                            </Button>
-                                        </DialogFooter>
-                                    </DialogContent>
-                                </Dialog>
+                                <CreateProjectDialog 
+                                    orgId={orgId} 
+                                    totalProjects={totalProjects}
+                                    userRole={userRole as "admin" | "member"}
+                                    onProjectCreated={handleProjectCreated} 
+                                />
                             </>
                         )}
                     </div>
@@ -449,9 +342,9 @@ const ProjTab = ({
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-6">
                         <div className="space-y-6">
-                            {allProjectsList.length > 0 ? (
+                            {displayProjects.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {allProjectsList
+                                    {displayProjects
                                         .sort((a, b) =>
                                             a.title.localeCompare(b.title),
                                         )

@@ -1105,33 +1105,40 @@ export async function setBgImage(orgId: string, imageUrl: string) {
     }
 }
 
-export async function getOrganizationMembersResponses(orgId: string) {
+
+export async function getProjectMembersResponses(projId: string) {
     const { userId } = await auth();
     if (!userId) {
         throw new Error("Unauthorized");
     }
 
     try {
-        // Get organization data
-        const orgDoc = await adminDb
-            .collection("organizations")
-            .doc(orgId)
+        // Get project data
+        const projectDoc = await adminDb
+            .collection("projects")
+            .doc(projId)
             .get();
-        if (!orgDoc.exists) {
-            throw new Error("Organization not found");
+        if (!projectDoc.exists) {
+            throw new Error("Project not found");
         }
 
-        const orgData = orgDoc.data();
-        const members = [
-            ...(orgData?.members || []),
-            ...(orgData?.admins || []),
+        const projectData = projectDoc.data();
+        const allMembers = [
+            ...(projectData?.members || []),
+            ...(projectData?.admins || []),
         ];
+        
+        // 去重，确保没有重复的成员
+        const members = [...new Set(allMembers)];
+        
+        console.log("Project members before deduplication:", allMembers);
+        console.log("Project members after deduplication:", members);
 
         if (members.length === 0) {
             return { success: true, data: [] };
         }
 
-        // Get all members' onboardingSurveyResponse
+        // Get all project members' onboardingSurveyResponse
         const memberResponses = await Promise.all(
             members.map(async (memberEmail) => {
                 const userDoc = await adminDb

@@ -24,6 +24,7 @@ export type Project = {
     orgId: string;
     title: string;
     members: string[];
+    admins: string[];
     teamCharterResponse: string[];
     projectType?: string; // 项目类型：Frontend, Backend, Mobile等
     createdAt?: string;

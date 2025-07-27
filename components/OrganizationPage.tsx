@@ -6,14 +6,9 @@ import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { collection, doc, query, where } from "firebase/firestore";
 import { db } from "@/firebase";
 import MemberList from "./MemberList";
-import ProjOnboarding from "./ProjOnboarding";
 import { Organization, UserOrgData } from "@/types/types";
 import { useUser } from "@clerk/nextjs";
 import ProjTab from "./ProjTab";
-import { Copy, Eye, EyeOff } from "lucide-react";
-import { toast } from "sonner";
-import ImageSearchDialog from "./ImageSearchDialog";
-import OrganizationScoreCard from "./OrganizationScoreCard";
 import OrgHeader from "./OrgHeader";
 
 const OrganizationPage = ({ id }: { id: string }) => {

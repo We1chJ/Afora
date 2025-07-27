@@ -4,6 +4,8 @@ import { GeneratedTasks, Stage } from "@/types/types";
 import { auth } from "@clerk/nextjs/server";
 import { Timestamp } from "firebase-admin/firestore";
 import axios from "axios";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "@/firebase";
 
 // IMPLEMENT THIS WITH FIREBASE FIRESTORE NOW THAT WE AREN'T USING LIVE BLOCKS
 
@@ -1476,10 +1478,19 @@ export async function getTaskSubmissions(
             .orderBy("submitted_at", "desc")
             .get();
 
-        const submissions = submissionsSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-        }));
+        const submissions = submissionsSnapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                user_email: data.user_email,
+                content: data.content,
+                // Convert Timestamp to plain object
+                submitted_at: data.submitted_at ? {
+                    _seconds: data.submitted_at.seconds,
+                    _nanoseconds: data.submitted_at.nanoseconds
+                } : null,
+            };
+        });
 
         return {
             success: true,
@@ -1625,9 +1636,21 @@ export async function getUserScore(userEmail: string, projectId: string) {
         }
 
         const scoreDoc = scoresQuery.docs[0];
+        const data = scoreDoc.data();
         const scoreData = {
             id: scoreDoc.id,
-            ...scoreDoc.data(),
+            user_email: data.user_email,
+            project_id: data.project_id,
+            total_points: data.total_points,
+            tasks_completed: data.tasks_completed,
+            tasks_assigned: data.tasks_assigned,
+            average_completion_time: data.average_completion_time,
+            streak: data.streak,
+            // Convert Timestamp to plain object
+            last_updated: data.last_updated ? {
+                _seconds: data.last_updated.seconds,
+                _nanoseconds: data.last_updated.nanoseconds
+            } : null,
         };
 
         return {
@@ -1655,10 +1678,24 @@ export async function getProjectLeaderboard(projId: string) {
             .limit(50)
             .get();
 
-        const leaderboard = scores.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-        }));
+        const leaderboard = scores.docs.map((doc) => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                user_email: data.user_email,
+                project_id: data.project_id,
+                total_points: data.total_points,
+                tasks_completed: data.tasks_completed,
+                tasks_assigned: data.tasks_assigned,
+                average_completion_time: data.average_completion_time,
+                streak: data.streak,
+                // Convert Timestamp to plain object
+                last_updated: data.last_updated ? {
+                    _seconds: data.last_updated.seconds,
+                    _nanoseconds: data.last_updated.nanoseconds
+                } : null,
+            };
+        });
 
         return {
             success: true,
@@ -2219,10 +2256,25 @@ export async function getTeamCompatibilityScores(
 
         const snapshot = await query.orderBy("overall_score", "desc").get();
 
-        const scores = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-        }));
+        const scores = snapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                org_id: data.org_id,
+                project_id: data.project_id,
+                user_email: data.user_email,
+                communication_score: data.communication_score,
+                collaboration_score: data.collaboration_score,
+                technical_score: data.technical_score,
+                leadership_score: data.leadership_score,
+                overall_score: data.overall_score,
+                // Convert Timestamp to plain object
+                last_updated: data.last_updated ? {
+                    _seconds: data.last_updated.seconds,
+                    _nanoseconds: data.last_updated.nanoseconds
+                } : null,
+            };
+        });
 
         return {
             success: true,
@@ -2305,7 +2357,11 @@ export async function getProjectAnalytics(projId: string) {
                 tasks_assigned: data.tasks_assigned,
                 average_completion_time: data.average_completion_time,
                 streak: data.streak,
-                last_updated: data.last_updated,
+                // Convert Timestamp to plain object
+                last_updated: data.last_updated ? {
+                    _seconds: data.last_updated.seconds,
+                    _nanoseconds: data.last_updated.nanoseconds
+                } : null,
                 project_id: data.project_id,
             };
         });
@@ -2774,6 +2830,100 @@ export async function reassignTask(
         return { success: true, message: "Task reassigned successfully" };
     } catch (error) {
         console.error("Error reassigning task:", error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+// ================ Team Analysis ================
+
+export async function saveTeamAnalysis(
+    projId: string,
+    analysis: any,
+) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        // 创建文件路径
+        const filePath = `team_analysis/${projId}/latest_analysis.json`;
+        
+        // 将分析结果转换为 JSON 字符串
+        const analysisJson = JSON.stringify(analysis);
+        
+        // 创建 Blob
+        const blob = new Blob([analysisJson], { type: 'application/json' });
+        
+        // 上传到 Firebase Storage
+        const storageRef = ref(storage, filePath);
+        await uploadBytes(storageRef, blob);
+        
+        // 保存元数据到 Firestore
+        await adminDb.collection("projects").doc(projId).update({
+            lastTeamAnalysis: {
+                timestamp: new Date(),
+                filePath: filePath,
+            }
+        });
+
+        return {
+            success: true,
+            message: "Team analysis saved successfully",
+        };
+    } catch (error) {
+        console.error("Error saving team analysis:", error);
+        return { success: false, message: (error as Error).message };
+    }
+}
+
+export async function getTeamAnalysis(projId: string) {
+    const { userId } = await auth();
+    if (!userId) {
+        throw new Error("Unauthorized");
+    }
+
+    try {
+        // 获取项目文档
+        const projectDoc = await adminDb.collection("projects").doc(projId).get();
+        const projectData = projectDoc.data();
+        
+        if (!projectData?.lastTeamAnalysis?.filePath) {
+            return { success: false, message: "No analysis found" };
+        }
+
+        // 从 Storage 获取文件
+        const storageRef = ref(storage, projectData.lastTeamAnalysis.filePath);
+        const url = await getDownloadURL(storageRef);
+        
+        // 获取文件内容
+        const response = await fetch(url);
+        const analysis = await response.json();
+
+        // 处理 timestamp 字段
+        let ts = projectData.lastTeamAnalysis.timestamp;
+        let timestamp;
+        if (ts && typeof ts === 'object' && (ts.seconds !== undefined || ts._seconds !== undefined)) {
+            // Firestore Timestamp
+            timestamp = {
+                _seconds: ts.seconds ?? ts._seconds,
+                _nanoseconds: ts.nanoseconds ?? ts._nanoseconds ?? 0
+            };
+        } else if (ts instanceof Date) {
+            timestamp = ts.toISOString();
+        } else {
+            timestamp = ts ?? null;
+        }
+
+        return {
+            success: true,
+            data: {
+                analysis,
+                timestamp,
+            },
+        };
+    } catch (error) {
+        console.error("Error getting team analysis:", error);
         return { success: false, message: (error as Error).message };
     }
 }

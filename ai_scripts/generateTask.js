@@ -1,7 +1,7 @@
 "use server";
 // HAS TO HAVE USE SERVER!!! OTHERWISE NOT WORKING
 // because openai blocks openai api key if used on client side to prevent leaking
-const apiRequest = require("./apiRequest");
+import { apiRequest } from "./apiRequest.js";
 
 
 const responseFormat = {

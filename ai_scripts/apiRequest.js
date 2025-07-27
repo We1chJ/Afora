@@ -1,12 +1,12 @@
-const dotenv = require("dotenv");
+import dotenv from "dotenv";
 dotenv.config();
-const OpenAI = require("openai");
+import OpenAI from "openai";
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
-const apiRequest = async ({ context, responseFormat, input, functionName }) => {
+export const apiRequest = async ({ context, responseFormat, input, functionName }) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s
 
@@ -76,5 +76,3 @@ const apiRequest = async ({ context, responseFormat, input, functionName }) => {
     }
 };
 
-
-module.exports = apiRequest; // Exporting the function directly

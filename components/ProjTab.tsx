@@ -1,13 +1,7 @@
 "use client";
 import { db } from "@/firebase";
 import { Project, Task } from "@/types/types";
-import {
-    collection,
-    DocumentData,
-    getDocs,
-    query,
-    where,
-} from "firebase/firestore";
+import {collection, DocumentData, getDocs, query, where} from "firebase/firestore";
 import React, { useEffect, useState, useTransition } from "react";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { Button } from "./ui/button";
@@ -49,7 +43,7 @@ const ProjTab = ({
     
 
     const userQ = query(
-        collection(db, "users", userId, "projects"),
+        collection(db, "users", userId, "projs"),
         where("orgId", "==", orgId),
     );
     const [userProjects, userLoading, userError] = useCollection(userQ);

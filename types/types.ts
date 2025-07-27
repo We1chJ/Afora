@@ -341,8 +341,10 @@ export interface StageProgress {
     locked: boolean;
 }
 
-export interface OrganizationScoreCardProps {
+export interface TeamScoreCardProps {
     orgId: string;
     members: string[];
     projectFilter?: string;
+    initialAnalysis: TeamCompatibilityAnalysis | null;
+    lastAnalysisTime: Date | null;
 }

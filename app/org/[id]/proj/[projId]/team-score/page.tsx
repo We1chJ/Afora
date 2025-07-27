@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import OrganizationScoreCard from "@/components/OrganizationScoreCard";
+import OrganizationScoreCard from "@/components/TeamScoreCard";
 
 function TeamScorePage() {
     const params = useParams();

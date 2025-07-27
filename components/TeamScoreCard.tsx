@@ -1,26 +1,32 @@
 "use client";
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Loader2, Users, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
 import { analyzeTeamCompatibility } from "@/ai_scripts/analyzeTeamCompatibility";
-import { appQuestions, TeamCompatibilityAnalysis } from "@/types/types";
-import { getOrganizationMembersResponses } from "@/actions/actions";
+import { appQuestions, TeamCompatibilityAnalysis, TeamScoreCardProps } from "@/types/types";
+import { getOrganizationMembersResponses, saveTeamAnalysis } from "@/actions/actions";
 import { toast } from "sonner";
 import TeamScoreChart from "./TeamScoreChart";
-import { OrganizationScoreCardProps } from "@/types/types";
 
-const OrganizationScoreCard = ({
+const TeamScoreCard = ({
     orgId,
     members,
     projectFilter,
-}: OrganizationScoreCardProps) => {
-    const [analysis, setAnalysis] = useState<TeamCompatibilityAnalysis | null>(
-        null,
-    );
+    initialAnalysis,
+    lastAnalysisTime,
+}: TeamScoreCardProps) => {
+    const [analysis, setAnalysis] = useState<TeamCompatibilityAnalysis | null>(initialAnalysis);
     const [isPending, startTransition] = useTransition();
+    const [analysisTime, setAnalysisTime] = useState<Date | null>(lastAnalysisTime);
+
+    // 当 props 更新时同步状态
+    useEffect(() => {
+        setAnalysis(initialAnalysis);
+        setAnalysisTime(lastAnalysisTime);
+    }, [initialAnalysis, lastAnalysisTime]);
 
     const handleAnalyzeTeam = async () => {
         startTransition(() => {
@@ -40,9 +46,17 @@ const OrganizationScoreCard = ({
                             appQuestions,
                             memberResponses,
                         );
-                        const parsedResult: TeamCompatibilityAnalysis =
-                            JSON.parse(result);
+                        const parsedResult: TeamCompatibilityAnalysis = JSON.parse(result);
                         setAnalysis(parsedResult);
+                        
+                        // 保存分析结果
+                        if (projectFilter) {
+                            await saveTeamAnalysis(projectFilter, parsedResult);
+                            setAnalysisTime(new Date());
+                            toast.success("Team analysis completed and saved!");
+                        } else {
+                            toast.success("Team analysis completed!");
+                        }
                         return;
                     }
 
@@ -59,16 +73,20 @@ const OrganizationScoreCard = ({
                         appQuestions,
                         memberResponses,
                     );
-                    const parsedResult: TeamCompatibilityAnalysis =
-                        JSON.parse(result);
+                    const parsedResult: TeamCompatibilityAnalysis = JSON.parse(result);
                     setAnalysis(parsedResult);
 
-                    const successMessage = "Team analysis completed!";
-                    toast.success(successMessage);
+                    // 保存分析结果
+                    if (projectFilter) {
+                        await saveTeamAnalysis(projectFilter, parsedResult);
+                        setAnalysisTime(new Date());
+                        toast.success("Team analysis completed and saved!");
+                    } else {
+                        toast.success("Team analysis completed!");
+                    }
                 } catch (error) {
                     console.error("Analysis failed:", error);
-                    const errorMessage = "Analysis failed";
-                    toast.error(errorMessage);
+                    toast.error("Analysis failed. Please try again.");
                     setAnalysis(null);
                 }
             })();
@@ -105,6 +123,11 @@ const OrganizationScoreCard = ({
                         {projectFilter
                             ? "Analyze this project team's compatibility and collaboration potential based on member profiles"
                             : "Analyze team's overall compatibility and collaboration potential based on member onboarding surveys"}
+                        {analysisTime && (
+                            <div className="mt-2 text-sm text-muted-foreground">
+                                Last analysis: {analysisTime.toLocaleString()}
+                            </div>
+                        )}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -128,6 +151,19 @@ const OrganizationScoreCard = ({
                         </div>
                     ) : (
                         <div className="space-y-6">
+                            <div className="flex justify-end">
+                                <Button
+                                    onClick={handleAnalyzeTeam}
+                                    disabled={isPending}
+                                    variant="outline"
+                                    size="sm"
+                                >
+                                    {isPending && (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    )}
+                                    Refresh Analysis
+                                </Button>
+                            </div>
                             {/* Chart visualization */}
                             <TeamScoreChart analysis={analysis} />
 
@@ -538,4 +574,4 @@ const OrganizationScoreCard = ({
     );
 };
 
-export default OrganizationScoreCard;
+export default TeamScoreCard;

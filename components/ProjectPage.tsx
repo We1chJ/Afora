@@ -1,13 +1,13 @@
 "use client";
 
 import { db } from "@/firebase";
-import { useAuth } from "@clerk/nextjs";
-import { collection, doc } from "firebase/firestore";
+import { useAuth, useUser } from "@clerk/nextjs";
+import { collection, doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 
-import { Project, Stage, teamCharterQuestions } from "@/types/types";
+import { Project, Stage, teamCharterQuestions, TeamCompatibilityAnalysis } from "@/types/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFoo
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@radix-ui/react-label";
-import { setTeamCharter, updateProjectTitle, updateStages, getProjectStats, getProjectLeaderboard } from "@/actions/actions";
+import { setTeamCharter, updateProjectTitle, updateStages, getProjectStats, getProjectLeaderboard, getTeamAnalysis } from "@/actions/actions";
 import { HoverCard, HoverCardTrigger } from "@radix-ui/react-hover-card";
 import { HoverCardContent } from "@/components/ui/hover-card";
 import { ReorderIcon } from "@/components/ReorderIcon";
@@ -28,11 +28,12 @@ import { updateStatus } from "@/lib/store/features/stageStatus/stageStatusSlice"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import OrganizationScoreCard from "@/components/OrganizationScoreCard";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import TeamScoreCard from "@/components/TeamScoreCard";
 
 const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
-    const { isSignedIn, isLoaded } = useAuth(); // Get authentication state
+    const { isSignedIn, isLoaded } = useAuth();
+    const { user } = useUser();
     const [responses, setResponses] = useState<string[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const router = useRouter();
@@ -43,7 +44,25 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const [projectStats, setProjectStats] = useState<any>(null);
     const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
     const [statsLoading, setStatsLoading] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [analysisLoading, setAnalysisLoading] = useState(true);
+    const [analysisData, setAnalysisData] = useState<{analysis: TeamCompatibilityAnalysis, timestamp: Date} | null>(null);
+    const [hasExistingAnalysis, setHasExistingAnalysis] = useState<boolean>(false);
 
+    const [projData, projLoading, projError] = useDocument(
+        doc(db, "projects", projId),
+    );
+    const proj = projData?.data() as Project;
+    const [projTitle, setProjTitle] = useState(proj?.title || "");
+
+    // check if user is admin
+    useEffect(() => {
+        if (user?.primaryEmailAddress?.emailAddress && projData) {
+            const userEmail = user.primaryEmailAddress.emailAddress;
+            const admins = projData.data()?.admins || [];
+            setIsAdmin(admins.includes(userEmail));
+        }
+    }, [user, projData]);
 
     useEffect(() => {
         // Redirect to login if the user is not authenticated
@@ -52,17 +71,17 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         }
     }, [isLoaded, isSignedIn, router]);
 
-    // 加载项目统计数据
+    // load project stats
     const loadProjectStats = async () => {
         setStatsLoading(true);
         try {
-            // 加载项目统计
+            // load project stats
             const statsResult = await getProjectStats(projId);
             if (statsResult.success) {
                 setProjectStats(statsResult.data);
             }
 
-            // 加载排行榜数据
+            // load leaderboard data
             const leaderboardResult = await getProjectLeaderboard(projId);
             if (leaderboardResult.success) {
                 setLeaderboardData(leaderboardResult.leaderboard || []);
@@ -74,18 +93,45 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         }
     };
 
-    // 加载数据
+    // load data
     useEffect(() => {
         if (projId) {
             loadProjectStats();
         }
     }, [projId]);
 
-    const [projData, projLoading, projError] = useDocument(
-        doc(db, "projects", projId),
-    );
-    const proj = projData?.data() as Project;
-    const [projTitle, setProjTitle] = useState(proj?.title || "");
+    // load team analysis report
+    useEffect(() => {
+        const loadTeamAnalysis = async () => {
+            if (projId) {
+                try {
+                    setAnalysisLoading(true);
+                    const projectDoc = await getDoc(doc(db, "projects", projId));
+                    const projectData = projectDoc.data();
+                    
+                    if (projectData?.lastTeamAnalysis?.filePath) {
+                        setHasExistingAnalysis(true);
+                        // if there is existing analysis, load it
+                        const result = await getTeamAnalysis(projId);
+                        if (result.success && result.data) {
+                            setAnalysisData({
+                                analysis: result.data.analysis,
+                                timestamp: new Date(result.data.timestamp)
+                            });
+                        }
+                    } else {
+                        setHasExistingAnalysis(false);
+                    }
+                } catch (error) {
+                    console.error("Error checking team analysis:", error);
+                    setHasExistingAnalysis(false);
+                } finally {
+                    setAnalysisLoading(false);
+                }
+            }
+        };
+        loadTeamAnalysis();
+    }, [projId]);
 
     useEffect(() => {
         if (!isEditing) {
@@ -212,7 +258,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
 
     return (
         <div className="flex flex-col w-full h-full bg-gray-100">
-            {/* Header Section - 类似组织页面的背景图片风格 */}
+            {/* Header Section - similar to organization page background image style */}
             <div className="relative">
                 <div
                     className="bg-gradient-to-r from-[#6F61EF] to-purple-600 h-64 flex items-center justify-center bg-cover bg-center"
@@ -222,7 +268,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                         backgroundPosition: "center",
                     }}
                 >
-                    {/* 半透明卡片 - 类似组织页面的设计 */}
+                    {/* semi-transparent card - similar to organization page design */}
                     <div
                         className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-6 m-6 w-full max-w-8xl"
                         style={{
@@ -233,7 +279,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                         }}
                     >
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                            {/* 项目信息部分 */}
+                            {/* project information section */}
                             <div className="flex-1 space-y-4">
                                 <div className="flex items-center justify-between mb-3">
                                     <h1 className="text-3xl md:text-4xl font-bold text-white">
@@ -364,7 +410,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                     </TabsList>
 
                     <TabsContent value="roadmap" className="space-y-4">
-                        {/* 项目统计卡片 */}
+                        {/* project stats card */}
                         {projectStats && (
                             <Card className="mb-6">
                                 <CardHeader>
@@ -438,11 +484,15 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                             No stages yet
                                         </h3>
                                         <p>
-                                            Try generating stages and tasks to
-                                            start your project.
+                                            {isAdmin ? (
+                                                "Try generating stages and tasks to start your project."
+                                            ) : (
+                                                "Please wait for the admin to create project stages."
+                                            )}
                                         </p>
                                     </div>
-                                    <div className="flex justify-center gap-4">
+                                    {isAdmin && (
+                                        <div className="flex justify-center gap-4">
                                             <GenerateTasksButton
                                                 orgId={id}
                                                 projId={projId}
@@ -450,180 +500,181 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                     teamCharterData?.data()?.teamCharterResponse || []
                                                 }
                                             />
-                                        <AlertDialog
-                                            open={isOpen}
-                                            onOpenChange={setIsOpen}
-                                        >
-                                            <AlertDialogTrigger asChild>
-                                                <Button
-                                                    onClick={handleOpenEditing}
-                                                    variant="outline"
-                                                >
-                                                    <EditIcon className="mr-2 h-4 w-4" />{" "}
-                                                    Team Charter
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent className="w-full max-w-4xl">
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>
-                                                        Project Team Charter
-                                                    </AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        Fill out this charter to
-                                                        kick off your project!
-                                                        🚀
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <div className="overflow-y-auto max-h-96">
-                                                    <form className="space-y-8 p-2">
-                                                        {/* Group questions by section */}
-                                                        <div className="space-y-6">
-                                                            {/* Project Basic Information */}
-                                                            <div className="space-y-4">
-                                                                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                                                                    1. Project Basic Information
-                                                                </h3>
-                                                                {teamCharterQuestions.slice(0, 3).map((question, index) => (
-                                                                    <div key={index} className="space-y-2">
-                                                                        <Label
-                                                                            htmlFor={`question-${index}`}
-                                                                            className="text-sm font-medium text-gray-700"
-                                                                        >
-                                                                            {question}
-                                                                        </Label>
-                                                                        <Textarea
-                                                                            id={`question-${index}`}
-                                                                            name={`question-${index}`}
-                                                                            value={responses[index] || ""}
-                                                                            onChange={(e) => {
-                                                                                const newResponses = [...responses];
-                                                                                newResponses[index] = e.target.value;
-                                                                                setResponses(newResponses);
-                                                                            }}
-                                                                            placeholder="Enter your response here..."
-                                                                            className="min-h-[100px]"
-                                                                        />
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-
-                                                            {/* Team Information */}
-                                                            <div className="space-y-4">
-                                                                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                                                                    2. Team Information
-                                                                </h3>
-                                                                {teamCharterQuestions.slice(3, 6).map((question, index) => (
-                                                                    <div key={index + 3} className="space-y-2">
-                                                                        <Label
-                                                                            htmlFor={`question-${index + 3}`}
-                                                                            className="text-sm font-medium text-gray-700"
-                                                                        >
-                                                                            {question}
-                                                                        </Label>
-                                                                        <Textarea
-                                                                            id={`question-${index + 3}`}
-                                                                            name={`question-${index + 3}`}
-                                                                            value={responses[index + 3] || ""}
-                                                                            onChange={(e) => {
-                                                                                const newResponses = [...responses];
-                                                                                newResponses[index + 3] = e.target.value;
-                                                                                setResponses(newResponses);
-                                                                            }}
-                                                                            placeholder="Enter your response here..."
-                                                                            className="min-h-[100px]"
-                                                                        />
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-
-                                                            {/* Timeline Planning */}
-                                                            <div className="space-y-4">
-                                                                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                                                                    3. Timeline Planning
-                                                                </h3>
-                                                                {teamCharterQuestions.slice(6, 9).map((question, index) => (
-                                                                    <div key={index + 6} className="space-y-2">
-                                                                        <Label
-                                                                            htmlFor={`question-${index + 6}`}
-                                                                            className="text-sm font-medium text-gray-700"
-                                                                        >
-                                                                            {question}
-                                                                        </Label>
-                                                                        <Textarea
-                                                                            id={`question-${index + 6}`}
-                                                                            name={`question-${index + 6}`}
-                                                                            value={responses[index + 6] || ""}
-                                                                            onChange={(e) => {
-                                                                                const newResponses = [...responses];
-                                                                                newResponses[index + 6] = e.target.value;
-                                                                                setResponses(newResponses);
-                                                                            }}
-                                                                            placeholder="Enter your response here..."
-                                                                            className="min-h-[100px]"
-                                                                        />
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-
-                                                            {/* Additional Key Information */}
-                                                            <div className="space-y-4">
-                                                                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
-                                                                    4. Additional Key Information
-                                                                </h3>
-                                                                {teamCharterQuestions.slice(9).map((question, index) => (
-                                                                    <div key={index + 9} className="space-y-2">
-                                                                        <Label
-                                                                            htmlFor={`question-${index + 9}`}
-                                                                            className="text-sm font-medium text-gray-700"
-                                                                        >
-                                                                            {question}
-                                                                        </Label>
-                                                                        <Textarea
-                                                                            id={`question-${index + 9}`}
-                                                                            name={`question-${index + 9}`}
-                                                                            value={responses[index + 9] || ""}
-                                                                            onChange={(e) => {
-                                                                                const newResponses = [...responses];
-                                                                                newResponses[index + 9] = e.target.value;
-                                                                                setResponses(newResponses);
-                                                                            }}
-                                                                            placeholder="Enter your response here..."
-                                                                            className="min-h-[100px]"
-                                                                        />
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                                <AlertDialogFooter>
+                                            <AlertDialog
+                                                open={isOpen}
+                                                onOpenChange={setIsOpen}
+                                            >
+                                                <AlertDialogTrigger asChild>
                                                     <Button
-                                                        onClick={() =>
-                                                            setIsOpen(false)
-                                                        }
+                                                        onClick={handleOpenEditing}
                                                         variant="outline"
                                                     >
-                                                        Cancel
+                                                        <EditIcon className="mr-2 h-4 w-4" />{" "}
+                                                        Team Charter
                                                     </Button>
-                                                    <Button
-                                                        onClick={
-                                                            handleTeamCharterSave
-                                                        }
-                                                        disabled={isPending}
-                                                    >
-                                                        {isPending ? (
-                                                            <>
-                                                                <Loader2 className="animate-spin mr-2 h-4 w-4" />{" "}
-                                                                Loading
-                                                            </>
-                                                        ) : (
-                                                            "Save"
-                                                        )}
-                                                    </Button>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </div>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent className="w-full max-w-4xl">
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>
+                                                            Project Team Charter
+                                                        </AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Fill out this charter to
+                                                            kick off your project!
+                                                            🚀
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <div className="overflow-y-auto max-h-96">
+                                                        <form className="space-y-8 p-2">
+                                                            {/* Group questions by section */}
+                                                            <div className="space-y-6">
+                                                                {/* Project Basic Information */}
+                                                                <div className="space-y-4">
+                                                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                                                                        1. Project Basic Information
+                                                                    </h3>
+                                                                    {teamCharterQuestions.slice(0, 3).map((question, index) => (
+                                                                        <div key={index} className="space-y-2">
+                                                                            <Label
+                                                                                htmlFor={`question-${index}`}
+                                                                                className="text-sm font-medium text-gray-700"
+                                                                            >
+                                                                                {question}
+                                                                            </Label>
+                                                                            <Textarea
+                                                                                id={`question-${index}`}
+                                                                                name={`question-${index}`}
+                                                                                value={responses[index] || ""}
+                                                                                onChange={(e) => {
+                                                                                    const newResponses = [...responses];
+                                                                                    newResponses[index] = e.target.value;
+                                                                                    setResponses(newResponses);
+                                                                                }}
+                                                                                placeholder="Enter your response here..."
+                                                                                className="min-h-[100px]"
+                                                                            />
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+
+                                                                {/* Team Information */}
+                                                                <div className="space-y-4">
+                                                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                                                                        2. Team Information
+                                                                    </h3>
+                                                                    {teamCharterQuestions.slice(3, 6).map((question, index) => (
+                                                                        <div key={index + 3} className="space-y-2">
+                                                                            <Label
+                                                                                htmlFor={`question-${index + 3}`}
+                                                                                className="text-sm font-medium text-gray-700"
+                                                                            >
+                                                                                {question}
+                                                                            </Label>
+                                                                            <Textarea
+                                                                                id={`question-${index + 3}`}
+                                                                                name={`question-${index + 3}`}
+                                                                                value={responses[index + 3] || ""}
+                                                                                onChange={(e) => {
+                                                                                    const newResponses = [...responses];
+                                                                                    newResponses[index + 3] = e.target.value;
+                                                                                    setResponses(newResponses);
+                                                                                }}
+                                                                                placeholder="Enter your response here..."
+                                                                                className="min-h-[100px]"
+                                                                            />
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+
+                                                                {/* Timeline Planning */}
+                                                                <div className="space-y-4">
+                                                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                                                                        3. Timeline Planning
+                                                                    </h3>
+                                                                    {teamCharterQuestions.slice(6, 9).map((question, index) => (
+                                                                        <div key={index + 6} className="space-y-2">
+                                                                            <Label
+                                                                                htmlFor={`question-${index + 6}`}
+                                                                                className="text-sm font-medium text-gray-700"
+                                                                            >
+                                                                                {question}
+                                                                            </Label>
+                                                                            <Textarea
+                                                                                id={`question-${index + 6}`}
+                                                                                name={`question-${index + 6}`}
+                                                                                value={responses[index + 6] || ""}
+                                                                                onChange={(e) => {
+                                                                                    const newResponses = [...responses];
+                                                                                    newResponses[index + 6] = e.target.value;
+                                                                                    setResponses(newResponses);
+                                                                                }}
+                                                                                placeholder="Enter your response here..."
+                                                                                className="min-h-[100px]"
+                                                                            />
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+
+                                                                {/* Additional Key Information */}
+                                                                <div className="space-y-4">
+                                                                    <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+                                                                        4. Additional Key Information
+                                                                    </h3>
+                                                                    {teamCharterQuestions.slice(9).map((question, index) => (
+                                                                        <div key={index + 9} className="space-y-2">
+                                                                            <Label
+                                                                                htmlFor={`question-${index + 9}`}
+                                                                                className="text-sm font-medium text-gray-700"
+                                                                            >
+                                                                                {question}
+                                                                            </Label>
+                                                                            <Textarea
+                                                                                id={`question-${index + 9}`}
+                                                                                name={`question-${index + 9}`}
+                                                                                value={responses[index + 9] || ""}
+                                                                                onChange={(e) => {
+                                                                                    const newResponses = [...responses];
+                                                                                    newResponses[index + 9] = e.target.value;
+                                                                                    setResponses(newResponses);
+                                                                                }}
+                                                                                placeholder="Enter your response here..."
+                                                                                className="min-h-[100px]"
+                                                                            />
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                    <AlertDialogFooter>
+                                                        <Button
+                                                            onClick={() =>
+                                                                setIsOpen(false)
+                                                            }
+                                                            variant="outline"
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                        <Button
+                                                            onClick={
+                                                                handleTeamCharterSave
+                                                            }
+                                                            disabled={isPending}
+                                                        >
+                                                            {isPending ? (
+                                                                <>
+                                                                    <Loader2 className="animate-spin mr-2 h-4 w-4" />{" "}
+                                                                    Loading
+                                                                </>
+                                                            ) : (
+                                                                "Save"
+                                                            )}
+                                                        </Button>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="space-y-6">
@@ -688,7 +739,9 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                                                         <LockKeyhole className="mr-4" />
                                                                                     </HoverCardTrigger>
                                                                                     <HoverCardContent className="p-2 bg-gray-800 text-white rounded-md shadow-lg">
-                                                                                        <p className="text-sm">This stage is locked. Help your team members finish their tasks first!</p>
+                                                                                        <p className="text-sm">
+                                                                                            {isAdmin ? "此阶段已锁定。帮助团队成员完成他们的任务！" : "此阶段已锁定。请等待管理员解锁。"}
+                                                                                        </p>
                                                                                     </HoverCardContent>
                                                                                 </HoverCard>
                                                                             )}
@@ -822,7 +875,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                                     <HoverCardTrigger asChild>
                                                         <Link
                                                             href={`/org/${id}/proj/${projId}/stage/${stage.id}`}
-                                                            className="block p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 hover:border-blue-300 hover:shadow-md transition-all duration-300"
+                                                            className={`block p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 hover:border-blue-300 hover:shadow-md transition-all duration-300 ${stageStatus[index] === 0 && !isAdmin ? 'pointer-events-none opacity-50' : ''}`}
                                                         >
                                                             <div className="flex w-full justify-between items-center">
                                                                 <span className="text-lg font-semibold">
@@ -861,13 +914,28 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                     <BarChart3 className="h-5 w-5 text-purple-600" />
                                     Team Compatibility Analysis
                                 </CardTitle>
+                                <CardDescription>
+                                    {hasExistingAnalysis 
+                                        ? "View and manage your team's compatibility analysis"
+                                        : "Generate a new team compatibility analysis"}
+                                </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <OrganizationScoreCard
-                                    orgId={id}
-                                    members={projectMembers}
-                                    projectFilter={projId}
-                                />
+                                {analysisLoading ? (
+                                    <div className="space-y-4">
+                                        <Skeleton className="h-8 w-full" />
+                                        <Skeleton className="h-32 w-full" />
+                                        <Skeleton className="h-32 w-full" />
+                                    </div>
+                                ) : (
+                                    <TeamScoreCard
+                                        orgId={id}
+                                        members={projectMembers}
+                                        projectFilter={projId}
+                                        initialAnalysis={analysisData?.analysis || null}
+                                        lastAnalysisTime={analysisData?.timestamp || null}
+                                    />
+                                )}
                             </CardContent>
                         </Card>
 

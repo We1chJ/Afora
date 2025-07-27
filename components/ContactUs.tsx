@@ -1,13 +1,17 @@
-import Link from 'next/link'
-import React from 'react'
-import { Mail } from 'lucide-react'
+import Link from "next/link";
+import React from "react";
+import { Mail } from "lucide-react";
+import { Button } from "./ui/button";
 
 function ContactUs() {
-  return (
-    // More functionality is needed
-    // Add an actual contact us that can refer emails to the afora.connect@gmail.com
-    <Link href={'/contact'}> <Mail className='text-white hover:translate-y-[-2px] transition-transform duration-300'/></Link>
-  )
+    return (
+        <Link href="/contact">
+            <Button variant="ghost" className="text-white hover:text-white hover:bg-white/20">
+                <Mail className="w-6 h-6 mr-2" />
+                Notifications
+            </Button>
+        </Link>
+    );
 }
 
-export default ContactUs
+export default ContactUs;

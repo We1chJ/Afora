@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
     Breadcrumb,
@@ -7,71 +7,199 @@ import {
     BreadcrumbList,
     BreadcrumbPage,
     BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+    BreadcrumbEllipsis,
+} from "@/components/ui/breadcrumb";
 import { db } from "@/firebase";
 import { Organization, Project, Stage, Task } from "@/types/types";
 import { doc } from "firebase/firestore";
 
 import { usePathname } from "next/navigation";
-import { Fragment, useEffect } from "react";
+import { Fragment, useEffect, useMemo } from "react";
 import { useDocument } from "react-firebase-hooks/firestore";
+
+// 文本截断函数
+const truncateText = (text: string, maxLength: number = 15) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + "...";
+};
 
 function Breadcrumbs() {
     // Adds a path that a user can refer to know where they are and click to "parent" directories
     const path = usePathname();
 
-    const segments = path.split("/").filter(segment => segment !== "");
-    useEffect(() => {
-        if (segments.length >= 1 && segments[0] !== 'org') {
-            segments.length = 0;
+    console.log(`Path: "${path}"`);
+
+    const segments = useMemo(() => {
+        const pathSegments = path
+            ? path.split("/").filter((segment) => segment !== "")
+            : [];
+        
+        // Filter out non-org routes
+        if (pathSegments.length >= 1 && pathSegments[0] !== "org") {
+            return [];
         }
-        console.log(segments);
+        
+        return pathSegments;
     }, [path]);
-    const orgDocRef = (segments.length >= 1 && segments[0] == 'org')? doc(db, 'organizations', segments[1]) : null;
+
+    useEffect(() => {
+        console.log(segments);
+    }, [segments]);
+
+    // Determine route structure
+    const isOrgRoute = segments.length >= 2 && segments[0] === "org";
+    const isProjRoute = segments.length >= 4 && segments[2] === "proj";
+    const isStageRoute = segments.length >= 6 && segments[4] === "stage";
+    const isTaskRoute = segments.length >= 8 && segments[6] === "task";
+    const isLeaderboardRoute =
+        segments.length >= 5 && segments[4] === "leaderboard";
+
+    // Get document references based on route structure
+    const orgDocRef = isOrgRoute ? doc(db, "organizations", segments[1]) : null;
     const [orgDoc] = useDocument(orgDocRef);
-    const orgTitle = orgDoc && orgDoc.exists() ? (orgDoc.data() as Organization).title : null;
 
-    const projDocRef = segments.length >= 3 ? doc(db, 'projects', segments[3]) : null;
+    const projDocRef = isProjRoute ? doc(db, "projects", segments[3]) : null;
     const [projDoc] = useDocument(projDocRef);
-    const projTitle = projDoc && projDoc.exists() ? (projDoc.data() as Project).title : null;
 
-    const stageDocRef = segments.length >= 5 ? doc(db, 'projects', segments[3], 'stages', segments[5]) : null;
+    const stageDocRef =
+        isStageRoute
+            ? doc(db, "projects", segments[3], "stages", segments[5])
+            : null;
     const [stageDoc] = useDocument(stageDocRef);
-    const stageTitle = stageDoc && stageDoc.exists() ? (stageDoc.data() as Stage).title : null;
 
-    const taskDocRef = segments.length >= 7 ? doc(db, 'projects', segments[3], 'stages', segments[5], 'tasks', segments[7]) : null;
+    const taskDocRef =
+        isTaskRoute
+            ? doc(
+                  db,
+                  "projects",
+                  segments[3],
+                  "stages",
+                  segments[5],
+                  "tasks",
+                  segments[7],
+              )
+            : null;
     const [taskDoc] = useDocument(taskDocRef);
-    const taskTitle = taskDoc && taskDoc.exists() ? (taskDoc.data() as Task).title : null;
 
-    const titles = [orgTitle, projTitle, stageTitle, taskTitle];
+    // Get titles from documents
+    const orgTitle =
+        orgDoc && orgDoc.exists()
+            ? (orgDoc.data() as Organization).title
+            : null;
+    const projTitle =
+        projDoc && projDoc.exists()
+            ? (projDoc.data() as Project).title
+            : null;
+    const stageTitle =
+        stageDoc && stageDoc.exists()
+            ? (stageDoc.data() as Stage).title
+            : null;
+    const taskTitle =
+        taskDoc && taskDoc.exists() ? (taskDoc.data() as Task).title : null;
+    const leaderboardTitle = isLeaderboardRoute ? "Leaderboard" : null;
+
+    // 定义breadcrumb项目类型
+    type BreadcrumbItemType = {
+        title: string;
+        href: string;
+        isActive?: boolean;
+        isEllipsis?: boolean;
+    };
+
+    // 计算需要显示的breadcrumb项目数量
+    const breadcrumbItems: BreadcrumbItemType[] = [];
+
+    // Home
+    breadcrumbItems.push({ title: "Home", href: "/" });
+
+    // Organization
+    if (isOrgRoute && orgTitle) {
+        breadcrumbItems.push({
+            title: truncateText(orgTitle, 12),
+            href: `/${segments.slice(0, 2).join("/")}`,
+            isActive: !isProjRoute,
+        });
+    }
+
+    // Project
+    if (isProjRoute && projTitle) {
+        breadcrumbItems.push({
+            title: truncateText(projTitle, 12),
+            href: `/${segments.slice(0, 4).join("/")}`,
+            isActive: isLeaderboardRoute || (!isStageRoute && !isTaskRoute),
+        });
+    }
+
+    // Stage
+    if (isStageRoute && stageTitle) {
+        breadcrumbItems.push({
+            title: truncateText(stageTitle, 12),
+            href: `/${segments.slice(0, 6).join("/")}`,
+            isActive: !isTaskRoute,
+        });
+    }
+
+    // Task
+    if (isTaskRoute && taskTitle) {
+        breadcrumbItems.push({
+            title: truncateText(taskTitle, 12),
+            href: "",
+            isActive: true,
+        });
+    }
+
+    // Leaderboard
+    if (isLeaderboardRoute && leaderboardTitle) {
+        breadcrumbItems.push({
+            title: leaderboardTitle,
+            href: "",
+            isActive: true,
+        });
+    }
+
+    // 如果有超过3个项目，显示省略号
+    let displayItems: BreadcrumbItemType[] = breadcrumbItems;
+    if (breadcrumbItems.length > 4) {
+        displayItems = [
+            breadcrumbItems[0], // Home
+            { title: "...", href: "", isEllipsis: true },
+            ...breadcrumbItems.slice(-2), // 最后两个项目
+        ];
+    }
 
     return (
-        <Breadcrumb>
-            <BreadcrumbList className="text-white">
-                <BreadcrumbItem>
-                    <BreadcrumbLink href="/" className="text-white">Home</BreadcrumbLink>
-                </BreadcrumbItem>
-                {segments.map((segment, index) => {
-                    if (!segment) return null;
-                    if (index % 2 == 1 || index + 1 >= segments.length) return null; // skip the even ones and make sure there is an ID afterwards
-                    const href = `${segments.slice(0, index + 2).join("/")}`
-                    const isLast = index === segments.length - 2;
-                    const title = titles[index / 2];
-                    return (
-                        <Fragment key={segment}>
-                            {title && <BreadcrumbSeparator className="text-white" />}
-                            <BreadcrumbItem key={segment}>
-                                {isLast ? (
-                                    <BreadcrumbPage className="text-white">{title}</BreadcrumbPage>
-                                ) : (
-                                    <BreadcrumbLink href={`/${href}`} className="text-white">{title}</BreadcrumbLink>
-                                )}
-                            </BreadcrumbItem>
-                        </Fragment>
-                    )
-                })}
+        <Breadcrumb className="hidden md:block">
+            <BreadcrumbList className="text-white text-sm">
+                {displayItems.map((item, index) => (
+                    <Fragment key={index}>
+                        {index > 0 && (
+                            <BreadcrumbSeparator className="text-white" />
+                        )}
+                        <BreadcrumbItem>
+                            {item.isEllipsis ? (
+                                <BreadcrumbEllipsis className="text-white" />
+                            ) : item.isActive ? (
+                                <BreadcrumbPage
+                                    className="text-white font-medium max-w-[120px] truncate"
+                                    title={item.title}
+                                >
+                                    {item.title}
+                                </BreadcrumbPage>
+                            ) : (
+                                <BreadcrumbLink
+                                    href={item.href}
+                                    className="text-white hover:text-gray-200 max-w-[120px] truncate"
+                                    title={item.title}
+                                >
+                                    {item.title}
+                                </BreadcrumbLink>
+                            )}
+                        </BreadcrumbItem>
+                    </Fragment>
+                ))}
             </BreadcrumbList>
         </Breadcrumb>
-    )
+    );
 }
-export default Breadcrumbs
+
+export default Breadcrumbs;

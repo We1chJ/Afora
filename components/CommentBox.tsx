@@ -1,265 +1,183 @@
-'use client'
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { CircleUser, LoaderCircle, SendHorizontal } from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
+import { CircleUser, LoaderCircle, SendHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import React from 'react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
-import { useUser } from '@clerk/nextjs';
-import Image from 'next/image';
-import { postComment } from '@/actions/actions';
-import { useTransition } from 'react';
-import { Timestamp } from 'firebase/firestore';
+import React from "react";
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { useUser } from "@clerk/nextjs";
+import Image from "next/image";
+import { postComment } from "@/actions/actions";
+import { useTransition } from "react";
+import { Timestamp } from "firebase/firestore";
+import dynamic from 'next/dynamic';
 
+const TiptapEditor = dynamic(() => Promise.resolve(EditorContent), {
+    ssr: false,
+    loading: () => <div className="min-h-[40px] p-2 bg-gray-50 animate-pulse rounded-lg" />
+});
 
 interface CommentBoxProps {
-  className?: string;
-  isPublic: boolean;
-  projId: string;
-  stageId: string;
-  taskId: string;
+    className?: string;
+    isPublic: boolean;
+    projId: string;
+    stageId: string;
+    taskId: string;
 }
 
-const CommentBox: React.FC<CommentBoxProps> = ({ className, isPublic, projId, stageId, taskId }) => {
-  const { user } = useUser();
-  const [comment, setComment] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
-  const quillRef = useRef<HTMLDivElement>(null);
-  const [isPending, startTransition] = useTransition();
+const CommentBox: React.FC<CommentBoxProps> = ({
+    className,
+    isPublic,
+    projId,
+    stageId,
+    taskId,
+}) => {
+    const { user } = useUser();
+    const [isFocused, setIsFocused] = useState(false);
+    const editorRef = useRef<HTMLDivElement>(null);
+    const [isPending, startTransition] = useTransition();
+    const [isClient, setIsClient] = useState(false);
 
-  const handlePost = () => {
-    startTransition(async () => {
-      await postComment(isPublic, projId, stageId, taskId, comment, new Timestamp(Date.now() / 1000, 0), user!.primaryEmailAddress!.toString())
-        .then(() => {
-          setComment('');
-        })
-        .catch((error) => {
-          console.error('Error posting comment:', error);
-        });
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    const editor = useEditor({
+        extensions: [
+            StarterKit,
+        ],
+        content: '',
+        onFocus: () => setIsFocused(true),
+        onBlur: () => {
+            if (!editor?.getText().trim()) {
+                setIsFocused(false);
+            }
+        },
+        editorProps: {
+            attributes: {
+                class: 'min-h-[40px] p-2 focus:outline-none prose prose-sm max-w-none',
+            },
+        },
+        // 添加这个选项来解决 SSR 问题
+        immediatelyRender: false,
     });
-  };
 
-  const modules = {
-    toolbar: [
-      ['bold', 'italic', 'underline'],
-      ['link'],
-      [{ 'list': 'ordered' }, { 'list': 'bullet' }]
-    ]
-  };
+    const handlePost = () => {
+        if (!editor) return;
+        
+        const content = editor.getHTML();
+        if (!content.trim()) return;
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const tempElement = document.createElement('div');
-      tempElement.innerHTML = comment;
-      if (tempElement.textContent?.trim() === '') {
-        setComment('');
-        setIsFocused(false);
-      }
-      if (quillRef.current && !quillRef.current.contains(event.target as Node)) {
-        if (!comment.trim() || comment.trim() === '') {
-          setIsFocused(false);
-        }
-      }
+        startTransition(async () => {
+            await postComment(
+                isPublic,
+                projId,
+                stageId,
+                taskId,
+                content,
+                new Timestamp(Date.now() / 1000, 0),
+                user!.primaryEmailAddress!.toString(),
+            )
+                .then(() => {
+                    editor.commands.setContent('');
+                    setIsFocused(false);
+                })
+                .catch((error) => {
+                    console.error("Error posting comment:", error);
+                });
+        });
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [comment]);
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                editorRef.current &&
+                !editorRef.current.contains(event.target as Node)
+            ) {
+                if (!editor?.getText().trim()) {
+                    setIsFocused(false);
+                }
+            }
+        };
 
-  return (
-    <div className={`relative w-full max-w-full`} ref={quillRef}>
-      <style jsx global>{`
-        .quill {
-          position: relative;
-          z-index: 50;
-          display: flex;
-          flex-direction: column;
-          transition: all 0.2s ease;
-          width: 100%;
-          min-width: 0; /* Add this to handle text overflow */
-        }
-        
-        .ql-toolbar {
-          position: sticky;
-          top: 0;
-          z-index: 51;
-          background-color: white;
-          border-top-left-radius: 0.375rem;
-          border-top-right-radius: 0.375rem;
-          padding: 4px !important;
-          border: none !important;
-          border-bottom: 1px solid #e5e7eb !important;
-          opacity: 0;
-          height: 0;
-          padding: 0 !important;
-          overflow: hidden;
-          transition: all 0.2s ease;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 4px;
-          width: 100%;
-        }
-        
-        .toolbar-visible .ql-toolbar {
-          opacity: 1;
-          height: auto;
-          min-height: 36px;
-          padding: 4px !important;
-        }
-        
-        .ql-toolbar .ql-formats {
-          margin-right: 4px !important;
-          margin-bottom: 4px !important;
-          display: flex;
-          flex-wrap: wrap;
-        }
-        
-        .ql-toolbar button {
-          width: 28px;
-          height: 28px;
-          padding: 4px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
+    }, [editor]);
 
-        @media (max-width: 480px) {
-          .ql-toolbar button {
-            width: 24px;
-            height: 24px;
-            padding: 2px;
-          }
-        }
-        
-        .ql-container {
-          z-index: 50;
-          height: auto !important;
-          min-height: 40px;
-          max-height: none;
-          border-radius: 0.375rem;
-          border: 1px solid #e5e7eb !important;
-          transition: all 0.2s ease;
-          width: 100%;
-          min-width: 0; /* Add this to handle text overflow */
-        }
-        
-        .toolbar-visible .ql-container {
-          border-top-left-radius: 0 !important;
-          border-top-right-radius: 0 !important;
-        }
-        
-        .ql-editor {
-          min-height: 40px;
-          max-height: ${isFocused ? '300px' : '40px'};
-          height: auto;
-          overflow-y: auto;
-          overflow-x: hidden; /* Prevent horizontal scroll */
-          padding: 8px !important;
-          word-break: break-word;
-          word-wrap: break-word;
-          white-space: pre-wrap;
-          font-size: 14px;
-          line-height: 1.5;
-          width: 100%;
-        }
+    if (!isClient) {
+        return (
+            <div className="w-full max-w-full">
+                <div className="flex items-start w-full space-x-2 p-2 sm:p-3 bg-white rounded-lg shadow">
+                    <div className="hidden sm:block flex-shrink-0">
+                        <CircleUser className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="min-h-[40px] p-2 bg-gray-50 animate-pulse rounded-lg" />
+                    </div>
+                    <div className="flex-shrink-0">
+                        <div className="h-8 w-8 sm:h-10 sm:w-10 bg-gray-100 rounded-lg" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
-        /* Handle placeholder text */
-        .ql-editor.ql-blank::before {
-          font-style: normal !important;
-          color: #9ca3af !important;
-          font-size: 14px;
-          position: absolute;
-          left: 8px;
-          right: 8px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        @media (max-width: 640px) {
-          .ql-editor {
-            font-size: 16px;
-            padding: 6px !important;
-            max-height: ${isFocused ? '200px' : '40px'};
-          }
-          
-          .ql-editor.ql-blank::before {
-            font-size: 16px;
-            left: 6px;
-            right: 6px;
-          }
-        }
-        
-        .ql-tooltip {
-          z-index: 52 !important;
-          position: fixed !important;
-          left: 50% !important;
-          top: 50% !important;
-          transform: translate(-50%, -50%) !important;
-          max-width: 90vw;
-          width: auto;
-          white-space: normal;
-        }
-
-        .ql-tooltip input[type="text"] {
-          width: 100%;
-          max-width: 200px;
-        }
-        
-        .ql-tooltip[data-mode="link"]::before {
-          content: "Enter link URL:";
-        }
-
-        @media (max-width: 480px) {
-          .ql-tooltip {
-            font-size: 14px;
-          }
-          
-          .ql-tooltip input[type="text"] {
-            max-width: 160px;
-          }
-        }
-      `}</style>
-
-      <div className={`flex items-start w-full space-x-2 p-2 sm:p-3 bg-white rounded-lg shadow ${className}`}>
-        <div className="hidden sm:block shrink-0">
-          {(user && user.imageUrl) ?
-            <Image src={user.imageUrl} alt="User profile image" width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" />
-            :
-            <CircleUser className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
-          }
+    return (
+        <div
+            className={`relative w-full max-w-full`}
+            ref={editorRef}
+        >
+            <div
+                className={`flex items-start w-full space-x-2 p-2 sm:p-3 bg-white rounded-lg shadow transition-all duration-200 ${className}`}
+            >
+                <div className="hidden sm:block flex-shrink-0">
+                    {user && user.imageUrl ? (
+                        <Image
+                            src={user.imageUrl}
+                            alt="User profile image"
+                            width={40}
+                            height={40}
+                            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
+                        />
+                    ) : (
+                        <CircleUser className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+                    )}
+                </div>
+                <div className="flex-1 min-w-0 relative z-50">
+                    <div
+                        className={`${
+                            isFocused ? "border-blue-500" : "border-gray-200"
+                        } border rounded-lg overflow-hidden transition-all duration-200`}
+                    >
+                        <TiptapEditor
+                            editor={editor}
+                        />
+                        {!editor?.getText().trim() && !isFocused && (
+                            <div className="absolute top-2 left-2 text-gray-400 pointer-events-none">
+                                Leave a comment here...
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <div className="flex-shrink-0">
+                    <Button
+                        variant="default"
+                        onClick={handlePost}
+                        className="h-8 w-8 sm:h-10 sm:w-10 p-0 transition-all duration-200 hover:scale-105"
+                        disabled={!editor?.getText().trim() || isPending}
+                    >
+                        {isPending ? (
+                            <LoaderCircle className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                        ) : (
+                            <SendHorizontal className="h-4 w-4 sm:h-5 sm:w-5" />
+                        )}
+                    </Button>
+                </div>
+            </div>
         </div>
-        <div className="flex-1 min-w-0"> {/* Add min-width: 0 to handle text overflow */}
-          <div className={isFocused ? 'toolbar-visible' : ''}>
-            <ReactQuill
-              theme="snow"
-              value={comment}
-              placeholder={comment ? '' : 'Leave a comment here...'}
-              onChange={setComment}
-              modules={modules}
-              className="w-full"
-              onFocus={() => setIsFocused(true)}
-            />
-          </div>
-        </div>
-        <div className="shrink-0">
-          <Button
-            variant="default"
-            onClick={handlePost}
-            className="h-8 w-8 sm:h-10 sm:w-10 p-0"
-            disabled={!comment.trim() || isPending}
-          >
-            {isPending ? (
-              <LoaderCircle className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-            ) : (
-              <SendHorizontal className="h-4 w-4 sm:h-5 sm:w-5" />
-            )}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default CommentBox;

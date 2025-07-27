@@ -2,9 +2,9 @@ import { DocumentData, Timestamp } from "firebase/firestore";
 
 /**
  * - editor: members who can edit the documents
- * - admin: administrators who have higher access 
+ * - admin: administrators who have higher access
  */
-export const access_roles: string[] = ['editor', 'admin'];
+export const access_roles: string[] = ["editor", "admin"];
 
 export type User = {
     fullName: string;
@@ -14,19 +14,33 @@ export type User = {
     emailAddresses: string;
     imageUrl: string;
     unsafeMetadata: {
-        demographic?: string;  // Use optional chaining here
+        demographic?: string; // Use optional chaining here
         gender?: string;
     };
-}
+};
 
 export type Project = {
     projId: string;
     orgId: string;
     title: string;
     members: string[];
+    admins: string[];
     teamCharterResponse: string[];
+    projectType?: string; // 项目类型：Frontend, Backend, Mobile等
+    createdAt?: string;
+    description?: string;
     // Add other fields as necessary
-}
+};
+
+export type ProjectStats = {
+    totalTasks: number;
+    completedTasks: number;
+    totalStages: number;
+    completedStages: number;
+    progress: number; // 0-100
+    memberCount: number;
+    projectType: string;
+};
 
 export type Organization = {
     title: string;
@@ -34,7 +48,7 @@ export type Organization = {
     admins: string[];
     members: string[];
     backgroundImage: string;
-}
+};
 
 // this structure describes the subcollection 'org' document under each user
 // orgId and userId are not repetitive and are needed for quick query when deleting organizations
@@ -45,8 +59,16 @@ export interface UserOrgData extends DocumentData {
     userId: string;
 }
 
-export const appHeader = ['Core Skills and Expertise', 'Current Interests', 'Fields Seeking to Pursue'];
-export const appQuestions = ['What is your primary area of expertise and main professional skills?', 'What industries or fields are you currently most interested in some levels of skills and experiences?', 'What future roles or job titles are you aiming for?'];
+export const appHeader = [
+    "Core Skills and Expertise",
+    "Current Interests",
+    "Fields Seeking to Pursue",
+];
+export const appQuestions = [
+    "What is your primary area of expertise and main professional skills?",
+    "What industries or fields are you currently most interested in some levels of skills and experiences?",
+    "What future roles or job titles are you aiming for?",
+];
 export const appTags = [
     "Web Development",
     "Data Science",
@@ -124,11 +146,39 @@ export const appTags = [
 ];
 
 // TODO: moved to somewhere else beause questions can be customized by org admin
-export const projHeader = ['Hard Skills', 'Communication Style', 'Project Preferences', 'Extreme Preferences', 'Time Availability']
-export const projQuestions = ['What are your top three technical or professional skills? Which tools, frameworks, or technologies are you proficient in?', 'What is your preferred method of communication for this project? (e.g., Slack, Email, Video calls) How often do you prefer to receive updates or engage with teammates? (e.g., daily, weekly)', 'What kind of project structure do you prefer? (e.g., rigid with clear processes, or flexible with more autonomy) What industry or type of project excites you most for this specific collaboration?', 'Anyone you definitely want to work with for this project? Someone you definitely do not want to work with for this project?', 'What days and times are you available to work on this project? (Please share a preferred weekly schedule or select available times like in When2Meet)'];
+export const projHeader = [
+    "Hard Skills",
+    "Communication Style",
+    "Project Preferences",
+    "Extreme Preferences",
+    "Time Availability",
+];
 
-//TODO: make this customizable
-export const teamCharterQuestions = ['Project Purpose', 'Key Project Stakeholders', 'Product Objectives']
+export const projQuestions = [
+    "What are your top three technical or professional skills? Which tools, frameworks, or technologies are you proficient in?",
+    "What is your preferred method of communication for this project? (e.g., Slack, Email, Video calls) How often do you prefer to receive updates or engage with teammates? (e.g., daily, weekly)",
+    "What kind of project structure do you prefer? (e.g., rigid with clear processes, or flexible with more autonomy) What industry or type of project excites you most for this specific collaboration?",
+    "Anyone you definitely want to work with for this project? Someone you definitely do not want to work with for this project?",
+    "What days and times are you available to work on this project? (Please share a preferred weekly schedule or select available times like in When2Meet)",
+];
+
+export const teamCharterQuestions = [
+    "Project Purpose (Describe the main goals and intentions of the project)",
+    "Key Project Stakeholders (List all key stakeholders and their roles)",
+    "Product Objectives (List specific functional goals and expected outcomes)",
+
+    "Team Structure and Roles (Describe team members, their expertise and responsibilities)",
+    "Team Communication Preferences (Communication methods and frequency)",
+    "Team Working Style (e.g., Agile, Waterfall, or hybrid approach)",
+    
+    "Project Timeline (Expected project duration, e.g., 2 months/12 weeks)",
+    "Major Milestones (List key project milestones)",
+    "Team Availability (Weekly time commitment per team member)",
+    
+    "Success Criteria (Metrics to measure project success)",
+    "Potential Risks and Challenges (Identify possible risks and challenges)",
+    "Resource Requirements (Required technologies, tools, and resources)"
+];
 
 // export interface Task {
 //     id: string
@@ -144,7 +194,7 @@ export type Stage = {
     order: number;
     tasksCompleted: number;
     totalTasks: number;
-}
+};
 
 export type Task = {
     id: string;
@@ -155,7 +205,14 @@ export type Task = {
     assignee: string;
     order: number;
     isCompleted: boolean;
-}
+    completion_percentage?: number; // Task completion percentage (0-100)
+    // Task pool related fields
+    points: number; // Points earned for completing the task (default: 1)
+    status: "available" | "assigned" | "completed" | "overdue"; // Task status
+    assignedAt?: string; // When the task was assigned
+    completedAt?: string; // When the task was completed
+    canBeReassigned?: boolean; // Whether the task can be reassigned after soft deadline
+};
 
 export type GeneratedTasks = {
     stages: {
@@ -174,4 +231,121 @@ export type Comment = {
     msgId: string;
     time: Timestamp;
     uid: string;
+};
+
+export type TeamCompatibilityAnalysis = {
+    overall_score: number;
+    member_analyses: {
+        member_email: string;
+        strengths: string[];
+        skills: string[];
+        interests: string[];
+        compatibility_score: number;
+        role_suggestion: string;
+        detailed_analysis: {
+            technical_proficiency: {
+                score: number;
+                strengths: string[];
+                areas_for_improvement: string[];
+            };
+            collaboration_style: {
+                preferred_methods: string[];
+                communication_frequency: string;
+                team_role: string;
+            };
+            project_contribution: {
+                primary_responsibilities: string[];
+                potential_impact: string;
+                risk_factors: string[];
+            };
+        };
+    }[];
+    team_analysis: {
+        team_strengths: string[];
+        potential_gaps: string[];
+        collaboration_potential: string;
+        recommendations: string[];
+        project_fit: {
+            technical_alignment: number;
+            schedule_compatibility: number;
+            interest_alignment: number;
+            charter_alignment: {
+                vision_alignment: number;
+                values_compatibility: number;
+                key_findings: string[];
+                detailed_assessment: {
+                    shared_values: string[];
+                    potential_conflicts: string[];
+                    team_culture: string;
+                    decision_making: string;
+                };
+            };
+            technical_assessment: {
+                skill_coverage: {
+                    strong_areas: string[];
+                    weak_areas: string[];
+                    coverage_percentage: number;
+                };
+                technology_stack: {
+                    frontend: string[];
+                    backend: string[];
+                    other: string[];
+                };
+                expertise_distribution: {
+                    junior: number;
+                    mid: number;
+                    senior: number;
+                };
+            };
+            schedule_assessment: {
+                overlap_hours: number;
+                peak_availability: string[];
+                timezone_distribution: string[];
+                flexibility_score: number;
+            };
+            comments: string[];
+        };
+    };
+};
+
+// Task pool and leaderboard types
+export type UserScore = {
+    userId: string;
+    email: string;
+    totalPoints: number;
+    tasksCompleted: number;
+    tasksAssigned: number;
+    averageCompletionTime: number; // in hours
+    streak: number; // consecutive days with completed tasks
+};
+
+export type ProjectLeaderboard = {
+    projectId: string;
+    projectTitle: string;
+    scores: UserScore[];
+    lastUpdated: string;
+};
+
+export type TaskPoolStats = {
+    stageId: string;
+    totalTasks: number;
+    availableTasks: number;
+    assignedTasks: number;
+    completedTasks: number;
+    overdueTasks: number;
+};
+
+export interface StageProgress {
+    stageOrder: number;
+    totalTasks: number;
+    tasksCompleted: number;
+    locked: boolean;
+}
+
+export interface TeamScoreCardProps {
+    orgId: string;
+    members: string[];
+    projectFilter?: string;
+    initialAnalysis: TeamCompatibilityAnalysis | null;
+    lastAnalysisTime: Date | null;
 }

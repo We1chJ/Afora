@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import {
     Dialog,
@@ -7,10 +7,10 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import { FormEvent, useState, useTransition } from "react";
 import { Button } from "./ui/button";
-import { usePathname, } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { inviteUserToOrg } from "@/actions/actions";
 import { toast } from "sonner";
 import { Input } from "./ui/input";
@@ -22,17 +22,22 @@ import {
     DropdownMenuRadioItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import { ChevronRight } from "lucide-react";
 import { access_roles } from "@/types/types";
 
-function InviteUser() {
+interface InviteUserProps {
+    defaultAccessRole?: string;
+}
+
+function InviteUser(props: InviteUserProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
     const [email, setEmail] = useState("");
     const pathname = usePathname();
     // const router = useRouter();
-    const [access, setAccess] = useState(access_roles[0]);
+    const defaultAccessRole = props.defaultAccessRole || "editor"; // Default to 'editor' if not provided
+    const [access, setAccess] = useState(defaultAccessRole);
 
     const handleInvite = async (e: FormEvent) => {
         e.preventDefault();
@@ -40,16 +45,20 @@ function InviteUser() {
         if (!organizationId) return;
 
         startTransition(async () => {
-            const { success, message } = await inviteUserToOrg(organizationId, email, access); // Updated function call
+            const { success, message } = await inviteUserToOrg(
+                organizationId,
+                email,
+                access,
+            ); // Updated function call
 
             if (success) {
                 setIsOpen(false);
-                toast.success("User added to organization successfully")
+                toast.success("User added to organization successfully");
             } else {
                 toast.error(message);
             }
-        })
-    }
+        });
+    };
 
     return (
         <div>
@@ -59,7 +68,9 @@ function InviteUser() {
                 </Button>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Invite a user to your organization</DialogTitle>
+                        <DialogTitle>
+                            Invite a user to your organization
+                        </DialogTitle>
                         <DialogDescription>
                             Enter the email of the user you want to invite.
                         </DialogDescription>
@@ -70,20 +81,28 @@ function InviteUser() {
                             placeholder="Email"
                             className="w-full"
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)} />
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline">
-                                    <ChevronRight className="h-4 w-4" />{access}
+                                    <ChevronRight className="h-4 w-4" />
+                                    {access}
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-25">
                                 <DropdownMenuLabel>Invite As</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuRadioGroup value={access} onValueChange={setAccess}>
+                                <DropdownMenuRadioGroup
+                                    value={access}
+                                    onValueChange={setAccess}
+                                >
                                     {access_roles.map((role) => (
-                                        <DropdownMenuRadioItem key={role} value={role}>
+                                        <DropdownMenuRadioItem
+                                            key={role}
+                                            value={role}
+                                        >
                                             {role}
                                         </DropdownMenuRadioItem>
                                     ))}
@@ -98,7 +117,7 @@ function InviteUser() {
                 </DialogContent>
             </Dialog>
         </div>
-    )
+    );
 }
 
-export default InviteUser
+export default InviteUser;

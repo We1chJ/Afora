@@ -12,7 +12,7 @@
 //   const { register, handleSubmit, reset } = useForm<IFormInput>();
 //   const pathname = usePathname();
 //   const projectId = pathname.split("/").pop();
-  
+
 //   const removeAssignee = async (emailToRemove: string) => {
 //     try {
 //       if (projectId) {

@@ -1,223 +1,495 @@
-'use client';
+"use client";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useAuth } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { Button } from "@/components/ui/button";
+import { useAuth, useUser } from "@clerk/nextjs";
+import { useRouter, useParams } from "next/navigation";
+import { useEffect, useMemo, useState, useTransition, useCallback } from "react";
+import React from "react";
 import Link from "next/link";
+import { getOverdueTasks, assignTask, unassignTask, reassignTask } from "@/actions/actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 import { db } from "@/firebase";
 import { Stage, Task } from "@/types/types";
 import { collection, doc } from "firebase/firestore";
-import PieChartProgress from "@/components/PieChartProgress";
-import { CircleCheckBig, Clock7, Trash, Edit3 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
+import {
+    Edit3,
+    DollarSign,
+} from "lucide-react";
+import BountyBoardButton from "@/components/BountyBoardButton";
+import TaskManagement from "@/components/TaskManagement";
 import { createTask, deleteTask } from "@/actions/actions";
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-function StagePage({ params: { id, projId, stageId } }: {
-  params: {
-    id: string;
-    projId: string;
-    stageId: string;
-  }
-}) {
-  const { isSignedIn, isLoaded } = useAuth();
-  const router = useRouter();
 
-  useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.replace('/');
+function StagePage() {
+    const params = useParams();
+    const id = params.id as string;
+    const projId = params.projId as string;
+    const stageId = params.stageId as string;
+    
+    const { isSignedIn, isLoaded } = useAuth();
+    const { user } = useUser();
+    const router = useRouter();
+    const [swapTaskDialogOpen, setSwapTaskDialogOpen] = useState(false);
+    const [currentTaskId, setCurrentTaskId] = useState<string>("");
+    const [swapAssigneeEmail, setSwapAssigneeEmail] = useState("");
+
+    useEffect(() => {
+        if (isLoaded && !isSignedIn) {
+            router.replace("/");
+        }
+    }, [isLoaded, isSignedIn, router]);
+
+    // 加载过期任务和可用任务
+    const loadTaskPoolData = useCallback(async () => {
+        try {
+            // 获取过期任务
+            const overdueResult = await getOverdueTasks(projId);
+            if (overdueResult.success) {
+                setBackendOverdueTasks(overdueResult.tasks || []);
+            }
+
+
+        } catch (error) {
+            console.error("Failed to load task pool data:", error);
+        }
+    }, [projId]);
+
+    // 加载任务池数据
+    useEffect(() => {
+        loadTaskPoolData();
+    }, [loadTaskPoolData]);
+
+    const [isPending, startTransition] = useTransition();
+    const [stageData, stageLoading, stageError] = useDocument(
+        doc(db, "projects", projId, "stages", stageId),
+    );
+    const [tasksData, tasksLoading, tasksError] = useCollection(
+        collection(db, "projects", projId, "stages", stageId, "tasks"),
+    );
+
+    console.log("\n\n\nTASKS DATA\n\n");
+    console.log(tasksData);
+
+    const tasks: Task[] = useMemo(() => {
+        return (
+            tasksData?.docs
+                .map((doc) => ({
+                    ...(doc.data() as Task),
+                }))
+                .sort((a, b) => a.order - b.order) || []
+        );
+    }, [tasksData]);
+
+    const [isOpen, setIsOpen] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [bountyBoardOpen, setBountyBoardOpen] = useState(false);
+
+    // 新增：存储从后端获取的过期任务
+    const [backendOverdueTasks, setBackendOverdueTasks] = useState<Array<{
+        id: string;
+        title: string;
+        description: string;
+        stage_id: string;
+        soft_deadline: string;
+    }>>([]);
+
+
+    if (!isSignedIn) return null;
+
+        if (stageLoading || tasksLoading) {
+            return <Skeleton className="w-full h-96" />;
+        }
+
+        if (stageError) {
+            return <div>Error: {stageError.message}</div>;
+        }
+
+        if (tasksError) {
+        return <div>Error: {tasksError.message}</div>;
     }
-  }, [isLoaded, isSignedIn, router]);
 
-  const [isPending, startTransition] = useTransition();
-  const [stageData, stageLoading, stageError] = useDocument(doc(db, 'projects', projId, 'stages', stageId));
-  const [tasksData, tasksLoading, tasksError] = useCollection(collection(db, 'projects', projId, 'stages', stageId, 'tasks'));
-  const tasks: Task[] = useMemo(() => {
-    return tasksData?.docs.map(doc => ({
-      ...(doc.data() as Task)
-    })).sort((a, b) => a.order - b.order) || [];
-  }, [tasksData]);
+    const stage = (stageData?.data() as Stage);
 
-  const [isOpen, setIsOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+    if (!stage) {
+        return <div>Error: The stage has been deleted.</div>;
+    }
 
-  if (!isSignedIn) return null;
 
-  if (stageLoading || tasksLoading) {
-    return <Skeleton className="w-full h-96" />;
-  }
 
-  if (stageError) {
-    return <div>Error: {stageError.message}</div>;
-  }
+    // Get overdue tasks for bounty board
+    const overdueTasks = backendOverdueTasks.filter((task) => task.stage_id === stageId);
 
-  if (tasksError) {
-    return <div>Error: {tasksError.message}</div>;
-  }
+    const handleNewTask = () => {
+        createTask(projId, stageId, tasks.length + 1)
+            .then(() => {
+                toast.success("Task created successfully!");
+            })
+            .catch((error) => {
+                toast.error("Failed to create task: " + error.message);
+            });
+    };
 
-  const stage = stageData?.data() as Stage;
-
-  if (!stage) {
-    return <div>Error: The stage has been deleted.</div>;
-  }
-
-  const tasksCompleted = tasks.filter(task => task.isCompleted).length;
-
-  const handleNewTask = () => {
-    createTask(projId, stageId, tasks.length + 1)
-      .then(() => {
-        toast.success("Task created successfully!");
-      })
-      .catch((error) => {
-        toast.error("Failed to create task: " + error.message);
-      });
-  }
-
-  const handleDeleteTask = (taskId: string) => {
-
-    startTransition(() => {
-      deleteTask(projId, stageId, taskId)
-        .then(() => {
-          toast.success("Task deleted successfully!");
-        })
-        .catch((error) => {
-          toast.error("Failed to delete task: " + error.message);
-        })
-        .finally(() => {
-          setIsOpen(false);
-          setIsEditing(false);
+    const handleDeleteTask = (taskId: string) => {
+        startTransition(() => {
+            deleteTask(projId, stageId, taskId)
+                .then(() => {
+                    toast.success("Task deleted successfully!");
+                })
+                .catch((error) => {
+                    toast.error("Failed to delete task: " + error.message);
+                })
+                .finally(() => {
+                    setIsOpen(false);
+                    setIsEditing(false);
+                });
         });
-    });
-  };
+    };
 
-  return (
-    <div className="w-full h-full flex flex-col">
-      <Table className="w-full">
-        <TableHeader>
-          <div className="flex w-full h-full gap-4 p-4 justify-between">
-            <div className="w-3/4">
-              <Card className="w-full h-full bg-[#6F61EF] hover:shadow-lg transition-shadow">
-                <CardHeader className="p-3 flex justify-between">
-                  <CardTitle className="text-xl w-full font-bold text-white flex justify-between items-center">
-                    {'Stage ' + (stage.order + 1) + '. ' + stage.title}
-                    <Button variant="ghost" className="text-white" onClick={() => setIsEditing(!isEditing)}>
-                      <Edit3 />
-                    </Button>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <h1 className="text-4xl font-bold text-white">
-                    Tasks
-                  </h1>
-                </CardContent>
-              </Card>
-            </div>
-            <div className="w-1/4">
-              <PieChartProgress tasksCompleted={tasksCompleted} totalTasks={tasks.length} />
-            </div>
-          </div>
-        </TableHeader>
-        <TableBody className="w-full">
-          {tasks.map((task, index) => (
-            <TableRow className="flex flex-1" key={index}>
-              <Link
-                className="flex flex-1"
-                href={`/org/${id}/proj/${projId}/stage/${stageId}/task/${task.id}`}
-                onClick={(e) => isEditing && e.preventDefault()}
-              >
-                <TableCell className="flex flex-1">
-                  <Card className="w-full shadow-lg hover:shadow-3xl hover:translate-y-[-4px] transition-transform duration-300 h-auto">
-                    <CardHeader>
-                      <div className="flex justify-between items-center">
-                        <span className="text-lg">{index + 1}. {task.title}</span>
-                        <div className="flex items-center gap-2">
-                          {task.isCompleted ? (
-                            <CircleCheckBig className="text-green-500" />
-                          ) : (
-                            <Clock7 className="text-yellow-500" />
-                          )}
-                          {isEditing && (
-                            <AlertDialog open={isOpen}>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  className="text-red-500"
-                                  onClick={() => setIsOpen(true)}
-                                >
-                                  <Trash />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete this task? This action cannot be undone!
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <Button variant="secondary" onClick={() => setIsOpen(false)}>
-                                    Cancel
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    onClick={() => { handleDeleteTask(task.id) }}
-                                    disabled={isPending}
-                                  >
-                                    {isPending ? <Clock7 className="animate-spin" /> : "Delete"}
-                                  </Button>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                        </div>
-                      </div>
-                    </CardHeader>
-                  </Card>
-                </TableCell>
-              </Link>
-            </TableRow>
-          ))}
-          {(isEditing || tasks.length == 0) && (
-            <TableRow>
-              <TableCell>
-                <div className="w-full flex-1 p-4 bg-gray-200 rounded-lg shadow hover:shadow-lg transition-shadow duration-300 cursor-pointer">
-                  <div className="flex justify-between items-center">
-                    <Button
-                      variant="ghost"
-                      className="w-full flex justify-between items-center"
-                      onClick={handleNewTask}
+    const handleAcceptTask = async (taskId: string) => {
+        const userEmail = user?.primaryEmailAddress?.emailAddress;
+        if (!userEmail) {
+            toast.error("User email not found");
+            return;
+        }
+        
+        startTransition(async () => {
+            const result = await assignTask(
+                projId,
+                stageId,
+                taskId,
+                userEmail
+            );
+            
+            if (result.success) {
+                toast.success("Task accepted successfully!");
+            } else {
+                toast.error(result.message || "Failed to accept task");
+            }
+        });
+    };
+
+    const handleSwapTask = async (taskId: string) => {
+        setCurrentTaskId(taskId);
+        setSwapAssigneeEmail("");
+        setSwapTaskDialogOpen(true);
+    };
+
+    const handleSwapTaskConfirm = async () => {
+        if (!swapAssigneeEmail.trim()) {
+            toast.error("Please enter an email address");
+            return;
+        }
+
+        toast.success("Task swapped successfully! (Mock mode)");
+        setSwapTaskDialogOpen(false);
+        setSwapAssigneeEmail("");
+        setCurrentTaskId("");
+
+        startTransition(async () => {
+            const result = await reassignTask(
+                projId, 
+                stageId, 
+                currentTaskId, 
+                swapAssigneeEmail.trim()
+            );
+            
+            if (result.success) {
+                toast.success("Task swapped successfully!");
+                setSwapTaskDialogOpen(false);
+                setSwapAssigneeEmail("");
+                setCurrentTaskId("");
+            } else {
+                toast.error(result.message || "Failed to swap task");
+            }
+        });
+    };
+
+    const handleDropTask = async (taskId: string) => {
+        startTransition(async () => {
+            const result = await unassignTask(projId, stageId, taskId);
+            
+            if (result.success) {
+                toast.success("Task dropped successfully!");
+            } else {
+                toast.error(result.message || "Failed to drop task");
+            }
+        });
+    };
+
+    return (
+        <div className="w-full h-full flex flex-col bg-gray-100">
+            {/* Header Section - 类似项目页面的设计风格 */}
+            <div className="relative">
+                <div
+                    className="bg-gradient-to-r from-[#6F61EF] to-purple-600 h-64 flex items-center justify-center bg-cover bg-center"
+                    style={{
+                        backgroundImage: `linear-gradient(135deg, #6F61EF 0%, #8B7ED8 50%, #B794F6 100%)`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                    }}
+                >
+                    {/* 半透明卡片 - 类似项目页面的设计 */}
+                    <div
+                        className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-6 m-6 w-full max-w-8xl"
+                        style={{
+                            background: "rgba(255,255,255,0.15)",
+                            WebkitBackdropFilter: "blur(10px)",
+                            backdropFilter: "blur(10px)",
+                            border: "1px solid rgba(255,255,255,0.2)",
+                        }}
                     >
-                      <span className="w-full text-lg font-semibold text-gray-500">
-                        + New Task
-                      </span>
-                    </Button>
-                  </div>
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                            {/* Stage信息部分 */}
+                            <div className="flex-1 space-y-4">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h1 className="text-3xl md:text-4xl font-bold text-white">
+                                        {"Stage " +
+                                            (stage.order + 1) +
+                                            ". " +
+                                            stage.title}
+                                    </h1>
+                                    <div className="flex items-center gap-3">
+                                        <BountyBoardButton
+                                            overdueTasks={overdueTasks.length}
+                                            showBountyBoard={false}
+                                            onClick={() =>
+                                                setBountyBoardOpen(true)
+                                            }
+                                        />
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="text-white hover:bg-white/20 transition-colors"
+                                            onClick={() =>
+                                                setIsEditing(!isEditing)
+                                            }
+                                        >
+                                            <Edit3 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between mb-2">
+                                    <h2 className="text-xl md:text-2xl font-semibold text-white">
+                                        Tasks List
+                                    </h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
-  );
+            </div>
+
+            {/* Content Section */}
+            <div className="flex-1 p-6">
+                {/* Bounty Board Dialog */}
+                <Dialog
+                    open={bountyBoardOpen}
+                    onOpenChange={setBountyBoardOpen}
+                >
+                    <DialogContent className="max-w-7xl h-3/4">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-2xl font-bold">
+                                Bounty Board
+                                <span className="text-base font-normal text-gray-500">
+                                    ({overdueTasks.length} tasks)
+                                </span>
+                            </DialogTitle>
+                            <DialogDescription className="text-gray-600">
+                                Claim overdue tasks to earn extra points and help the team stay on track.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="py-4">
+                            {overdueTasks.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {overdueTasks.map((task) => (
+                                        <div
+                                            key={task.id}
+                                            className="group bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-orange-300 transition-all duration-300 overflow-hidden"
+                                        >
+                                            {/* 卡片头部 */}
+                                            <div className="bg-gradient-to-r from-orange-500 to-red-500 px-4 py-3">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                                                        <span className="text-white text-sm font-medium">
+                                                            OVERDUE
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="bg-white/20 px-3 py-1 rounded-full">
+                                                            <span className="text-white text-sm font-bold">
+                                                                1 Point
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* 卡片内容 */}
+                                            <div className="p-6">
+                                                <div className="mb-4">
+                                                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
+                                                        {task.title}
+                                                    </h3>
+                                                    <p className="text-gray-600 text-sm line-clamp-3 leading-relaxed">
+                                                        {task.description}
+                                                    </p>
+                                                </div>
+
+                                                {/* 底部信息 */}
+                                                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                                                    <div className="flex items-center gap-2 text-gray-500">
+                                                        <svg
+                                                            className="w-4 h-4"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                                            />
+                                                        </svg>
+                                                        <span className="text-xs font-medium">
+                                                            {new Date(
+                                                                task.soft_deadline,
+                                                            ).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
+                                                    <Link
+                                                        href={`/org/${id}/proj/${projId}/stage/${stageId}/task/${task.id}`}
+                                                    >
+                                                        <Button
+                                                            size="sm"
+                                                            className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-medium px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+                                                            onClick={() =>
+                                                                setBountyBoardOpen(
+                                                                    false,
+                                                                )
+                                                            }
+                                                        >
+                                                            <svg
+                                                                className="w-4 h-4 mr-2"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                viewBox="0 0 24 24"
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    strokeWidth={
+                                                                        2
+                                                                    }
+                                                                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                                                                />
+                                                            </svg>
+                                                            Claim Task
+                                                        </Button>
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-16 text-gray-500">
+                                    <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+                                        <DollarSign className="h-12 w-12 text-gray-400" />
+                                    </div>
+                                    <p className="text-xl font-semibold text-gray-700 mb-2">
+                                        No overdue tasks available
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                        All tasks are on track! 🎉
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Swap Task Dialog */}
+                <Dialog open={swapTaskDialogOpen} onOpenChange={setSwapTaskDialogOpen}>
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle>Swap Task Assignment</DialogTitle>
+                            <DialogDescription>
+                                Enter the email address of the person you want to assign this task to.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="assignee-email" className="text-right">
+                                    Email
+                                </Label>
+                                <Input
+                                    id="assignee-email"
+                                    type="email"
+                                    placeholder="user@example.com"
+                                    value={swapAssigneeEmail}
+                                    onChange={(e) => setSwapAssigneeEmail(e.target.value)}
+                                    className="col-span-3"
+                                />
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button 
+                                variant="outline" 
+                                onClick={() => {
+                                    setSwapTaskDialogOpen(false);
+                                    setSwapAssigneeEmail("");
+                                    setCurrentTaskId("");
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button 
+                                onClick={handleSwapTaskConfirm}
+                                disabled={isPending || !swapAssigneeEmail.trim()}
+                            >
+                                {isPending ? "Swapping..." : "Swap Task"}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Task Management Component */}
+                <TaskManagement
+                    tasks={tasks}
+                    isEditing={isEditing}
+                    handleNewTask={handleNewTask}
+                    handleDeleteTask={handleDeleteTask}
+                    handleSwapTask={handleSwapTask}
+                    handleDropTask={handleDropTask}
+                    handleAcceptTask={handleAcceptTask}
+                    isPending={isPending}
+                    isOpen={isOpen}
+                    setIsOpen={setIsOpen}
+                    orgId={id}
+                    projId={projId}
+                    stageId={stageId}
+                    currentUserEmail={user?.primaryEmailAddress?.emailAddress}
+                />
+            </div>
+        </div>
+    );
 }
+
 export default StagePage;

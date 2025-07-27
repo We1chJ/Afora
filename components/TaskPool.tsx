@@ -65,11 +65,6 @@ const TaskPool: React.FC<TaskPoolProps> = ({
         return now > softDeadline && task.status === "assigned";
     };
 
-    const canUserAssignTask = (task: Task): boolean => {
-        if (task.status === "available") return true;
-        if (task.status === "assigned" && isTaskOverdue(task)) return true;
-        return false;
-    };
 
     const isUserAssigned = (task: Task): boolean => {
         return task.assignee === user?.primaryEmailAddress?.toString();

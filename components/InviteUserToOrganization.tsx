@@ -26,7 +26,11 @@ import {
 import { ChevronRight } from "lucide-react";
 import { access_roles } from "@/types/types";
 
-function InviteUser(props) {
+interface InviteUserProps {
+    defaultAccessRole?: string;
+}
+
+function InviteUser(props: InviteUserProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
     const [email, setEmail] = useState("");

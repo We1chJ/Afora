@@ -77,18 +77,6 @@ function TaskMainContent({
         }
     }, [task]);
 
-    const handleMarkComplete = () => {
-        if (!taskLocked) {
-            setIsCompleted(true);
-            setCompletionPercentage([100]);
-            setTempCompletionPercentage([100]);
-            setHasUnsavedChanges(false);
-            toast.success("Task marked as complete!");
-        } else {
-            toast.info("This task is currently locked.");
-        }
-    };
-
     const handleProgressChange = (value: number[]) => {
         setTempCompletionPercentage(value);
         setHasUnsavedChanges(value[0] !== completionPercentage[0]);
@@ -314,7 +302,7 @@ function TaskMainContent({
                                 )}
                             </>
                             ) : !task?.assignee ? (
-                              // 未分配，显示“接受任务”按钮
+                              // 未分配，显示"接受任务"按钮
                               <div className="">
                                 <Button
                                   onClick={async () => {
@@ -335,7 +323,7 @@ function TaskMainContent({
                                       } else {
                                         toast.error(result.message || "Accept task failed");
                                       }
-                                    } catch (e) {
+                                    } catch {
                                       toast.error("Accept task failed");
                                     }
                                   }}

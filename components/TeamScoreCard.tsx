@@ -11,6 +11,11 @@ import { getProjectMembersResponses, saveTeamAnalysis } from "@/actions/actions"
 import { toast } from "sonner";
 import TeamScoreChart from "./TeamScoreChart";
 
+interface MemberData {
+    email: string;
+    responses: string[];
+}
+
 const TeamScoreCard = ({
     members,
     projectFilter,
@@ -68,7 +73,7 @@ const TeamScoreCard = ({
                     console.log("Expected members count:", members.length);
                     
                     const memberResponses = membersData.data.map(
-                        (member: any) => {
+                        (member: MemberData) => {
                             return `User: ${member.email}
                                     Question 1 Answer: ${member.responses[0] || "No answer"}
                                     Question 2 Answer: ${member.responses[1] || "No answer"}
@@ -129,7 +134,7 @@ const TeamScoreCard = ({
                             : "Team Compatibility Analysis"}
                     </CardTitle>
                     <CardDescription>
-                        Analyze team's overall compatibility and collaboration potential based on member onboarding surveys
+                        Analyze team&apos;s overall compatibility and collaboration potential based on member onboarding surveys
                         {analysisTime && (
                             <div className="mt-2 text-sm text-muted-foreground">
                                 Last analysis: {analysisTime.toLocaleString()}
@@ -475,7 +480,7 @@ const TeamScoreCard = ({
                             {/* Member detailed analysis */}
                             <div className="mt-6">
                                 <h4 className="font-semibold mb-4">Member Detailed Analysis</h4>
-                                {analysis.member_analyses.map((member, index) => (
+                                {analysis.member_analyses.map((member) => (
                                     <div key={member.member_email} className="mb-4 bg-white rounded-lg border p-4">
                                         <div className="flex items-center justify-between mb-3">
                                             <div>

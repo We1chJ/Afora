@@ -4,7 +4,7 @@ import { db } from "@/firebase";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { collection, doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition, useCallback } from "react";
 import { useCollection, useDocument } from "react-firebase-hooks/firestore";
 
 import { Project, Stage, teamCharterQuestions, TeamCompatibilityAnalysis } from "@/types/types";
@@ -19,7 +19,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFoo
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@radix-ui/react-label";
-import { setTeamCharter, updateProjectTitle, updateStages, getProjectStats, getProjectLeaderboard, getTeamAnalysis } from "@/actions/actions";
+import { setTeamCharter, updateProjectTitle, updateStages, getProjectStats, getTeamAnalysis } from "@/actions/actions";
 import { HoverCard, HoverCardTrigger } from "@radix-ui/react-hover-card";
 import { HoverCardContent } from "@/components/ui/hover-card";
 import { ReorderIcon } from "@/components/ReorderIcon";
@@ -28,8 +28,18 @@ import { updateStatus } from "@/lib/store/features/stageStatus/stageStatusSlice"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import TeamScoreCard from "@/components/TeamScoreCard";
+
+interface ProjectStats {
+    totalTasks: number;
+    completedTasks: number;
+    assignedTasks: number;
+    availableTasks: number;
+    overdueTasks: number;
+    completionRate: number;
+    stageCount?: number;
+}
 
 const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const { isSignedIn, isLoaded } = useAuth();
@@ -41,13 +51,10 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     const [isEditing, setIsEditing] = useState(false);
     const [reorderedStages, setReorderedStages] = useState<Stage[]>([]);
     const dragControl = useDragControls();
-    const [projectStats, setProjectStats] = useState<any>(null);
-    const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
-    const [statsLoading, setStatsLoading] = useState(false);
+    const [projectStats, setProjectStats] = useState<ProjectStats | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
     const [analysisLoading, setAnalysisLoading] = useState(true);
     const [analysisData, setAnalysisData] = useState<{analysis: TeamCompatibilityAnalysis, timestamp: Date} | null>(null);
-    const [hasExistingAnalysis, setHasExistingAnalysis] = useState<boolean>(false);
 
     const [projData, projLoading, projError] = useDocument(
         doc(db, "projects", projId),
@@ -72,33 +79,24 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
     }, [isLoaded, isSignedIn, router]);
 
     // load project stats
-    const loadProjectStats = async () => {
-        setStatsLoading(true);
+    const loadProjectStats = useCallback(async () => {
         try {
             // load project stats
             const statsResult = await getProjectStats(projId);
-            if (statsResult.success) {
+            if (statsResult.success && statsResult.data) {
                 setProjectStats(statsResult.data);
-            }
-
-            // load leaderboard data
-            const leaderboardResult = await getProjectLeaderboard(projId);
-            if (leaderboardResult.success) {
-                setLeaderboardData(leaderboardResult.leaderboard || []);
             }
         } catch (error) {
             console.error("Error loading project stats:", error);
-        } finally {
-            setStatsLoading(false);
         }
-    };
+    }, [projId]);
 
     // load data
     useEffect(() => {
         if (projId) {
             loadProjectStats();
         }
-    }, [projId]);
+    }, [projId, loadProjectStats]);
 
     // load team analysis report
     useEffect(() => {
@@ -110,7 +108,6 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                     const projectData = projectDoc.data();
                     
                     if (projectData?.lastTeamAnalysis?.filePath) {
-                        setHasExistingAnalysis(true);
                         // if there is existing analysis, load it
                         const result = await getTeamAnalysis(projId);
                         if (result.success && result.data) {
@@ -119,12 +116,9 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
                                 timestamp: new Date(result.data.timestamp)
                             });
                         }
-                    } else {
-                        setHasExistingAnalysis(false);
                     }
                 } catch (error) {
                     console.error("Error checking team analysis:", error);
-                    setHasExistingAnalysis(false);
                 } finally {
                     setAnalysisLoading(false);
                 }
@@ -137,7 +131,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         if (!isEditing) {
             setProjTitle(proj?.title || "");
         }
-    }, [proj]);
+    }, [proj, isEditing]);
 
     const [stagesData, stagesLoading, stagesError] = useCollection(
         collection(db, "projects", projId, "stages"),
@@ -161,7 +155,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         if (!isEditing) {
             setReorderedStages(stages.map((stage) => ({ ...stage })));
         }
-    }, [stages]);
+    }, [stages, isEditing]);
 
     // 0 = locked, 1 = in progress, 2 = completed
     const [stageStatus, setStageStatus] = useState<number[]>([]);
@@ -178,7 +172,7 @@ const ProjectPage = ({id, projId}: {id: string, projId: string}) => {
         });
         dispatch(updateStatus(newStageStatus.map((status) => status === 0)));
         setStageStatus(newStageStatus);
-    }, [stages]);
+    }, [stages, dispatch]);
 
     
         if (stagesLoading || projLoading) {

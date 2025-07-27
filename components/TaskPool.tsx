@@ -7,17 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Task, TaskPoolStats } from "@/types/types";
-import {
-    Clock,
-    Trophy,
-    User,
-    Calendar,
-    CheckCircle,
-    AlertTriangle,
-    UserPlus,
-    UserMinus,
-    Timer,
-} from "lucide-react";
+import { Trophy, Calendar, CheckCircle, AlertTriangle, UserPlus, UserMinus, Timer } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 
@@ -33,7 +23,6 @@ interface TaskPoolProps {
 
 const TaskPool: React.FC<TaskPoolProps> = ({
     stageId,
-    projId,
     tasks,
     isMockMode = false,
     onTaskAssign,

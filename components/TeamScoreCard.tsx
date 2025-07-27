@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Users, TrendingUp, AlertCircle, CheckCircle, BarChart3 } from "lucide-react";
+import { Loader2, TrendingUp, AlertCircle, CheckCircle, BarChart3 } from "lucide-react";
 import { analyzeTeamCompatibility } from "@/ai_scripts/analyzeTeamCompatibility";
 import { appQuestions, TeamCompatibilityAnalysis, TeamScoreCardProps } from "@/types/types";
 import { getProjectMembersResponses, saveTeamAnalysis } from "@/actions/actions";
@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import TeamScoreChart from "./TeamScoreChart";
 
 const TeamScoreCard = ({
-    orgId,
     members,
     projectFilter,
     initialAnalysis,

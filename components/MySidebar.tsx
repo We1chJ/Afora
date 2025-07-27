@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Settings, Mail, Calendar } from "lucide-react";
+import { Settings, Mail, Calendar } from "lucide-react";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { useUser } from "@clerk/nextjs";
 import { collection, DocumentData, query, where } from "firebase/firestore";
@@ -13,14 +13,12 @@ import {
     SidebarGroup,
     SidebarGroupContent,
     SidebarGroupLabel,
-    SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarFooterGroup,
 } from "@/components/ui/sidebar";
 import { Organization } from "@/types/types";
-import ContactUs from "./ContactUs";
 
 interface OrgDocument extends DocumentData {
     createdAt: string;

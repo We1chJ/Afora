@@ -2,22 +2,18 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Search, Upload, Check } from "lucide-react";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useDropzone } from "react-dropzone";
-import { Image } from "lucide-react";
+import { Image as ImageIcon } from "lucide-react";
 import { searchPexelsImages, setBgImage } from "@/actions/actions";
 import { toast } from "sonner";
 import { Skeleton } from "./ui/skeleton";
 import { Loader } from "lucide-react";
 import { storage } from "@/firebase";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import NextImage from "next/image";
 
 export default function ImageSearchDialog({ orgId }: { orgId: string }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -313,7 +309,7 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
                 onClick={() => setIsOpen(true)}
             >
                 <div className="flex items-center w-full">
-                    <Image size={20} className="flex-shrink-0" />
+                    <ImageIcon size={20} className="flex-shrink-0" />
                     <span className="ml-1 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         Change Image
                     </span>
@@ -346,17 +342,17 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
                                             {isLoading ? (
                                                 <Loader className="w-10 h-10 text-gray-500" />
                                             ) : (
-                                                <img
+                                                <NextImage
                                                     src={imagePreview}
                                                     alt="Preview"
+                                                    width={400}
+                                                    height={192}
                                                     className={`mx-auto object-contain max-h-48 w-full transition-opacity duration-300 ${loadedImages[imagePreview] ? "opacity-100" : "opacity-0"}`}
                                                     onLoad={() =>
                                                         handleImageLoad(
                                                             imagePreview,
                                                         )
                                                     }
-                                                    loading="eager"
-                                                    fetchPriority="high"
                                                 />
                                             )}
                                         </div>
@@ -393,12 +389,12 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
                                         href="https://www.pexels.com"
                                         className="mr-4"
                                     >
-                                        <img
+                                        <NextImage
                                             src="https://images.pexels.com/lib/api/pexels.png"
                                             alt="Pexels"
+                                            width={64}
+                                            height={24}
                                             className="inline-block h-6"
-                                            loading="eager"
-                                            fetchPriority="high"
                                         />
                                     </a>
                                 </DialogTitle>
@@ -436,15 +432,15 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
                             <div className="grid grid-cols-3 gap-3 mb-4 relative mx-auto justify-items-center">
                                 {isLoading
                                     ? [...Array(9)].map((_, i) => (
-                                          <div
-                                              key={i}
-                                              className="h-24 w-24 flex items-center justify-center"
-                                          >
-                                              <Skeleton className="rounded-md h-full w-full" />
-                                          </div>
-                                      ))
+                                            <div
+                                                key={i}
+                                                className="h-24 w-24 flex items-center justify-center"
+                                            >
+                                                <Skeleton className="rounded-md h-full w-full" />
+                                            </div>
+                                        ))
                                     : searchRes.length === 0
-                                      ? [...Array(9)].map((_, i) => (
+                                        ? [...Array(9)].map((_, i) => (
                                             <div
                                                 key={i}
                                                 className="h-24 w-24 flex items-center justify-center"
@@ -467,11 +463,13 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
                                                         <div className="absolute inset-0 animate-pulse bg-gray-200 rounded-md"></div>
                                                     )}
                                                     {/* Higher quality thumbnails */}
-                                                    <img
+                                                    <NextImage
                                                         src={generateThumbnailUrl(
                                                             url,
                                                         )}
                                                         alt={`Search result ${i + 1}`}
+                                                        width={96}
+                                                        height={96}
                                                         className="object-cover w-full h-full transition-opacity duration-300"
                                                         style={{
                                                             opacity:
@@ -484,9 +482,6 @@ export default function ImageSearchDialog({ orgId }: { orgId: string }) {
                                                         onLoad={() =>
                                                             handleImageLoad(url)
                                                         }
-                                                        loading="eager"
-                                                        fetchPriority="high"
-                                                        decoding="sync"
                                                     />
                                                 </div>
                                             );

@@ -19,6 +19,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "./ui/button";
+import Image from "next/image";
 
 function SignedInLanding() {
     const [orgs, setOrgs] = useState<UserOrgData[]>([]);
@@ -169,10 +170,12 @@ function SignedInLanding() {
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-16 px-4 bg-white/50 backdrop-blur-sm rounded-2xl border border-gray-100">
-                        <img
+                        <Image
                             src="/logoFull.svg"
-                            className="w-24 h-24 mb-6 opacity-80"
                             alt="Logo"
+                            width={96}
+                            height={96}
+                            className="mb-6 opacity-80"
                         />
                         <h2 className="text-2xl font-semibold text-gray-800 mb-3">
                             Create Your First Organization

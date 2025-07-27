@@ -1,15 +1,14 @@
 "use client";
 import { db } from "@/firebase";
 import { Project, Task } from "@/types/types";
-import {collection, DocumentData, getDocs, query, where} from "firebase/firestore";
+import {collection, getDocs, query, where} from "firebase/firestore";
 import React, { useEffect, useState, useTransition } from "react";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { Button } from "./ui/button";
 import { updateProjects } from "@/actions/actions";
 import { toast } from "sonner";
 import ProjectCard from "./ProjectCard";
-import {Plus, Folder, Users, Briefcase} from "lucide-react";
-import { Input } from "./ui/input";
+import {Folder, Users, Briefcase} from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Card, CardContent } from "./ui/card";
 import { Separator } from "./ui/separator";
@@ -357,9 +356,9 @@ const ProjTab = ({
                                                     orgId={orgId}
                                                     projId={proj.projId}
                                                     projectName={proj.title}
-                                                    backgroundImage={""}
                                                     members={proj.members}
                                                     tasks={projectTasks[proj.projId] || []}
+                                                    backgroundImage=""
                                                 />
                                             </div>
                                         ))}

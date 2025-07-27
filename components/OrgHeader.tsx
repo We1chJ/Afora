@@ -2,12 +2,11 @@ import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff, Copy } from "lucide-react";
 import { toast } from "sonner";
-import { doc, collection, query, where } from "firebase/firestore";
-import { useDocument, useCollection } from "react-firebase-hooks/firestore";
+import { doc } from "firebase/firestore";
+import { useDocument } from "react-firebase-hooks/firestore";
 import { db } from "@/firebase";
 import { Organization, UserOrgData } from "@/types/types";
 import ImageSearchDialog from "./ImageSearchDialog";
-import ProjOnboarding from "./ProjOnboarding";
 
 interface OrgHeaderProps {
     id: string;
@@ -16,8 +15,6 @@ interface OrgHeaderProps {
 const OrgHeader = ({ id }: OrgHeaderProps) => {
     const { user } = useUser();
     const [showAccessCode, setShowAccessCode] = useState(false);
-
-    const userId = user?.id || "nonemptyString";
 
     const [org, loading, error] = useDocument(
         doc(db, "organizations", id),

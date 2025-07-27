@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useAuth, useUser } from "@clerk/nextjs";
-import { collection, doc } from "firebase/firestore";
-import { useCollection, useDocument } from "react-firebase-hooks/firestore";
+import { useUser } from "@clerk/nextjs";
+import { collection } from "firebase/firestore";
+import { useCollection } from "react-firebase-hooks/firestore";
 import { db } from "@/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import SubmissionCard from "@/components/SubmissionCard";
@@ -14,10 +14,7 @@ import { Comment, Task } from "@/types/types";
 import CommentView from "@/components/CommentView";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { useTransition } from "react";
 import { toast } from "sonner";
-import { RootState } from "@/lib/store/store";
-import { useSelector } from "react-redux";
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";

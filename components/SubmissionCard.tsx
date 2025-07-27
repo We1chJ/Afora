@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useTransition } from "react";
+import React, { useState, useEffect, useTransition, useCallback } from "react";
 // Card components removed - now using direct div layout
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,8 +22,6 @@ interface DownloadableFile {
 
 const SubmissionCard = ({
     task,
-    projId,
-    stageId,
     taskId,
     taskLocked,
 }: {
@@ -40,7 +38,8 @@ const SubmissionCard = ({
     const [submittedFiles, setSubmittedFiles] = useState<DownloadableFile[]>(
         [],
     );
-    const fetchSubmittedFiles = async () => {
+    
+    const fetchSubmittedFiles = useCallback(async () => {
         try {
             const listRef = ref(storage, `tasksSubmission/${taskId}`);
             listAll(listRef)
@@ -63,11 +62,11 @@ const SubmissionCard = ({
         } catch (error) {
             console.error("Failed to fetch submitted files:", error);
         }
-    };
+    }, [taskId]);
 
     useEffect(() => {
         fetchSubmittedFiles();
-    }, [taskId]);
+    }, [fetchSubmittedFiles]);
 
     useEffect(() => {
         const handleDragEnter = (e: DragEvent) => {

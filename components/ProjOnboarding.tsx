@@ -1,14 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 
-import {
-    AlertDialog,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import {AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle} from "@/components/ui/alert-dialog";
 import { Button } from "./ui/button";
 import { projHeader, projQuestions } from "@/types/types";
 import { Progress } from "@/components/ui/progress";
@@ -20,11 +13,12 @@ import { doc } from "firebase/firestore";
 import { useUser } from "@clerk/nextjs";
 import { Textarea } from "./ui/textarea";
 import TimeSlotSelector from "./TimeSlotSelector";
+
 const ProjOnboarding = ({ orgId }: { orgId: string }) => {
-    const [responses, setResponses] = useState<string[]>([]);
-    const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
-    const [isOpen, setIsOpen] = useState(false);
-    const [page, setPage] = useState(0);
+const [responses, setResponses] = useState<string[]>([]);
+const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
+const [isOpen, setIsOpen] = useState(false);
+const [page, setPage] = useState(0);
 
     useEffect(() => {
         // Open the dialog automatically when the component mounts
@@ -50,13 +44,8 @@ const ProjOnboarding = ({ orgId }: { orgId: string }) => {
     };
 
     const { user } = useUser();
-    const userId = user?.id || "nonemptyString";
 
     const userEmail = user?.primaryEmailAddress?.emailAddress;
-    const shouldFetchUserData = Boolean(userEmail && orgId);
-
-    // Debug information - remove in production
-    // console.log('ProjOnboarding debug:', { userEmail, orgId, shouldFetchUserData });
 
     const [userData] = useDocument(
         userEmail && orgId ? doc(db, "users", userEmail, "orgs", orgId) : null,

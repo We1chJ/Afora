@@ -13,14 +13,11 @@ import OrgHeader from "./OrgHeader";
 
 const OrganizationPage = ({ id }: { id: string }) => {
     const { user } = useUser();
-    const [showAccessCode, setShowAccessCode] = useState(false);
-
-    const userId = user?.id || "nonemptyString";
 
     const [org, loading, error] = useDocument(
         doc(db, "organizations", id),
     );
-    const [projectsData, projLoading, projError] = useCollection(
+    const [projectsData] = useCollection(
         query(collection(db, "projects"), where("orgId", "==", id)),
     );
     const userEmail = user?.primaryEmailAddress?.emailAddress;

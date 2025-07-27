@@ -15,13 +15,24 @@ import { useCollection } from "react-firebase-hooks/firestore";
 import {Users, Settings, UserPlus, Shuffle, FolderOpen, UserCheck, ArrowRight, Crown, Building2} from "lucide-react";
 import { toast } from "sonner";
 import {updateProjectMembers, removeProjectMember, autoAssignMembersToProjects, updateProjectTeamSize} from "@/actions/actions";
+import Image from "next/image";
 
 interface MemberListProps {
     admins: string[];
     members: string[];
     userRole: string;
     orgId: string;
-    projectsData?: any;
+    projectsData?: {
+        docs: Array<{
+            id: string;
+            data: () => {
+                projId?: string;
+                title?: string;
+                members?: string[];
+                teamSize?: number;
+            };
+        }>;
+    };
     currentUserEmail?: string;
 }
 
@@ -79,7 +90,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
             setAdminsPfp(adminsPfpData);
             setMembersPfp(membersPfpData);
         }
-    }, [results, loading, error]);
+    }, [results, loading, error, admins, members]);
 
     // use useMemo to calculate teams, avoid unnecessary recalculation
     const teams = useMemo(() => {
@@ -87,7 +98,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
             return [];
         }
 
-        return projects.map((proj: any): ProjectTeam => {
+        return projects.map((proj): ProjectTeam => {
             const projectData = proj.data();
             return {
                 projectId: projectData.projId || proj.id,
@@ -305,12 +316,14 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                 <div className="group flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-blue-200 transition-all duration-200">
                     <div className="flex items-center gap-3">
                         <div className="relative">
-                            <img
+                            <Image
                                 src={
                                     pfpData[memberEmail] ||
                                     "https://static.vecteezy.com/system/resources/previews/024/983/914/non_2x/simple-user-default-icon-free-png.png"
                                 }
                                 alt="Avatar"
+                                width={48}
+                                height={48}
                                 className="w-12 h-12 rounded-full border-2 border-gray-100 object-cover"
                             />
                             {isAdmin && (
@@ -935,7 +948,7 @@ const MemberList = ({admins, members, userRole, orgId, projectsData, currentUser
                                         {userRole === "admin" &&
                                             unassignedMembers.length > 0 && (
                                                 <p className="text-sm text-gray-400 mt-2">
-                                                    Select "Unassigned Members"
+                                                    Select &ldquo;Unassigned Members&rdquo;
                                                     from the left to add members
                                                 </p>
                                             )}

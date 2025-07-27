@@ -1,24 +1,7 @@
 "use client";
 import React from "react";
-import {
-    PieChart,
-    Pie,
-    Cell,
-    ResponsiveContainer,
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-} from "recharts";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TeamCompatibilityAnalysis } from "@/types/types";
 
 interface TeamScoreChartProps {
@@ -41,7 +24,7 @@ const TeamScoreChart = ({ analysis }: TeamScoreChartProps) => {
     ];
 
     // Prepare data for bar chart - each member's score
-    const barData = analysis.member_analyses.map((member, index) => ({
+    const barData = analysis.member_analyses.map((member) => ({
         name: member.member_email.split("@")[0], // Only show email prefix
         score: member.compatibility_score,
         role: member.role_suggestion,
@@ -64,7 +47,7 @@ const TeamScoreChart = ({ analysis }: TeamScoreChartProps) => {
                 <CardHeader>
                     <CardTitle>Team Overall Compatibility</CardTitle>
                     <CardDescription>
-                        Display team's overall compatibility score
+                        Display team&apos;s overall compatibility score
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -117,7 +100,7 @@ const TeamScoreChart = ({ analysis }: TeamScoreChartProps) => {
                 <CardHeader>
                     <CardTitle>Member Compatibility Comparison</CardTitle>
                     <CardDescription>
-                        Comparison of each member's compatibility score with the
+                        Comparison of each member&apos;s compatibility score with the
                         team
                     </CardDescription>
                 </CardHeader>
@@ -146,7 +129,9 @@ const TeamScoreChart = ({ analysis }: TeamScoreChartProps) => {
                                 <Tooltip
                                     formatter={(
                                         value: number,
+                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
                                         name: string,
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
                                         props: any,
                                     ) => [
                                         `${value} pts`,
@@ -154,6 +139,7 @@ const TeamScoreChart = ({ analysis }: TeamScoreChartProps) => {
                                     ]}
                                     labelFormatter={(
                                         label: string,
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         payload: any[],
                                     ) => {
                                         if (payload && payload[0]) {
@@ -190,7 +176,7 @@ const TeamScoreChart = ({ analysis }: TeamScoreChartProps) => {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {analysis.member_analyses.map((member, index) => (
+                        {analysis.member_analyses.map((member) => (
                             <div
                                 key={member.member_email}
                                 className="space-y-2"

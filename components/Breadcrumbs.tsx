@@ -14,7 +14,7 @@ import { Organization, Project, Stage, Task } from "@/types/types";
 import { doc } from "firebase/firestore";
 
 import { usePathname } from "next/navigation";
-import { Fragment, useEffect, useState, useMemo } from "react";
+import { Fragment, useEffect, useMemo } from "react";
 import { useDocument } from "react-firebase-hooks/firestore";
 
 // 文本截断函数

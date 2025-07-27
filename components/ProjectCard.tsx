@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FolderOpen, Users, ArrowRight, Target } from "lucide-react";
+import { FolderOpen, Users, ArrowRight } from "lucide-react";
 import { Task } from "@/types/types";
 
 interface ProjectCardProps {
@@ -17,7 +16,6 @@ const ProjectCard = ({
     projId,
     orgId,
     projectName = "Sample Project",
-    backgroundImage = "/placeholder.svg?height=200&width=600",
     tasks = [],
     members = [],
 }: ProjectCardProps) => {
